@@ -34,23 +34,46 @@
 
 package org.knopflerfish.eclipse.core;
 
-import java.io.IOException;
-
-import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
- * Represents a configuration when launching an OSGi framework.
+ * @author ar
  */
-public interface IOsgiConfiguration {
+public class PackageDescription {
 
-  /** 
-   * Saves this configuration and returns the program arguments
-   * that shall be used when launching the framework.
-   * 
-   * @return program arguments
-   * @throws IOException if failure creating configuration
-   */
-  public String [] create() throws IOException;
+  private String packageName;
+  private Map attributes = new HashMap();
   
-  public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info);
+  
+  public PackageDescription(String s) {
+    StringTokenizer st = new StringTokenizer(s, ";");
+    
+    // First token is package name
+    packageName = st.nextToken();
+    
+    // Attributes
+    while(st.hasMoreTokens()) {
+      String parameter = st.nextToken();
+      int idx = parameter.indexOf('=');
+      if (idx != -1) {
+        String attr = parameter.substring(0, idx);
+        String value = parameter.substring(idx+1);
+        // Removes qoutes if qouted
+        if (value.startsWith("\"") && value.endsWith("\"") ) {
+          value = value.substring(1, value.length()-1);
+        }
+      }
+    }
+  }
+  
+  public String getPackageName() {
+    return packageName;
+  }
+  
+  public String getAttribute(String attr) {
+    return (String) attributes.get(attr);
+  }
+  
 }

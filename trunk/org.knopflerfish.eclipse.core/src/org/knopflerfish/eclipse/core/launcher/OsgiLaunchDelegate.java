@@ -47,7 +47,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -56,15 +55,15 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
-import org.eclipse.debug.core.model.ISourceLocator;
 import org.eclipse.debug.core.sourcelookup.ISourceLookupDirector;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.internal.launching.JavaSourceLookupDirector;
 import org.eclipse.jdt.launching.AbstractJavaLaunchConfigurationDelegate;
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.IVMRunner;
 import org.eclipse.jdt.launching.VMRunnerConfiguration;
+import org.knopflerfish.eclipse.core.BundleProject;
+import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiConfiguration;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
@@ -79,8 +78,6 @@ import org.knopflerfish.eclipse.core.OsgiBundle;
 public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
 
   private static final String SEPARATOR = "/";
-  private static final String MANIFEST_FILE = "bundle.manifest";
-
 
   /* (non-Javadoc)
    * @see org.eclipse.debug.core.model.ILaunchConfigurationDelegate#launch(org.eclipse.debug.core.ILaunchConfiguration, java.lang.String, org.eclipse.debug.core.ILaunch, org.eclipse.core.runtime.IProgressMonitor)
@@ -99,16 +96,8 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     
     // Bundles
     ArrayList workspaceBundles = new ArrayList();
-    int type = getBundleSelectType(configuration);
-    Map bundleMap = null;
-    Map projectMap = null;
-    if (type == IOsgiLaunchConfigurationConstants.BUNDLE_SELECT_TYPE_MANUAL) {
-      bundleMap = verifyBundles(configuration);
-      projectMap = verifyProjects(configuration);
-    } else {
-      // TODO : Automatic selection of bundles is not yet implemented
-      System.err.println("Automatically determine which bundles are needed");
-    }
+    Map bundleMap = verifyBundles(configuration);
+    Map projectMap = verifyProjects(configuration);
     
     // Create configuration
     IOsgiLibrary[] osgiLibraries = osgiInstall.getLibraries();
@@ -126,9 +115,9 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     // Create framework configuration
     IOsgiConfiguration osgiConf = osgiVendor.createConfiguration(instanceDir, configuration.getAttributes());
     if (bundleMap != null) {
-      for (Iterator i=bundleMap.keySet().iterator();i.hasNext();) {
-        IOsgiBundle bundle = (IOsgiBundle) i.next();
-        osgiConf.addBundle(bundle, (Integer) bundleMap.get(bundle));
+      for (Iterator i=bundleMap.entrySet().iterator();i.hasNext();) {
+        Map.Entry entry = (Map.Entry) i.next();
+        osgiConf.addBundle((IOsgiBundle) entry.getKey(), (BundleLaunchInfo) entry.getValue());
       }
     }
     if (projectMap != null) {
@@ -136,13 +125,14 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
       if (!jarDirectory.exists()) {
         jarDirectory.mkdir();
       }
-      for (Iterator i=projectMap.keySet().iterator();i.hasNext();) {
-        IJavaProject project = (IJavaProject) i.next();
+      for (Iterator i=projectMap.entrySet().iterator();i.hasNext();) {
+        Map.Entry entry = (Map.Entry) i.next();
+        IJavaProject project = (IJavaProject) entry.getKey();
         // Build bundle jar
         try {
-          File jarFile = buildBundleJar(project, jarDirectory);
+          File jarFile = buildBundleJar(new BundleProject(project), jarDirectory);
           IOsgiBundle bundle = new OsgiBundle(jarFile);
-          osgiConf.addBundle(bundle, (Integer) projectMap.get(project));
+          osgiConf.addBundle(bundle, (BundleLaunchInfo) entry.getValue());
         } catch (IOException e) {
           // Failed to create jar file
           e.printStackTrace();
@@ -170,8 +160,6 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
                 SourcePathComputer.ID)); //$NON-NLS-1$
     sourceLocator.initializeDefaults(configuration);
     launch.setSourceLocator(sourceLocator);
-    //setDefaultSourceLocator(launch, configuration);
-    //ISourceLocator locator = launch.getSourceLocator();
     
     // Launch the configuration
     IVMRunner runner = vm.getVMRunner(mode);
@@ -270,13 +258,12 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
   public Map verifyBundles(ILaunchConfiguration configuration) throws CoreException {
     Map map = getBundles(configuration);
     HashMap bundles  = new HashMap();
-    for (Iterator i = map.keySet().iterator();i.hasNext();) {
+    for (Iterator i = map.entrySet().iterator();i.hasNext();) {
       try {
-        String path = (String) i.next();
-        Integer startLevel = new Integer((String)map.get(path));
-        OsgiBundle bundle = new OsgiBundle(new File(path));
-        // TODO: Use start level 1 for now
-        bundles.put(bundle, startLevel);
+        Map.Entry entry = (Map.Entry) i.next();
+        OsgiBundle bundle = new OsgiBundle(new File((String) entry.getKey()));
+        BundleLaunchInfo info = new BundleLaunchInfo((String) entry.getValue());
+        bundles.put(bundle, info);
       } catch (Exception e) {
         abort("Error in selected bundles.", e,
             IOsgiLaunchConfigurationConstants.ERR_BUNDLE_LIST);
@@ -298,10 +285,10 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     Map map = getProjects(configuration);
     HashMap projects  = new HashMap();
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-    for (Iterator i = map.keySet().iterator();i.hasNext();) {
+    for (Iterator i = map.entrySet().iterator();i.hasNext();) {
       try {
-        String name = (String) i.next();
-        Integer startLevel = new Integer((String)map.get(name));
+        Map.Entry entry = (Map.Entry) i.next();
+        String name = (String) entry.getKey();
         
         IProject project = root.getProject(name);
         if (project == null) {
@@ -315,7 +302,8 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
         }
         
         IJavaProject javaProject = JavaCore.create(project);
-        projects.put(javaProject, startLevel);
+        BundleLaunchInfo info = new BundleLaunchInfo((String) entry.getValue());
+        projects.put(javaProject, info);
       } catch (Exception e) {
         abort("Error in selected bundle projects.", e,
             IOsgiLaunchConfigurationConstants.ERR_PROJECT_LIST);
@@ -368,20 +356,6 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
   }
 
   /**
-   * Returns the bundle select type specified by the given launch configuration.
-   * 
-   * @param configuration launch configuration
-   * @return the bundle select type specified by the given launch configuration. 
-   * @exception CoreException if unable to retrieve the attribute
-   */
-  public static int getBundleSelectType(ILaunchConfiguration configuration) throws CoreException {
-    int type = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_BUNDLE_SELECT_TYPE, 
-        IOsgiLaunchConfigurationConstants.BUNDLE_SELECT_TYPE_AUTO);
-    
-    return type;
-  }
-
-  /**
    * Returns the bundles specified by the given launch configuration.
    * 
    * @param configuration launch configuration
@@ -417,9 +391,9 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
    * @return Reference to bundle jar file
    * @throws CoreException
    */
-  private File buildBundleJar(IJavaProject project, File jarDirectory) throws IOException, CoreException {
+  private File buildBundleJar(IBundleProject project, File jarDirectory) throws IOException, CoreException {
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-    String name = project.getProject().getName()+".jar";
+    String name = project.getJavaProject().getProject().getName()+".jar";
     JarOutputStream jos = null;
     InputStream is = null;
     File jarFile = null;
@@ -431,15 +405,13 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
       if (jarFile.exists()) jarFile.delete();
 
       // Get manifest
-      IFile manifestFile = project.getProject().getFile(MANIFEST_FILE);
-      is = manifestFile.getContents();
-      Manifest manifest = new Manifest(is); 
+      Manifest manifest = project.getManifest(); 
       
       // Create manifest output stream
       jos = new JarOutputStream(new FileOutputStream(jarFile), manifest);
       
       // Get output folder and class files to jar file
-      IFolder outFolder = root.getFolder(project.getOutputLocation());
+      IFolder outFolder = root.getFolder(project.getJavaProject().getOutputLocation());
       File outDir = new File(outFolder.getRawLocation().toString());
       addDirToJar(jos, outDir, "");
       

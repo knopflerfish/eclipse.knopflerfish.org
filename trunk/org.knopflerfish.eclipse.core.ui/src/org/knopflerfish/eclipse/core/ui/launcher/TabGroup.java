@@ -39,6 +39,8 @@ import org.eclipse.debug.ui.CommonTab;
 import org.eclipse.debug.ui.ILaunchConfigurationDialog;
 import org.eclipse.debug.ui.ILaunchConfigurationTab;
 import org.eclipse.jdt.debug.ui.launchConfigurations.JavaJRETab;
+import org.knopflerfish.eclipse.core.ui.launcher.bundle.BundleTab;
+import org.knopflerfish.eclipse.core.ui.launcher.main.MainTab;
 
 /**
  * Implementation of OSGi launch tab group.
@@ -56,10 +58,7 @@ public class TabGroup extends AbstractLaunchConfigurationTabGroup {
     ILaunchConfigurationTab[] tabs = new ILaunchConfigurationTab[] {
         new MainTab(),
         new BundleTab(),
-        //new JavaArgumentsTab(),
         new JavaJRETab(),
-        //new JavaClasspathTab(),
-        //new JavaSourceLookupTab(),
         new CommonTab()
     };
     setTabs(tabs);

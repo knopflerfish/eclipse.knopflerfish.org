@@ -32,25 +32,56 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.launcher;
 
-import java.io.IOException;
-
-import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
+import java.util.StringTokenizer;
 
 /**
- * Represents a configuration when launching an OSGi framework.
+ * @author ar
  */
-public interface IOsgiConfiguration {
+public class BundleLaunchInfo {
+  public static String [] MODES = new String[] {"Install", "Start"};
+  public static int MODE_INSTALL  = 0; 
+  public static int MODE_START    = 1; 
 
-  /** 
-   * Saves this configuration and returns the program arguments
-   * that shall be used when launching the framework.
-   * 
-   * @return program arguments
-   * @throws IOException if failure creating configuration
-   */
-  public String [] create() throws IOException;
+  private int startLevel;
+  private int mode;
   
-  public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info);
+  public BundleLaunchInfo() {
+  }
+  
+  public BundleLaunchInfo(String s) {
+    StringTokenizer st = new StringTokenizer(s, ",");
+    if (st.hasMoreTokens()) {
+      startLevel = Integer.parseInt(st.nextToken());
+    }
+    if (st.hasMoreTokens()) {
+      mode = Integer.parseInt(st.nextToken());
+    }
+  }
+  
+  public int getMode() {
+    return mode;
+  }
+
+  public void setMode(int mode) {
+    this.mode = mode;
+  }
+
+  public int getStartLevel() {
+    return startLevel;
+  }
+
+  public void setStartLevel(int startLevel) {
+    this.startLevel = startLevel;
+  }
+  
+  public String toString() {
+    StringBuffer buf = new StringBuffer();
+    buf.append(startLevel);
+    buf.append(",");
+    buf.append(mode);
+    
+    return buf.toString();
+  }
 }

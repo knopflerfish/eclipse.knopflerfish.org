@@ -32,55 +32,58 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.ui.launcher.bundle;
+
+import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.jface.viewers.Viewer;
 
 /**
  * @author ar
  */
-public interface IOsgiBundle extends IOsgiLibrary {
+public class AvailableTreeContentProvider implements ITreeContentProvider {
 
-  public static final String BUNDLE_SYMBOLIC_NAME = "Bundle-SymbolicName";
-  public static final String BUNDLE_NAME          = "Bundle-Name";
-  public static final String BUNDLE_VERSION       = "Bundle-Version";
-  public static final String BUNDLE_ACTIVATOR     = "Bundle-Activator";
-  public static final String BUNDLE_VENDOR        = "Bundle-Vendor";
-  public static final String BUNDLE_CONTACT       = "Bundle-ContactAddress";
-  public static final String BUNDLE_COPYRIGHT     = "Bundle-Copyright";
-  public static final String BUNDLE_DESCRIPTION   = "Bundle-Description";
-  public static final String BUNDLE_DOCURL        = "Bundle-DocURL";
-  public static final String EXPORT_PACKAGE       = "Export-Package";
-  public static final String IMPORT_PACKAGE       = "Import-Package";
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
+   */
+  public Object[] getChildren(Object parentElement) {
+    IAvailableTreeElement abe = (IAvailableTreeElement) parentElement;  
+    return abe.getChildren();
+  }
 
-  public static final String BUILT_FROM         = "Built-From";
-  
-  /**
-   * @return Returns the name.
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
    */
-  public String getName();
-  
-  /**
-   * @return Returns the version.
-   */
-  public String getVersion();
+  public Object getParent(Object element) {
+    IAvailableTreeElement abe = (IAvailableTreeElement) element;  
+    return abe.getParent();
+  }
 
-  /**
-   * @return Returns the activator.
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ITreeContentProvider#hasChildren(java.lang.Object)
    */
-  public String getActivator();
-  
-  public PackageDescription[] getImportedPackages(); 
+  public boolean hasChildren(Object element) {
+    IAvailableTreeElement abe = (IAvailableTreeElement) element;  
+    return abe.hasChildren();
+  }
 
-  public PackageDescription[] getExportedPackages(); 
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#getPath()
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
    */
-  public String getPath();
+  public Object[] getElements(Object inputElement) {
+    IAvailableTreeElement abe = (IAvailableTreeElement) inputElement;  
+    return abe.getChildren();
+  }
 
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#getSourceDirectory()
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IContentProvider#dispose()
    */
-  public String getSourceDirectory();
+  public void dispose() {
+  }
+
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+   */
+  public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+  }
+
 }

@@ -171,7 +171,7 @@ public class FrameworkDefinitionDialog extends Dialog {
       bundleImage = id.createImage();
     }
     
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", "icons/ovr16/src_ovr2.gif");
+    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", "icons/ovr16/src_ovr.gif");
     if (id != null) {
       Image srcOvrImage = id.createImage();
       if (libImage != null) { 
