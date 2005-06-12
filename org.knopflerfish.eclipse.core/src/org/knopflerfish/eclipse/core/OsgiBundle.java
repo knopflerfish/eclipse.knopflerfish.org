@@ -36,33 +36,26 @@ package org.knopflerfish.eclipse.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
-
 
 /**
  * @author ar
  */
 public class OsgiBundle implements IOsgiBundle {
 
-  public static final String BUNDLE_SYMBOLIC_NAME = "Bundle-SymbolicName";
-  public static final String BUNDLE_NAME          = "Bundle-Name";
-  public static final String BUNDLE_VERSION       = "Bundle-Version";
-  public static final String BUNDLE_ACTIVATOR     = "Bundle-Activator";
-  public static final String BUNDLE_VENDOR        = "Bundle-Vendor";
-  public static final String BUNDLE_CONTACT       = "Bundle-ContactAddress";
-  public static final String BUNDLE_COPYRIGHT     = "Bundle-Copyright";
-  public static final String BUNDLE_DESCRIPTION   = "Bundle-Description";
-  public static final String BUNDLE_DOCURL        = "Bundle-DocURL";
-
-  public static final String BUILT_FROM         = "Built-From";
-  
   private final File file;
   private String name;
   private String version;
+  private String activator;
   private String source;
   private String builtFrom;
+  private List importedPackages = new ArrayList();
+  private List exportedPackages = new ArrayList();
 
   public OsgiBundle(File jar) throws IOException {
     this.file = jar;
@@ -93,6 +86,14 @@ public class OsgiBundle implements IOsgiBundle {
   public String getVersion() {
     return version;
   }
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IOsgiBundle#getActivator()
+   */
+  public String getActivator() {
+    return activator;
+  }
 
   /*
    *  (non-Javadoc)
@@ -102,6 +103,20 @@ public class OsgiBundle implements IOsgiBundle {
     return file.getAbsolutePath();
   }
 
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IOsgiBundle#getImportPackages()
+   */
+  public PackageDescription[] getImportedPackages() {
+    return (PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]);
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IOsgiBundle#getExportPackages()
+   */
+  public PackageDescription[] getExportedPackages() {
+    return (PackageDescription[]) exportedPackages.toArray(new PackageDescription[exportedPackages.size()]);
+  }
+  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IOsgiBundle#getSourceDirectory()
@@ -144,9 +159,38 @@ public class OsgiBundle implements IOsgiBundle {
     if (attributes == null) return;
      
     name = attributes.getValue(BUNDLE_NAME);
-    
     version = attributes.getValue(BUNDLE_VERSION);
+    activator = attributes.getValue(BUNDLE_ACTIVATOR);
+    
+    // Import-Packages
+    String attr = attributes.getValue(IMPORT_PACKAGE);
+    importedPackages.clear();
+    if (attr != null) {
+      StringTokenizer st = new StringTokenizer(attr, ",");
+      while(st.hasMoreTokens()) {
+        try {
+          importedPackages.add(new PackageDescription(st.nextToken()));
+        } catch(Exception e) {
+          e.printStackTrace();
+        }
+      }
+    }
+
+    // Export-Packages
+    attr = attributes.getValue(EXPORT_PACKAGE);
+    exportedPackages.clear();
+    if (attr != null) {
+      StringTokenizer st = new StringTokenizer(attr, ",");
+      while(st.hasMoreTokens()) {
+        try {
+          exportedPackages.add(new PackageDescription(st.nextToken()));
+        } catch(Exception e) {
+          e.printStackTrace();
+        }
+      }
+    }
     
     builtFrom = attributes.getValue(BUILT_FROM);
   }
+
 }

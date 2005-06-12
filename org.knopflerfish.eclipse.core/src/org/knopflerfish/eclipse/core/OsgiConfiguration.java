@@ -42,6 +42,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 
 /**
@@ -55,7 +56,7 @@ public class OsgiConfiguration implements IOsgiConfiguration {
   
   private final File instanceDir;
   private final Map attributes;
-  private final TreeMap bundles = new TreeMap(); // Startleved (Integer), List of IOsgiBundle
+  private final TreeMap bundles = new TreeMap(); // Startlevel (Integer), List of IOsgiBundle
 
   
   public OsgiConfiguration(File dir, Map attributes) {
@@ -97,8 +98,9 @@ public class OsgiConfiguration implements IOsgiConfiguration {
     
     // Add install entries
     int currentLevel = -1;
-    for (Iterator i=bundles.keySet().iterator();i.hasNext();) {
-      Integer initLevel = ((Integer) i.next());
+    for (Iterator i=bundles.entrySet().iterator();i.hasNext();) {
+      Map.Entry entry = (Map.Entry) i.next();
+      Integer initLevel = (Integer) entry.getKey();
       
       // Set initial start level
       if (currentLevel != initLevel.intValue()) {
@@ -107,10 +109,10 @@ public class OsgiConfiguration implements IOsgiConfiguration {
       }
       
       // Add bundle install entries for this start level
-      ArrayList l = (ArrayList) bundles.get(initLevel);
+      ArrayList l = (ArrayList) entry.getValue();
       for (Iterator j = l.iterator() ; j.hasNext() ;) {
-        IOsgiBundle bundle = (IOsgiBundle) j.next();
-        writeCommand(initFile, "-install", "file:"+bundle.getPath(), true);
+        BundleElement e = (BundleElement) j.next();
+        writeCommand(initFile, "-install", "file:"+e.getBundle().getPath(), true);
       }
     }
     // Set start level and launch
@@ -119,14 +121,17 @@ public class OsgiConfiguration implements IOsgiConfiguration {
     
     
     // Add start entries
-    for (Iterator i=bundles.keySet().iterator();i.hasNext();) {
-      Integer initLevel = ((Integer) i.next());
+    for (Iterator i=bundles.entrySet().iterator();i.hasNext();) {
+      Map.Entry entry = (Map.Entry) i.next();
+      Integer initLevel = (Integer) entry.getKey();
       
       // Add bundle install entries for this start level
-      ArrayList l = (ArrayList) bundles.get(initLevel);
+      ArrayList l = (ArrayList) entry.getValue();
       for (Iterator j = l.iterator() ; j.hasNext() ;) {
-        IOsgiBundle bundle = (IOsgiBundle) j.next();
-        writeCommand(initFile, "-start", "file:"+bundle.getPath(), true);
+        BundleElement e = (BundleElement) j.next();
+        if (e.getLaunchInfo().getMode() == BundleLaunchInfo.MODE_START) {
+          writeCommand(initFile, "-start", "file:"+e.getBundle().getPath(), true);
+        }
       }
     }
     
@@ -136,12 +141,13 @@ public class OsgiConfiguration implements IOsgiConfiguration {
   /* (non-Javadoc)
    * @see org.gstproject.eclipse.osgi.IOsgiConfiguration#addBundle(org.gstproject.eclipse.osgi.IOsgiBundle, java.lang.Integer)
    */
-  public void addBundle(IOsgiBundle bundle, Integer startLevel) {
+  public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info) {
+    Integer startLevel = new Integer(info.getStartLevel());
     ArrayList l = (ArrayList) bundles.get(startLevel);
     if (l == null) {
       l = new ArrayList();
     }
-    l.add(bundle);
+    l.add(new BundleElement(bundle, info));
     bundles.put(startLevel, l);
   }
 
@@ -184,4 +190,25 @@ public class OsgiConfiguration implements IOsgiConfiguration {
     }
   }
 
+  /****************************************************************************
+   * Inner classes
+   ***************************************************************************/
+  
+  class BundleElement {
+    private final IOsgiBundle bundle;
+    private final BundleLaunchInfo launchInfo;
+    
+    BundleElement(IOsgiBundle bundle, BundleLaunchInfo info) {
+      this.bundle = bundle;
+      this.launchInfo = info;
+    }
+    
+    public IOsgiBundle getBundle() {
+      return bundle;
+    }
+
+    public BundleLaunchInfo getLaunchInfo() {
+      return launchInfo;
+    }
+  }
 }

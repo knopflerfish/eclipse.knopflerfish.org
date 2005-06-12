@@ -34,161 +34,147 @@
 
 package org.knopflerfish.eclipse.core;
 
-import org.eclipse.core.runtime.IPath;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
+
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 
 /**
  * @author ar
  */
-public class BundleProject {
-  // Project Settings
-  private final String name;
-  private IPath location = null;
-  private IPath sourceFolder = null;
-  private IPath outputFolder = null;
-  private IOsgiInstall osgiInstall = null;
+public class BundleProject implements IBundleProject {
+  private static final String MANIFEST_FILE = "bundle.manifest";
   
-  // Bundle Information
-  private String bundleSymbolicName;
-  private String bundleName;
-  private String bundleVersion;
-  private String bundleDescription;
-  private String bundleVendor;
-  private boolean createBundleActivator;
-  private String activatorClassName;
-  private String activatorPackageName;
-
+  private IJavaProject project;
+  private Manifest manifest;
+  private String name;
+  private String version;
+  private String activator;
+  private List importedPackages = new ArrayList();
+  private List exportedPackages = new ArrayList();
 
   public BundleProject(String name) {
-    this.name = name;
+    IWorkspaceRoot workspace = ResourcesPlugin.getWorkspace().getRoot();
+    IProject project = workspace.getProject(name);
+    IJavaProject javaProject = JavaCore.create(project);
+    init(javaProject);
   }
   
+  public BundleProject(IJavaProject project) {
+    init(project);
+  }
+  
+  private void init(IJavaProject project) {
+    this.project = project;
+    
+    // Read manifest
+    InputStream is = null;
+    try {
+      try {
+        // Get manifest
+        IFile manifestFile = project.getProject().getFile(MANIFEST_FILE);
+        is = manifestFile.getContents();
+        manifest = new Manifest(is); 
+        
+        Attributes attributes = manifest.getMainAttributes();
+        if (attributes != null) {
+          name = attributes.getValue(IOsgiBundle.BUNDLE_NAME);
+          version = attributes.getValue(IOsgiBundle.BUNDLE_VERSION);
+          activator = attributes.getValue(IOsgiBundle.BUNDLE_ACTIVATOR);
+
+          // Import-Packages
+          String attr = attributes.getValue(IOsgiBundle.IMPORT_PACKAGE);
+          importedPackages.clear();
+          if (attr != null) {
+            StringTokenizer st = new StringTokenizer(attr, ",");
+            while(st.hasMoreTokens()) {
+              try {
+                importedPackages.add(new PackageDescription(st.nextToken()));
+              } catch(Exception e) {
+                e.printStackTrace();
+              }
+            }
+          }
+
+          // Export-Packages
+          attr = attributes.getValue(IOsgiBundle.EXPORT_PACKAGE);
+          exportedPackages.clear();
+          if (attr != null) {
+            StringTokenizer st = new StringTokenizer(attr, ",");
+            while(st.hasMoreTokens()) {
+              try {
+                exportedPackages.add(new PackageDescription(st.nextToken()));
+              } catch(Exception e) {
+                e.printStackTrace();
+              }
+            }
+          }
+        }
+      } finally {
+        if (is != null) {
+          is.close();
+        }
+      }
+    } catch (Exception e) {
+      // Failed to read manifest
+    }
+  }
+  
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleProject#getJavaProject()
+   */
+  public IJavaProject getJavaProject() {
+    return project;
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleProject#getManifest()
+   */
+  public Manifest getManifest() {
+    return manifest;
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleProject#getName()
+   */
   public String getName() {
     return name;
   }
-  
-  public IPath getLocation() {
-    return location;
-  }
-  
-  public void setLocation(IPath location) {
-    this.location = location;
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleProject#getVersion()
+   */
+  public String getVersion() {
+    return version;
   }
 
-  public IPath getSourceFolder() {
-    return sourceFolder;
-  }
-  
-  public void setSourceFolder(IPath folder) {
-    sourceFolder = folder;
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleProject#getActivator()
+   */
+  public String getActivator() {
+    return activator;
   }
 
-  public IPath getOutputFolder() {
-    return outputFolder;
-  }
-  
-  public void setOutputFolder(IPath folder) {
-    outputFolder = folder;
-  }
-  
-  public IOsgiInstall getOsgiInstall() {
-    return osgiInstall;
-  }
-  
-  public void setOsgiInstall(IOsgiInstall osgiInstall) {
-    this.osgiInstall = osgiInstall;
-  }
-  
-  /**
-   * @return Returns the activatorPackageName.
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleProject#getImportedPackages()
    */
-  public String getActivatorPackageName() {
-    return activatorPackageName;
-  }
-  /**
-   * @param activatorPackageName The activatorPackageName to set.
-   */
-  public void setActivatorPackageName(String activatorPackageName) {
-    this.activatorPackageName = activatorPackageName;
-  }
-  
-  /**
-   * @return Returns the activatorClassName.
-   */
-  public String getActivatorClassName() {
-    return activatorClassName;
-  }
-  /**
-   * @param activatorClassName The activatorClassName to set.
-   */
-  public void setActivatorClassName(String activatorClassName) {
-    this.activatorClassName = activatorClassName;
-  }
-  /**
-   * @return Returns the bundleDescription.
-   */
-  public String getBundleDescription() {
-    return bundleDescription;
-  }
-  /**
-   * @param bundleDescription The bundleDescription to set.
-   */
-  public void setBundleDescription(String bundleDescription) {
-    this.bundleDescription = bundleDescription;
-  }
-  /**
-   * @return Returns the bundleName.
-   */
-  public String getBundleName() {
-    return bundleName;
-  }
-  /**
-   * @param bundleName The bundleName to set.
-   */
-  public void setBundleName(String bundleName) {
-    this.bundleName = bundleName;
-  }
-  /**
-   * @return Returns the bundleVendor.
-   */
-  public String getBundleVendor() {
-    return bundleVendor;
-  }
-  /**
-   * @param bundleVendor The bundleVendor to set.
-   */
-  public void setBundleVendor(String bundleVendor) {
-    this.bundleVendor = bundleVendor;
-  }
-  /**
-   * @return Returns the bundleVersion.
-   */
-  public String getBundleVersion() {
-    return bundleVersion;
-  }
-  /**
-   * @param bundleVersion The bundleVersion to set.
-   */
-  public void setBundleVersion(String bundleVersion) {
-    this.bundleVersion = bundleVersion;
-  }
-  /**
-   * @return Returns the createBundleActivator.
-   */
-  public boolean isCreateBundleActivator() {
-    return createBundleActivator;
-  }
-  /**
-   * @param createBundleActivator The createBundleActivator to set.
-   */
-  public void setCreateBundleActivator(boolean createBundleActivator) {
-    this.createBundleActivator = createBundleActivator;
+  public PackageDescription[] getImportedPackages() {
+    return (PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]);
   }
 
-  public String getBundleSymbolicName() {
-    return bundleSymbolicName;
-  }
-
-  public void setBundleSymbolicName(String bundleSymbolicName) {
-    this.bundleSymbolicName = bundleSymbolicName;
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleProject#getExportedPackages()
+   */
+  public PackageDescription[] getExportedPackages() {
+    return (PackageDescription[]) exportedPackages.toArray(new PackageDescription[exportedPackages.size()]);
   }
 }

@@ -49,15 +49,8 @@ public interface IOsgiLaunchConfigurationConstants {
   public String ATTR_PROPERTIES         = PACKAGE+"instance_properties";
 
   // Bundle Tab
-  public String ATTR_BUNDLE_SELECT_TYPE = PACKAGE+"bundle_select_type";
   public String ATTR_BUNDLES            = PACKAGE+"bundles";
   public String ATTR_BUNDLE_PROJECTS    = PACKAGE+"bundle_projects";
-
-  public int BUNDLE_SELECT_TYPE_AUTO = 0;
-  public int BUNDLE_SELECT_TYPE_MANUAL = 1;
-  
-  //public String ATTR_OSGI_RUNTIME = PACKAGE+"osgi_runtime";
-  //public String ATTR_MAIN_CLASS_NAME = PACKAGE+"main_class";
 
   // Error codes
   public int ERR_UNSPECIFIED_MAIN_CLASS       = 0;

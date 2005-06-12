@@ -34,23 +34,27 @@
 
 package org.knopflerfish.eclipse.core;
 
-import java.io.IOException;
+import java.util.jar.Manifest;
 
-import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
+import org.eclipse.jdt.core.IJavaProject;
 
 /**
- * Represents a configuration when launching an OSGi framework.
+ * @author ar
  */
-public interface IOsgiConfiguration {
+public interface IBundleProject {
 
-  /** 
-   * Saves this configuration and returns the program arguments
-   * that shall be used when launching the framework.
-   * 
-   * @return program arguments
-   * @throws IOException if failure creating configuration
-   */
-  public String [] create() throws IOException;
+  public IJavaProject getJavaProject();
   
-  public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info);
+  public Manifest getManifest();
+  
+  public String getName();
+  
+  public String getVersion();
+
+  public String getActivator();
+
+  public PackageDescription[] getImportedPackages(); 
+
+  public PackageDescription[] getExportedPackages(); 
+  
 }

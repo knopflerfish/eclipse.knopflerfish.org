@@ -32,25 +32,33 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
-
-import java.io.IOException;
-
-import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
+package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
 /**
- * Represents a configuration when launching an OSGi framework.
+ * @author ar
  */
-public interface IOsgiConfiguration {
+public interface IAvailableTreeElement {
 
-  /** 
-   * Saves this configuration and returns the program arguments
-   * that shall be used when launching the framework.
-   * 
-   * @return program arguments
-   * @throws IOException if failure creating configuration
-   */
-  public String [] create() throws IOException;
+  public static int TYPE_ROOT         = 0;
+  public static int TYPE_WORKSPACE    = 1;
+  public static int TYPE_PROJECT      = 2;
+  public static int TYPE_OSGI_INSTALL = 3;
+  public static int TYPE_BUNDLE       = 4;
   
-  public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info);
+
+  public IAvailableTreeElement getParent();
+  
+  public IAvailableTreeElement[] getChildren();
+  
+  public boolean hasChildren();
+  
+  public int getType();
+  
+  public String getName();
+  
+  public String getVersion();
+  
+  public String getPath();
+  
+  public Object getData();
 }

@@ -32,25 +32,34 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
-import java.io.IOException;
-
-import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
+import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.Viewer;
 
 /**
- * Represents a configuration when launching an OSGi framework.
+ * @author ar
  */
-public interface IOsgiConfiguration {
+public class SelectedBundlesContentProvider implements IStructuredContentProvider {
 
-  /** 
-   * Saves this configuration and returns the program arguments
-   * that shall be used when launching the framework.
-   * 
-   * @return program arguments
-   * @throws IOException if failure creating configuration
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
    */
-  public String [] create() throws IOException;
-  
-  public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info);
+  public Object[] getElements(Object inputElement) {
+
+    SelectedBundlesModel root = (SelectedBundlesModel) inputElement;
+    return root.getElements();
+  }
+
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IContentProvider#dispose()
+   */
+  public void dispose() {
+  }
+
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+   */
+  public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+  }
 }
