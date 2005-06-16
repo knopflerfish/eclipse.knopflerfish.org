@@ -62,8 +62,6 @@ import org.eclipse.jdt.launching.AbstractJavaLaunchConfigurationDelegate;
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.IVMRunner;
 import org.eclipse.jdt.launching.VMRunnerConfiguration;
-import org.knopflerfish.eclipse.core.BundleProject;
-import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiConfiguration;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
@@ -71,6 +69,8 @@ import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
+import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
  * Implementation of OSGi launch configuration delegate.
@@ -100,7 +100,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     Map projectMap = verifyProjects(configuration);
     
     // Create configuration
-    IOsgiLibrary[] osgiLibraries = osgiInstall.getLibraries();
+    IOsgiLibrary[] osgiLibraries = osgiInstall.getRuntimeLibraries();
     ArrayList libraries = new ArrayList();
     if (osgiLibraries != null) {
       for (int i=0; i<osgiLibraries.length; i++) {
@@ -137,7 +137,6 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
           // Failed to create jar file
           e.printStackTrace();
         }
-        
       }
     }
     
@@ -405,7 +404,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
       if (jarFile.exists()) jarFile.delete();
 
       // Get manifest
-      Manifest manifest = project.getManifest(); 
+      Manifest manifest = project.getBundleManifest(); 
       
       // Create manifest output stream
       jos = new JarOutputStream(new FileOutputStream(jarFile), manifest);

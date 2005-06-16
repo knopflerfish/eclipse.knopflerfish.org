@@ -32,76 +32,61 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.ui.preferences.model;
 
-import java.io.File;
-import java.io.IOException;
+import org.knopflerfish.eclipse.core.IOsgiLibrary;
 
 /**
  * @author ar
  */
-public class OsgiBundle extends OsgiLibrary implements IOsgiBundle {
+public class LibraryElementBuild implements ILibraryTreeElement {
 
-  private BundleManifest bundleManifest;
+  private final ILibraryTreeElement parent;
+  private IOsgiLibrary lib;
+  
+  public LibraryElementBuild(ILibraryTreeElement parent, IOsgiLibrary lib) {
+    this.parent = parent;
+    this.lib = lib;
+  }
+  
+  public IOsgiLibrary getLibrary() {
+    return lib;
+  }
 
-  public OsgiBundle(File jar) throws IOException {
-    super(jar);
-
-    if (getManifest() != null) {
-      bundleManifest = new BundleManifest(getManifest());
-    }
+  public void setLibrary(IOsgiLibrary lib) {
+    this.lib = lib;
   }
   
   /****************************************************************************
-   * org.knopflerfish.eclipse.core.IOsgiBundle methods
+   * org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement methods
    ***************************************************************************/
-
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#getBundleManifest()
-   */
-  public BundleManifest getBundleManifest() {
-    return bundleManifest;
-  }
   
   /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#hasExportedPackage(org.knopflerfish.eclipse.core.PackageDescription)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getChildren()
    */
-  public boolean hasExportedPackage(PackageDescription pkg) {
-    PackageDescription [] exportedPackages = bundleManifest.getExportedPackages();
-    for (int i=0; i<exportedPackages.length; i++) {
-      if (exportedPackages[i].isCompatible(pkg)) return true;
-    }
+  public ILibraryTreeElement[] getChildren() {
+    return null;
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getParent()
+   */
+  public ILibraryTreeElement getParent() {
+    return parent;
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#hasChildren()
+   */
+  public boolean hasChildren() {
     return false;
   }
 
   /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#hasCategory(java.lang.String)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getType()
    */
-  public boolean hasCategory(String cat) {
-    String [] categories = null;
-    if (bundleManifest != null) {
-      categories = bundleManifest.getCategories();
-    }
-    if (cat == null || categories == null) return false;
-
-    for (int i=0; i<categories.length; i++) {
-      if (cat.equals(categories[i])) return true;
-    }
-
-    return false;
+  public int getType() {
+    return TYPE_BUILD;
   }
-  
-  /****************************************************************************
-   * java.lang.Object methods
-   ***************************************************************************/
 
-  /*
-   *  (non-Javadoc)
-   * @see java.lang.Object#equals(java.lang.Object)
-   */
-  public boolean equals(Object obj) {
-    if(obj == null || !(obj instanceof OsgiBundle)) return false;
-    
-    return ((OsgiBundle) obj).getPath().equals(getPath());
-  }
 }

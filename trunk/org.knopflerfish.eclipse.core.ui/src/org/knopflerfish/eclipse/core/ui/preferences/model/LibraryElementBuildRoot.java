@@ -32,76 +32,89 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.ui.preferences.model;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * @author ar
  */
-public class OsgiBundle extends OsgiLibrary implements IOsgiBundle {
+public class LibraryElementBuildRoot implements ILibraryTreeElement {
 
-  private BundleManifest bundleManifest;
-
-  public OsgiBundle(File jar) throws IOException {
-    super(jar);
-
-    if (getManifest() != null) {
-      bundleManifest = new BundleManifest(getManifest());
-    }
+  private final ILibraryTreeElement parent;
+  private final ArrayList children = new ArrayList();
+  
+  LibraryElementBuildRoot(ILibraryTreeElement parent) {
+    this.parent = parent;
   }
   
-  /****************************************************************************
-   * org.knopflerfish.eclipse.core.IOsgiBundle methods
-   ***************************************************************************/
-
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#getBundleManifest()
-   */
-  public BundleManifest getBundleManifest() {
-    return bundleManifest;
+  public void clear() {
+    children.clear();
   }
   
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#hasExportedPackage(org.knopflerfish.eclipse.core.PackageDescription)
-   */
-  public boolean hasExportedPackage(PackageDescription pkg) {
-    PackageDescription [] exportedPackages = bundleManifest.getExportedPackages();
-    for (int i=0; i<exportedPackages.length; i++) {
-      if (exportedPackages[i].isCompatible(pkg)) return true;
-    }
-    return false;
-  }
-
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#hasCategory(java.lang.String)
-   */
-  public boolean hasCategory(String cat) {
-    String [] categories = null;
-    if (bundleManifest != null) {
-      categories = bundleManifest.getCategories();
-    }
-    if (cat == null || categories == null) return false;
-
-    for (int i=0; i<categories.length; i++) {
-      if (cat.equals(categories[i])) return true;
-    }
-
-    return false;
+  public void addChild(LibraryElementBuild e) {
+    children.add(e);
   }
   
-  /****************************************************************************
-   * java.lang.Object methods
-   ***************************************************************************/
+  public int indexOf(ILibraryTreeElement e) {
+    return children.indexOf(e);
+  }
 
-  /*
-   *  (non-Javadoc)
-   * @see java.lang.Object#equals(java.lang.Object)
-   */
-  public boolean equals(Object obj) {
-    if(obj == null || !(obj instanceof OsgiBundle)) return false;
+  public boolean remove(ILibraryTreeElement e) {
+    return children.remove(e);
+  }
+
+  public int size() {
+    return children.size();
+  }
+  
+  public void moveUp(ILibraryTreeElement e) {
+    int idx = indexOf(e);
+    if (idx < 1) return;
     
-    return ((OsgiBundle) obj).getPath().equals(getPath());
+    if (children.remove(e)) {
+      children.add(idx-1, e);
+    }
+  }
+
+  public void moveDown(ILibraryTreeElement e) {
+    int idx = indexOf(e);
+    if (idx == -1 || idx >= size()-1) return;
+    
+    if (children.remove(e)) {
+      children.add(idx+1, e);
+    }
+  }
+  
+  /****************************************************************************
+   * org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement methods
+   ***************************************************************************/
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getChildren()
+   */
+  public ILibraryTreeElement[] getChildren() {
+    return (ILibraryTreeElement[]) children.toArray(new ILibraryTreeElement[children.size()]);
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getParent()
+   */
+  public ILibraryTreeElement getParent() {
+    return parent;
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#hasChildren()
+   */
+  public boolean hasChildren() {
+    return (children.size() > 0);
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getType()
+   */
+  public int getType() {
+    return TYPE_BUILD_ROOT;
   }
 }

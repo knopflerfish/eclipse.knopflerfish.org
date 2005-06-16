@@ -34,32 +34,16 @@
 
 package org.knopflerfish.eclipse.core.ui.wizards;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IProjectDescription;
-import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IExtension;
-import org.eclipse.core.runtime.IExtensionPoint;
-import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -68,37 +52,21 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.JavaRuntime;
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.PartInitException;
-import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.ide.IDE;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
-import org.knopflerfish.eclipse.core.IOsgiLibrary;
-import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.OsgiBundle;
+import org.knopflerfish.eclipse.core.BundleManifest;
+import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 public class BundleProjectWizard extends Wizard implements INewWizard {
-  private static String EXTENSION_POINT_BUILDERS = "org.eclipse.core.resources.builders";
-
-  private static final String MANIFEST_FILE = "bundle.manifest";
   
   private ProjectWizardPage projectPage;
   private BundleWizardPage bundlePage;
 	private ISelection selection;
-
-
-	public BundleProjectWizard() {
-		super();
-		setNeedsProgressMonitor(true);
-	}
 
   /****************************************************************************
    * org.eclipse.ui.IWorkbenchWizard methods
@@ -137,123 +105,74 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
    * @see org.eclipse.jface.wizard.IWizard#performFinish()
    */
 	public boolean performFinish() {
-    final BundleProject project = bundlePage.getProject();
-    
-		IRunnableWithProgress op = new IRunnableWithProgress() {
-			public void run(IProgressMonitor monitor) throws InvocationTargetException {
-				try {
-					doFinish(project, monitor);
-				} catch (CoreException e) {
-					throw new InvocationTargetException(e);
-				} finally {
-					monitor.done();
-				}
- 			}
-		};
-    
-		try {
-			getContainer().run(true, false, op);
-		} catch (InterruptedException e) {
-			return false;
-		} catch (InvocationTargetException e) {
-			Throwable realException = e.getTargetException();
-			MessageDialog.openError(getShell(), "Error", realException.getMessage());
-			return false;
-		}
-		return true;
+    try {
+      doFinish();
+      return true;
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
 	}
 	
   /****************************************************************************
    * Private worker methods
    ***************************************************************************/
   
-	private void doFinish(BundleProject bundleProject, IProgressMonitor monitor) throws CoreException {
+	private void doFinish() throws CoreException {
 		// Create project
-    String projectName = bundleProject.getName();
-		monitor.beginTask("Creating " + projectName, 5);
-		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-    IProject project = root.getProject(projectName);
-    if (project.exists()) {
-      throwCoreException("Project \"" + projectName + "\" already exists.");
+    BundleProject project = BundleProject.create(
+        projectPage.getProjectName(),
+        projectPage.getProjectLocation(),
+        projectPage.getSourceFolder(),
+        projectPage.getOutputFolder());
+    
+    // Set manifest attributes
+    BundleManifest manifest = project.getBundleManifest();
+    manifest.setSymbolicName(bundlePage.getBundleSymbolicName());
+    manifest.setName(bundlePage.getBundleName());
+    manifest.setVersion(bundlePage.getBundleVersion());
+    manifest.setVendor(bundlePage.getBundleVendor());
+    manifest.setDescription(bundlePage.getBundleDescription());
+    if (bundlePage.isCreateBundleActivator()) {
+      String activator = bundlePage.getActivatorClassName();
+      String packageName = bundlePage.getActivatorPackageName();
+      if (packageName != null) {
+        activator = packageName+"."+activator;
+      }
+      manifest.setActivator(activator);
     }
+    project.saveManifest();
     
-    // Create project description
-    IProjectDescription projectDescription = ResourcesPlugin.getWorkspace().newProjectDescription(projectName);
-    
-    // Set project location
-    projectDescription.setLocation(bundleProject.getLocation());
-    IPath location = projectDescription.getLocation();
+    // Create classpath
+    ArrayList classPath = new ArrayList();
 
-    // Create project
-    project.create(projectDescription, monitor);
-    monitor.worked(1);
-   
-    // Open project
-    project.open(null);
-    //monitor.worked(1);
-
-    // Set project natures
-    projectDescription = project.getDescription();
-    projectDescription.setNatureIds(new String[] {Osgi.NATURE_ID, JavaCore.NATURE_ID});
-    project.setDescription(projectDescription, monitor);
-    
-    // Create source folder
-    IFolder srcFolder = project.getFolder(bundleProject.getSourceFolder());
-    srcFolder.create(true, true, monitor);
-    monitor.worked(1);
-
-    Path projectFolder = new Path("/"+projectName);
-    // Set default classpath
-    IJavaProject javaProject = JavaCore.create(project);
-    // Set output location 
-    javaProject.setOutputLocation(projectFolder.append(bundleProject.getOutputFolder()), monitor);
-    monitor.worked(1);
-    
     // Source folder
-    IClasspathEntry srcEntry = JavaCore.newSourceEntry(projectFolder.append(bundleProject.getSourceFolder()));
-    // Lib folder
-    IOsgiInstall osgiInstall = bundleProject.getOsgiInstall();
-    IOsgiLibrary [] osgiLibraries = osgiInstall.getLibraries();
+    Path projectFolder = new Path("/"+project.getJavaProject().getProject().getName());
+    classPath.add(JavaCore.newSourceEntry(projectFolder.append(projectPage.getSourceFolder())));
     
-    IClasspathEntry[] newClasspath = new IClasspathEntry[2+(osgiLibraries != null ? osgiLibraries.length : 0)];
-    newClasspath[0] = srcEntry;
-    newClasspath[1] = JavaRuntime.getDefaultJREContainerEntry();
+    // JRE container
+    classPath.add(JavaRuntime.getDefaultJREContainerEntry());
     
-    if (osgiLibraries != null) {
-      for (int i=0; i<osgiLibraries.length; i++) {
-        newClasspath[i+2]=  JavaCore.newLibraryEntry(
-            new Path(osgiLibraries[i].getPath()), 
-            new Path(osgiLibraries[i].getSourceDirectory()),
-            null, //no source
-            false); //not exported
-      }
+    // Knopflerfish container
+    IPath containerPath = new Path(OsgiContainerInitializer.KF_CONTAINER);
+    if (!projectPage.isDefaultProjectLibrary()) {
+      containerPath = containerPath.append(projectPage.getEnvironmentName());
     }
-    // Set build path
-    javaProject.setRawClasspath(newClasspath, monitor);
-    monitor.worked(1);
+    classPath.add(JavaCore.newContainerEntry(containerPath));
     
-    
+    // Set classpath
+    project.getJavaProject().setRawClasspath((IClasspathEntry []) classPath.toArray(new IClasspathEntry[classPath.size()]), null);
+
     // Check if bundle activator shall be created
-    if (bundleProject.isCreateBundleActivator()) {
-      String className = bundleProject.getActivatorClassName();
-      String packageName = bundleProject.getActivatorPackageName();
-      createActivator(javaProject, srcFolder, packageName, className, monitor);
+    if (bundlePage.isCreateBundleActivator()) {
+      String className = bundlePage.getActivatorClassName();
+      String packageName = bundlePage.getActivatorPackageName();
+      createActivator(
+          project.getJavaProject(), 
+          project.getJavaProject().getProject().getFolder(projectPage.getSourceFolder()),
+          packageName, 
+          className);
     }
-    
-    // Create manifest
-    final IFile manifest = createManifest(javaProject, bundleProject, monitor);
-    
-    // Open manifest
-    getShell().getDisplay().asyncExec(new Runnable() {
-      public void run() {
-        IWorkbenchPage page =
-          PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-        try {
-          IDE.openEditor(page, manifest, true);
-        } catch (PartInitException e) {
-        }
-      }
-    });
 	}
 
   /**
@@ -267,7 +186,7 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
    * @param unitName class name for the activator.
    * @param monitor progress monitor
    */
-  private void createActivator(IJavaProject project, IFolder srcFolder, String packageName, String unitName, IProgressMonitor monitor) throws CoreException {
+  private void createActivator(IJavaProject project, IFolder srcFolder, String packageName, String unitName) throws CoreException {
     
     // Read bundle activator template
     InputStream is = null;
@@ -301,89 +220,12 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
     skeleton = skeleton.replaceAll("%PACKAGE%", pkg);
     skeleton = skeleton.replaceAll("%BUNDLE_NAME%", unitName);
     
-    
     // Create package fragment
     IPackageFragmentRoot rootFragment = project.findPackageFragmentRoot(srcFolder.getFullPath());
-    IPackageFragment fragment = rootFragment.createPackageFragment((packageName == null ? "":packageName), true, monitor);
+    IPackageFragment fragment = rootFragment.createPackageFragment((packageName == null ? "":packageName), true, null);
     
     // Create compilation unit
-    ICompilationUnit unit = fragment.createCompilationUnit(unitName+".java", skeleton, true, monitor);
-  }
-  
-  /**
-   * Creates a manifest file. The manifest is primed with attributes
-   * taken from the BundleProject.
-   * 
-   * @param project the Java project in which the file shall be created.
-   * @param bundleProject project settings used to set attributes in manifest.
-   * @param monitor progress monitor
-   */
-  private IFile createManifest(IJavaProject javaProject, BundleProject bundleProject, IProgressMonitor monitor) throws CoreException {
-    IProject project = javaProject.getProject();
-
-    // Create manifest and set attributes
-    Manifest manifest = new Manifest();
-    Attributes attributes = manifest.getMainAttributes();
-    // Manifest version
-    attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
-    // Bundle Symbolic Name
-    String value = bundleProject.getBundleSymbolicName();
-    if (value != null && value.trim().length() > 0) {
-      attributes.putValue(OsgiBundle.BUNDLE_SYMBOLIC_NAME, value);
-    }
-    // Bundle Name
-    value = bundleProject.getBundleName();
-    if (value != null && value.trim().length() > 0) {
-      attributes.putValue(OsgiBundle.BUNDLE_NAME, value);
-    }
-    // Bundle Version
-    value = bundleProject.getBundleVersion();
-    if (value != null && value.trim().length() > 0) {
-      attributes.putValue(OsgiBundle.BUNDLE_VERSION, value);
-    }
-    // Bundle Vendor
-    value = bundleProject.getBundleVendor();
-    if (value != null && value.trim().length() > 0) {
-      attributes.putValue(OsgiBundle.BUNDLE_VENDOR, value);
-    }
-    // Bundle Description
-    value = bundleProject.getBundleDescription();
-    if (value != null && value.trim().length() > 0) {
-      attributes.putValue(OsgiBundle.BUNDLE_DESCRIPTION, value);
-    }
-    
-    // Bundle Activator
-    if (bundleProject.isCreateBundleActivator()) {
-      value = bundleProject.getActivatorClassName();
-      String packageName = bundleProject.getActivatorPackageName();
-      if (packageName != null) {
-        value = packageName+"."+value;
-      }
-      if (value != null && value.trim().length() > 0) {
-        attributes.putValue(OsgiBundle.BUNDLE_ACTIVATOR, value);
-      }
-    }
-    
-    // Write manifest to file
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ByteArrayInputStream bais = null;
-    IFile file = null;
-    try {
-      try {
-        manifest.write(baos);
-        baos.flush();
-        bais = new ByteArrayInputStream(baos.toByteArray());
-        file = project.getFile(MANIFEST_FILE);
-        file.create(bais, true, monitor);
-      } finally {
-        baos.close();
-        bais.close();
-      }
-    } catch (IOException e) {
-      throwCoreException("Failed to create manifest file ("+e+")");
-    }
-    
-    return file;
+    ICompilationUnit unit = fragment.createCompilationUnit(unitName+".java", skeleton, true, null);
   }
   
 	private void throwCoreException(String message) throws CoreException {
@@ -391,21 +233,4 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
 			new Status(IStatus.ERROR, "org.gstproject.eclipse.osgi.ui", IStatus.OK, message, null);
 		throw new CoreException(status);
 	}
-
-
-  public static List getBuilders()  {
-    ArrayList builders = new ArrayList();
-    IExtensionRegistry registry = Platform.getExtensionRegistry();
-    IExtensionPoint point = registry.getExtensionPoint(EXTENSION_POINT_BUILDERS);
-    if (point != null) {
-      IExtension[] extensions = point.getExtensions();
-      for (int i = 0; i < extensions.length; i++) {
-        System.err.println("Builder :"+extensions[i]);
-        System.err.println("Simple id:"+extensions[i].getSimpleIdentifier());
-        System.err.println("Unique id:"+extensions[i].getUniqueIdentifier());
-      }
-    }
-    
-    return builders;
-  }
 }

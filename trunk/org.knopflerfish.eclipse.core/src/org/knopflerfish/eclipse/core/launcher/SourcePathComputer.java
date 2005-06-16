@@ -103,12 +103,15 @@ public class SourcePathComputer extends JavaSourcePathComputer implements ISourc
       containerList.add(new JavaProjectSourceContainer(javaProject));
     }
     
+    // Add bundle source code
+    // TODO: Get bundle source 
+    
     // Add framework libraries source code
     String vendorName = OsgiLaunchDelegate.getOsgiVendorName(configuration);
     IOsgiVendor vendor = Osgi.getVendor(vendorName);
     String installName = OsgiLaunchDelegate.getOsgiInstallName(configuration);
     IOsgiInstall osgiInstall = vendor.getOsgiInstall(installName);
-    IOsgiLibrary [] libraries = osgiInstall.getLibraries();
+    IOsgiLibrary [] libraries = osgiInstall.getRuntimeLibraries();
     if (libraries != null) {
       for (int i=0; i<libraries.length;i++) {
         String src = libraries[i].getSourceDirectory();
@@ -121,5 +124,4 @@ public class SourcePathComputer extends JavaSourcePathComputer implements ISourc
     
     return (ISourceContainer []) containerList.toArray(new ISourceContainer[containerList.size()]);
   }
-
 }

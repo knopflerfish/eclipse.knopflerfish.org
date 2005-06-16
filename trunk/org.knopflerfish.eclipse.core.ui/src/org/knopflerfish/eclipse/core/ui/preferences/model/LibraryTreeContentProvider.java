@@ -32,76 +32,62 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.ui.preferences.model;
 
-import java.io.File;
-import java.io.IOException;
+import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.jface.viewers.Viewer;
 
 /**
  * @author ar
  */
-public class OsgiBundle extends OsgiLibrary implements IOsgiBundle {
-
-  private BundleManifest bundleManifest;
-
-  public OsgiBundle(File jar) throws IOException {
-    super(jar);
-
-    if (getManifest() != null) {
-      bundleManifest = new BundleManifest(getManifest());
-    }
-  }
+public class LibraryTreeContentProvider implements ITreeContentProvider {
   
   /****************************************************************************
-   * org.knopflerfish.eclipse.core.IOsgiBundle methods
+   * org.eclipse.jface.viewers.ITreeContentProvider methods
    ***************************************************************************/
-
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#getBundleManifest()
-   */
-  public BundleManifest getBundleManifest() {
-    return bundleManifest;
-  }
   
   /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#hasExportedPackage(org.knopflerfish.eclipse.core.PackageDescription)
+   * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
    */
-  public boolean hasExportedPackage(PackageDescription pkg) {
-    PackageDescription [] exportedPackages = bundleManifest.getExportedPackages();
-    for (int i=0; i<exportedPackages.length; i++) {
-      if (exportedPackages[i].isCompatible(pkg)) return true;
-    }
-    return false;
+  public Object[] getChildren(Object parentElement) {
+    ILibraryTreeElement e = (ILibraryTreeElement) parentElement;
+    return e.getChildren();
   }
 
   /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#hasCategory(java.lang.String)
+   * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
    */
-  public boolean hasCategory(String cat) {
-    String [] categories = null;
-    if (bundleManifest != null) {
-      categories = bundleManifest.getCategories();
-    }
-    if (cat == null || categories == null) return false;
-
-    for (int i=0; i<categories.length; i++) {
-      if (cat.equals(categories[i])) return true;
-    }
-
-    return false;
+  public Object getParent(Object element) {
+    ILibraryTreeElement e = (ILibraryTreeElement) element;  
+    return e.getParent();
   }
-  
-  /****************************************************************************
-   * java.lang.Object methods
-   ***************************************************************************/
 
-  /*
-   *  (non-Javadoc)
-   * @see java.lang.Object#equals(java.lang.Object)
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ITreeContentProvider#hasChildren(java.lang.Object)
    */
-  public boolean equals(Object obj) {
-    if(obj == null || !(obj instanceof OsgiBundle)) return false;
-    
-    return ((OsgiBundle) obj).getPath().equals(getPath());
+  public boolean hasChildren(Object element) {
+    ILibraryTreeElement e = (ILibraryTreeElement) element;  
+    return e.hasChildren();
   }
+
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
+   */
+  public Object[] getElements(Object inputElement) {
+    ILibraryTreeElement e = (ILibraryTreeElement) inputElement;  
+    return e.getChildren();
+  }
+
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IContentProvider#dispose()
+   */
+  public void dispose() {
+  }
+
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+   */
+  public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+  }
+
 }

@@ -42,24 +42,31 @@ import java.util.StringTokenizer;
  * @author ar
  */
 public class PackageDescription {
+  public static String SPECIFICATION_VERSION = "specification-version";
 
   private String packageName;
   private Map attributes = new HashMap();
   
+  public PackageDescription(String name, String version) {
+    this.packageName = name;
+    if (version != null) {
+      attributes.put(SPECIFICATION_VERSION, version);
+    }
+  }
   
   public PackageDescription(String s) {
     StringTokenizer st = new StringTokenizer(s, ";");
     
     // First token is package name
-    packageName = st.nextToken();
+    packageName = st.nextToken().trim();
     
     // Attributes
     while(st.hasMoreTokens()) {
       String parameter = st.nextToken();
       int idx = parameter.indexOf('=');
       if (idx != -1) {
-        String attr = parameter.substring(0, idx);
-        String value = parameter.substring(idx+1);
+        String attr = parameter.substring(0, idx).trim();
+        String value = parameter.substring(idx+1).trim();
         // Removes qoutes if qouted
         if (value.startsWith("\"") && value.endsWith("\"") ) {
           value = value.substring(1, value.length()-1);
@@ -72,8 +79,28 @@ public class PackageDescription {
     return packageName;
   }
   
+  public String getSpecificationVersion() {
+    return getAttribute(SPECIFICATION_VERSION);
+  }
+  
   public String getAttribute(String attr) {
     return (String) attributes.get(attr);
   }
-  
+
+  public boolean isCompatible(PackageDescription pkg) {
+    // Check package name
+    if (pkg == null || pkg.getPackageName() == null) return false;
+    if (!packageName.equals(pkg.getPackageName())) return false;
+
+    // Package name the same, check specification version
+    if (pkg.getSpecificationVersion() == null) return true;
+    String version = getSpecificationVersion();
+    if (version == null) return false;
+    
+    return true;
+    // TODO: Check if versions are compatible
+    //StringTokenizer st1 = new StringTokenizer(version);
+    //StringTokenize
+  }
+
 }

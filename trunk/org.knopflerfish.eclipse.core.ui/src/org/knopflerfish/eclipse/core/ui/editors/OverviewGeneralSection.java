@@ -66,7 +66,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.IOsgiBundle;
+import org.knopflerfish.eclipse.core.BundleManifest;
 
 /**
  * @author ar
@@ -79,13 +79,13 @@ public class OverviewGeneralSection extends ManifestSectionPart {
   
   // Initialize attributes, use array to keep order of attributes
   static private String[][] widgetAttributes = new String[][] {
-      new String[] {IOsgiBundle.BUNDLE_SYMBOLIC_NAME, "Bundle Symbolic Name:", 
+      new String[] {BundleManifest.BUNDLE_SYMBOLIC_NAME, "Bundle Symbolic Name:", 
       "A unique, non localizable, name for this bundle. This name should be based on the reverse domain name convention."},  
-      new String[] {IOsgiBundle.BUNDLE_VERSION, "Bundle Version:",
+      new String[] {BundleManifest.BUNDLE_VERSION, "Bundle Version:",
       "The version of this bundle."},  
-    new String[] {IOsgiBundle.BUNDLE_NAME, "Bundle Name:", 
+    new String[] {BundleManifest.BUNDLE_NAME, "Bundle Name:", 
         "Name for this bundle. This should be a short, human readable, name and should contain no spaces."},  
-    new String[] {IOsgiBundle.BUNDLE_ACTIVATOR, "Bundle Activator:",
+    new String[] {BundleManifest.BUNDLE_ACTIVATOR, "Bundle Activator:",
         "The name of the class that is used to start and stop the bundle."}  
   };
   
@@ -138,7 +138,7 @@ public class OverviewGeneralSection extends ManifestSectionPart {
           textChanged((Text) e.widget);
         }
       });
-      if (IOsgiBundle.BUNDLE_ACTIVATOR.equals(attr)) {
+      if (BundleManifest.BUNDLE_ACTIVATOR.equals(attr)) {
         
         TableWrapData td = new TableWrapData();
         td.valign = TableWrapData.MIDDLE;

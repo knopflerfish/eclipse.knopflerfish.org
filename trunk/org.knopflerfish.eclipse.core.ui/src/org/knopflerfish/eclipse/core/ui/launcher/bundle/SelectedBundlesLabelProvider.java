@@ -112,7 +112,8 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider {
     switch (columnIndex) {
       case 0:
         // Name
-        return e.getName();
+        String name = e.getName();
+        return name == null ? "" : name;
         /*
         if (e.getType() == SelectedBundleElement.TYPE_BUNDLE) {
           return e.getName(); 
@@ -122,7 +123,8 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider {
         */
       case 1:
         // Version
-        return e.getVersion();
+        String version = e.getVersion();
+        return version == null ? "" : version;
       case 2:
         // Start level
         return Integer.toString(e.getLaunchInfo().getStartLevel());

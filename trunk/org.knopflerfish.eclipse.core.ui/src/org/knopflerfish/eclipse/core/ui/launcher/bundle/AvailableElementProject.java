@@ -36,7 +36,7 @@ package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
 import java.util.ArrayList;
 
-import org.knopflerfish.eclipse.core.IBundleProject;
+import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
  * @author ar
@@ -92,7 +92,7 @@ public class AvailableElementProject implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getName()
    */
   public String getName() {
-    return project.getName();
+    return project.getBundleManifest().getName();
   }
   
   /*
@@ -100,7 +100,7 @@ public class AvailableElementProject implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getVersion()
    */
   public String getVersion() {
-    return project.getVersion();
+    return project.getBundleManifest().getVersion();
   }
   
   /*

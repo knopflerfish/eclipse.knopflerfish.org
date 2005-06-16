@@ -127,10 +127,13 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
     IAvailableTreeElement e = (IAvailableTreeElement) o;
     switch (e.getType()) {
     case IAvailableTreeElement.TYPE_PROJECT:
-      //return e.getPath()+ " ("+e.getName()+")"; 
-      return e.getName(); 
+      // Name
+      String name = e.getName();
+      return name == null ? "" : name;
     default :
-      return e.getName();
+      // Name
+      name = e.getName();
+      return name == null ? "" : name;
     }
   }
 }
