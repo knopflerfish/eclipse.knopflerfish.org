@@ -59,7 +59,14 @@ public interface IOsgiInstall {
    * 
    * @return libraries
    */
-  IOsgiLibrary[] getLibraries();
+  IOsgiLibrary[] getRuntimeLibraries();
+
+  /** 
+   * Returns the libraries needed to launch the framework.
+   * 
+   * @return libraries
+   */
+  IOsgiLibrary[] getBuildLibraries();
 
   /** 
    * Returns the bundles defined by this distribution.

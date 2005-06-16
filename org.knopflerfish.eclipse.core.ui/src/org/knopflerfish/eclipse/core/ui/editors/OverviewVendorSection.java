@@ -46,7 +46,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.IOsgiBundle;
+import org.knopflerfish.eclipse.core.BundleManifest;
 
 /**
  * @author ar
@@ -59,11 +59,11 @@ public class OverviewVendorSection extends ManifestSectionPart {
 
   // Initialize attributes, use array to keep order of attributes
   static private String[][] widgetAttributes = new String[][] {
-    new String[] {IOsgiBundle.BUNDLE_VENDOR,    "Vendor Name:",
+    new String[] {BundleManifest.BUNDLE_VENDOR,    "Vendor Name:",
         "A text description of the vendor."},  
-    new String[] {IOsgiBundle.BUNDLE_CONTACT,   "Contact Address:",
+    new String[] {BundleManifest.BUNDLE_CONTACT,   "Contact Address:",
         "Contact address if it is necessary to contact the vendor."},  
-    new String[] {IOsgiBundle.BUNDLE_COPYRIGHT, "Copyright:",
+    new String[] {BundleManifest.BUNDLE_COPYRIGHT, "Copyright:",
         "Copyright specification for this bundle."}  
   };
   

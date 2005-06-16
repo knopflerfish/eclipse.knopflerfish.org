@@ -35,8 +35,17 @@
 package org.knopflerfish.eclipse.core.ui.preferences;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.IClasspathContainer;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.window.Window;
@@ -57,10 +66,12 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
+import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiInstall;
 import org.knopflerfish.eclipse.core.OsgiVendor;
+import org.knopflerfish.eclipse.core.project.OsgiClasspathContainer;
+import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
-import org.osgi.service.prefs.BackingStoreException;
 
 public class KnopflerfishPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
   private static String DESCRIPTION = 
@@ -295,9 +306,37 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
    * @see org.eclipse.jface.preference.IPreferencePage#performOk()
    */
   public boolean performOk() {
+    // Save Knopflerfish instances to preference store
     try {
       osgiVendor.setOsgiInstalls(osgiInstalls);
-    } catch (BackingStoreException e) {
+
+      // Get java projects
+      IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+      IProject [] projects = root.getProjects();
+      ArrayList javaProjectList = new ArrayList();
+      for(int i=0; projects != null && i<projects.length; i++) {
+        if (projects[i].hasNature(Osgi.NATURE_ID)) {
+          javaProjectList.add(JavaCore.create(projects[i]));
+        }
+      }
+    
+      IJavaProject [] javaProjects = (IJavaProject[]) javaProjectList.toArray(new IJavaProject[javaProjectList.size()]);
+      IClasspathContainer [] containers = new IClasspathContainer[javaProjectList.size()];
+      
+      // Update containers
+      for (int i=0; osgiInstalls != null && i<osgiInstalls.size(); i++) {
+        OsgiInstall osgiInstall = (OsgiInstall) osgiInstalls.get(i);
+        IClasspathContainer container = new OsgiClasspathContainer(osgiInstall);
+        Arrays.fill(containers, container);
+        IPath path = new Path(OsgiContainerInitializer.KF_CONTAINER);
+        if (osgiInstall.isDefaultDefinition()) {
+          JavaCore.setClasspathContainer(path,javaProjects,containers,null);
+        }
+        path = path.append(osgiInstall.getName());
+        JavaCore.setClasspathContainer(path,javaProjects,containers,null);
+      }
+    
+    } catch (Exception e) {
       e.printStackTrace();
     }
     return true;

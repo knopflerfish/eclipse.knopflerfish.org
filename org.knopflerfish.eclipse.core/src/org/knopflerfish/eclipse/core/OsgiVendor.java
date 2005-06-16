@@ -85,6 +85,8 @@ public class OsgiVendor implements IOsgiVendor {
    * @see org.gstproject.eclipse.osgi.IOsgiVendor#getOsgiInstall(java.lang.String)
    */
   public IOsgiInstall getOsgiInstall(String name) {
+    if (name == null || name.length() == 0) return null;
+    
     Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
     IOsgiInstall osgiInstall = null;
     try  {

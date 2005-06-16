@@ -41,9 +41,9 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.jface.viewers.TableViewer;
-import org.knopflerfish.eclipse.core.BundleProject;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
+import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
  * @author ar

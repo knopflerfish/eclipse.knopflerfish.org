@@ -32,44 +32,21 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.project;
 
-import java.util.jar.Manifest;
+import org.eclipse.jdt.core.IJavaProject;
+import org.knopflerfish.eclipse.core.BundleManifest;
+import org.knopflerfish.eclipse.core.PackageDescription;
 
 /**
- * A framework definition library.
+ * @author ar
  */
-public interface IOsgiLibrary {
+public interface IBundleProject {
 
-  /**
-   * Returns the name of this library.
-   * 
-   * @return name of library.
-   */
-  public String getName();
+  public IJavaProject getJavaProject();
   
-  /**
-   * Returns the full path to this library.
-   * 
-   * @return path to library.
-   */
-  public String getPath();
+  public BundleManifest getBundleManifest();
   
-  /**
-   * Returns the full path to a directory containing source
-   * for this library.
-   * 
-   * @return path to source directory.
-   */
-  public String getSourceDirectory();
-
-  /**
-   * Sets the full path to a directory containing source
-   * for this library.
-   * 
-   * @param dir path to source directory.
-   */
-  public void setSourceDirectory(String dir);
-  
-  public Manifest getManifest();
+  public boolean hasExportedPackage(PackageDescription pkg);
+ 
 }

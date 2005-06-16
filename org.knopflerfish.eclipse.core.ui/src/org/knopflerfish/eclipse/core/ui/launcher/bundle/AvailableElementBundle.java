@@ -100,7 +100,9 @@ public class AvailableElementBundle implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getVersion()
    */
   public String getVersion() {
-    return bundle.getVersion();
+    if (bundle.getBundleManifest() == null) return null;
+
+    return bundle.getBundleManifest().getVersion();
   }
   
   /*

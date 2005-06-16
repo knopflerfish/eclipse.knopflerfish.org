@@ -36,6 +36,8 @@ package org.knopflerfish.eclipse.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 /**
  * @author ar
@@ -43,17 +45,32 @@ import java.io.IOException;
 public class OsgiLibrary implements IOsgiLibrary {
 
   private final File file;
+  private final JarFile jar;
+  private final Manifest manifest;
   private String source;
 
-  public OsgiLibrary(File jar) throws IOException {
-    this.file = jar;
+  public OsgiLibrary(File f) throws IOException {
+    file = f;
     
-    if (!file.exists() || !file.isFile()) {
+    if (!f.exists() || !f.isFile()) {
       throw new IOException("Library does not exist.");
     }
     
+    jar = new JarFile(file);
+    manifest = jar.getManifest();
   }
   
+  /****************************************************************************
+   * org.knopflerfish.eclipse.core.IOsgiLibrary methods
+   ***************************************************************************/
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#getName()
+   */
+  public String getName() {
+    return file.getName();
+  }
+
   /* (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IOsgiLibrary#getPath()
    */
@@ -67,7 +84,31 @@ public class OsgiLibrary implements IOsgiLibrary {
   public String getSourceDirectory() {
     return source;
   }
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#setSourceDirectory(java.lang.String)
+   */
   public void setSourceDirectory(String source) {
     this.source = source;
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#getManifest()
+   */
+  public Manifest getManifest() {
+    return manifest;
+  }
+  
+  /****************************************************************************
+   * java.lang.Object methods
+   ***************************************************************************/
+
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#hashCode()
+   */
+  public int hashCode() {
+    return file.getAbsolutePath().hashCode();
   }
 }

@@ -32,44 +32,26 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
-
-import java.util.jar.Manifest;
+package org.knopflerfish.eclipse.core.ui.preferences.model;
 
 /**
- * A framework definition library.
+ * @author ar
  */
-public interface IOsgiLibrary {
+public interface ILibraryTreeElement {
 
-  /**
-   * Returns the name of this library.
-   * 
-   * @return name of library.
-   */
-  public String getName();
-  
-  /**
-   * Returns the full path to this library.
-   * 
-   * @return path to library.
-   */
-  public String getPath();
-  
-  /**
-   * Returns the full path to a directory containing source
-   * for this library.
-   * 
-   * @return path to source directory.
-   */
-  public String getSourceDirectory();
+  public static int TYPE_ROOT         = 0;
+  public static int TYPE_RUNTIME_ROOT = 1;
+  public static int TYPE_BUILD_ROOT   = 2;
+  public static int TYPE_BUNDLE_ROOT  = 3;
+  public static int TYPE_RUNTIME      = 4;
+  public static int TYPE_BUILD        = 5;
+  public static int TYPE_BUNDLE       = 6;
 
-  /**
-   * Sets the full path to a directory containing source
-   * for this library.
-   * 
-   * @param dir path to source directory.
-   */
-  public void setSourceDirectory(String dir);
-  
-  public Manifest getManifest();
+  ILibraryTreeElement[] getChildren();
+
+  ILibraryTreeElement getParent();
+
+  boolean hasChildren();
+
+  public int getType();
 }

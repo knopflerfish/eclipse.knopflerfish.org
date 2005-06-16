@@ -44,6 +44,7 @@ import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.ConfigurationScope;
+import org.eclipse.jdt.core.IJavaProject;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
@@ -172,5 +173,16 @@ public class Osgi {
 
     node.flush();
     
+  }
+
+  /****************************************************************************
+   * Project methods
+   ***************************************************************************/
+  public static boolean isBundleProject(IJavaProject project) {
+    try {
+      return project.getProject().hasNature(Osgi.NATURE_ID);
+    } catch (CoreException e) {
+      return false;
+    }
   }
 }

@@ -432,66 +432,82 @@ public class BundleWizardPage extends WizardPage {
   /****************************************************************************
    * Getters/Setters
    ***************************************************************************/
-  private String getBundleSymbolicName() {
-    BundleProject project = projectPage.getProject();
+  public String getBundleSymbolicName() {
+    String val = null;
     if (!((Boolean) wBundleSymbolicNameText.getData(PROP_INITIALIZED)).booleanValue()) {
-      return projectPage.getProjectName();
+      val=projectPage.getProjectName();
     } else {
-      return wBundleSymbolicNameText.getText();
+      val=wBundleSymbolicNameText.getText();
+    }
+    
+    if (val == null || val.trim().length()==0) {
+      return null;
+    } else {
+      return val.trim();
     }
   }
   
-  private String getBundleName() {
-    BundleProject project = projectPage.getProject();
+  public String getBundleName() {
+    String val = null;
     if (!((Boolean) wBundleNameText.getData(PROP_INITIALIZED)).booleanValue()) {
-      return projectPage.getProjectName();
+      val=projectPage.getProjectName();
     } else {
-      return wBundleNameText.getText();
+      val=wBundleNameText.getText();
+    }
+    
+    if (val == null || val.trim().length()==0) {
+      return null;
+    } else {
+      return val.trim();
     }
   }
   
-  private String getBundleVersion() {
-    return wBundleVersionText.getText();
+  public String getBundleVersion() {
+    String val = wBundleVersionText.getText();
+    if (val == null || val.trim().length()==0) {
+      return null;
+    } else {
+      return val.trim();
+    }
   }
 
-  private String getBundleDescription() {
-    return wBundleDescriptionText.getText();
+  public String getBundleDescription() {
+    String val = wBundleDescriptionText.getText();
+    if (val == null || val.trim().length()==0) {
+      return null;
+    } else {
+      return val.trim();
+    }
   }
 
-  private String getBundleVendor() {
-    return wBundleVendorText.getText();
+  public String getBundleVendor() {
+    String val = wBundleVendorText.getText();
+    if (val == null || val.trim().length()==0) {
+      return null;
+    } else {
+      return val.trim();
+    }
   }
 
-  private String getActivatorPackageName() {
-    String name = wBundleActivatorPackageText.getText();
-    if (name != null && name.trim().length() == 0) name = null;
-    
-    return name;
+  public String getActivatorPackageName() {
+    String val = wBundleActivatorPackageText.getText();
+    if (val == null || val.trim().length()==0) {
+      return null;
+    } else {
+      return val.trim();
+    }
   }
   
-  private String getActivatorClassName() {
-    String name = wBundleActivatorClassText.getText();
-    if (name != null && name.trim().length() == 0) name = null;
-    
-    return name;
+  public String getActivatorClassName() {
+    String val = wBundleActivatorClassText.getText();
+    if (val == null || val.trim().length()==0) {
+      return null;
+    } else {
+      return val.trim();
+    }
   }
   
-  private boolean isCreateBundleActivator() {
+  public boolean isCreateBundleActivator() {
     return wCreateBundleActivatorButton.getSelection();
-  }
-
-  public BundleProject getProject() {
-   BundleProject project = projectPage.getProject();
-   
-   project.setBundleSymbolicName(getBundleSymbolicName());
-   project.setBundleName(getBundleName());
-   project.setBundleVersion(getBundleVersion());
-   project.setBundleDescription(getBundleDescription());
-   project.setBundleVendor(getBundleVendor());
-   project.setCreateBundleActivator(isCreateBundleActivator());
-   project.setActivatorPackageName(getActivatorPackageName());
-   project.setActivatorClassName(getActivatorClassName());
-   
-   return project;
   }
 }

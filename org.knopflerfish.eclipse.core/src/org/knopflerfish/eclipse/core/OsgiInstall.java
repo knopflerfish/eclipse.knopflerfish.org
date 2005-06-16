@@ -58,7 +58,8 @@ public class OsgiInstall implements IOsgiInstall {
   private static String PREF_SPECIFICATION_VERISION = "SpecificationVersion";
   private static String PREF_TYPE                   = "Type";
   private static String PREF_MAINCLASS              = "MainClass";
-  private static String PREF_LIBRARIES              = "Libraries";
+  private static String PREF_RUNTIME_LIBRARIES      = "Libraries";
+  private static String PREF_BUILD_LIBRARIES        = "BuildLibraries";
   private static String PREF_BUNDLES                = "Bundles";
   private static String PREF_JAR                    = "Jar";
   private static String PREF_SOURCE                 = "Source";
@@ -78,7 +79,8 @@ public class OsgiInstall implements IOsgiInstall {
   private boolean defaultDefinition;
   private boolean defaultSettings;
   private String mainClass;
-  private ArrayList libraries = new ArrayList();  
+  private ArrayList runtimeLibs = new ArrayList();  
+  private ArrayList buildLibs = new ArrayList();  
   private ArrayList bundles = new ArrayList();
   private ArrayList properties = new ArrayList();
   
@@ -106,21 +108,34 @@ public class OsgiInstall implements IOsgiInstall {
     // Main class
     mainClass = node.get(PREF_MAINCLASS, "");
     
-    // Libraries
-    Preferences librariesNode = node.node(PREF_LIBRARIES);
-    String [] libraryNames = librariesNode.childrenNames();
-    libraries.clear();
-    if (libraryNames != null) {
-      for (int i=0; i<libraryNames.length; i++) {
-        Preferences libraryNode = librariesNode.node(libraryNames[i]);
-        try {
-          OsgiLibrary library = new OsgiLibrary(new File(libraryNode.get(PREF_JAR, "")));
-          library.setSourceDirectory(libraryNode.get(PREF_SOURCE, null));
-          libraries.add(library);
-        } catch (Exception e) {}
-      }
+    // Runtime Libraries
+    Preferences librariesNode = node.node(PREF_RUNTIME_LIBRARIES);
+    runtimeLibs.clear();
+    int idx = 0;
+    while (librariesNode.nodeExists("Library "+idx)) {
+      Preferences libraryNode = librariesNode.node("Library "+idx);
+      try {
+        OsgiLibrary library = new OsgiLibrary(new File(libraryNode.get(PREF_JAR, "")));
+        library.setSourceDirectory(libraryNode.get(PREF_SOURCE, null));
+        runtimeLibs.add(library);
+      } catch (Exception e) {}
+      idx++;
     }
 
+    // Build Libraries
+    Preferences buildLibNode = node.node(PREF_BUILD_LIBRARIES);
+    buildLibs.clear();
+    idx = 0;
+    while (buildLibNode.nodeExists("Library "+idx)) {
+      Preferences libraryNode = buildLibNode.node("Library "+idx);
+      try {
+        OsgiLibrary library = new OsgiLibrary(new File(libraryNode.get(PREF_JAR, "")));
+        library.setSourceDirectory(libraryNode.get(PREF_SOURCE, null));
+        buildLibs.add(library);
+      } catch (Exception e) {}
+      idx++;
+    }
+    
     // Default definition
     defaultDefinition = "true".equalsIgnoreCase(node.get(PREF_DEFAULT_DEFINITION, "false"));
 
@@ -142,7 +157,7 @@ public class OsgiInstall implements IOsgiInstall {
     // Properties
     Preferences propertiesNode = node.node(PREF_PROPERTIES);
     properties.clear();
-    int idx = 0;
+    idx = 0;
     while (propertiesNode.nodeExists("Property "+idx)) {
       Preferences propertyNode = propertiesNode.node("Property "+idx);
       idx++;
@@ -216,12 +231,24 @@ public class OsgiInstall implements IOsgiInstall {
     } else {
       subNode.remove(PREF_MAINCLASS);
     }
-    // Libraries
-    subNode.node(PREF_LIBRARIES).removeNode();
-    Preferences librariesNode = subNode.node(PREF_LIBRARIES);
-    for (int i=0; i<libraries.size(); i++) {
-      OsgiLibrary library = (OsgiLibrary) libraries.get(i);
+    // Runtime Libraries
+    subNode.node(PREF_RUNTIME_LIBRARIES).removeNode();
+    Preferences librariesNode = subNode.node(PREF_RUNTIME_LIBRARIES);
+    for (int i=0; i<runtimeLibs.size(); i++) {
+      OsgiLibrary library = (OsgiLibrary) runtimeLibs.get(i);
       Preferences libraryNode = librariesNode.node("Library "+i);
+      libraryNode.put(PREF_JAR, library.getPath());
+      if (library.getSourceDirectory() != null) {
+        libraryNode.put(PREF_SOURCE, library.getSourceDirectory());
+      }
+    }
+    
+    // Build Libraries
+    subNode.node(PREF_BUILD_LIBRARIES).removeNode();
+    Preferences buildLibNode = subNode.node(PREF_BUILD_LIBRARIES);
+    for (int i=0; i<buildLibs.size(); i++) {
+      OsgiLibrary library = (OsgiLibrary) buildLibs.get(i);
+      Preferences libraryNode = buildLibNode.node("Library "+i);
       libraryNode.put(PREF_JAR, library.getPath());
       if (library.getSourceDirectory() != null) {
         libraryNode.put(PREF_SOURCE, library.getSourceDirectory());
@@ -373,14 +400,33 @@ public class OsgiInstall implements IOsgiInstall {
   /* (non-Javadoc)
    * @see org.gstproject.eclipse.osgi.IOsgiInstall#getLibraries()
    */
-  public IOsgiLibrary[] getLibraries() {
-    return (OsgiLibrary[]) libraries.toArray(new OsgiLibrary[libraries.size()]);
+  public IOsgiLibrary[] getRuntimeLibraries() {
+    return (OsgiLibrary[]) runtimeLibs.toArray(new OsgiLibrary[runtimeLibs.size()]);
   }
 
-  public void setLibraries(ArrayList libraries) {
-    this.libraries = libraries;
+  public void setRuntimeLibraries(IOsgiLibrary[] libraries) {
+    runtimeLibs.clear();
+    if (libraries == null) return;
+    for(int i=0; i<libraries.length; i++) {
+      runtimeLibs.add(libraries[i]);
+    }
   }
 
+  /* (non-Javadoc)
+   * @see org.gstproject.eclipse.osgi.IOsgiInstall#getLibraries()
+   */
+  public IOsgiLibrary[] getBuildLibraries() {
+    return (OsgiLibrary[]) buildLibs.toArray(new OsgiLibrary[buildLibs.size()]);
+  }
+
+  public void setBuildLibraries(IOsgiLibrary[] libraries) {
+    buildLibs.clear();
+    if (libraries == null) return;
+    for(int i=0; i<libraries.length; i++) {
+      buildLibs.add(libraries[i]);
+    }
+  }
+  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IOsgiInstall#getBundles()
@@ -389,8 +435,12 @@ public class OsgiInstall implements IOsgiInstall {
     return (OsgiBundle[]) bundles.toArray(new OsgiBundle[bundles.size()]);
   }
 
-  public void setBundles(ArrayList bundles) {
-    this.bundles = bundles;
+  public void setBundles(IOsgiBundle[] libraries) {
+    bundles.clear();
+    if (libraries == null) return;
+    for(int i=0; i<libraries.length; i++) {
+      bundles.add(libraries[i]);
+    }
   }
 
   /*

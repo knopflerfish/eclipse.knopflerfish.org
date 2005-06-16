@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.preferences;
+package org.knopflerfish.eclipse.core.ui.dialogs;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +70,7 @@ public class LibraryDialog extends Dialog {
   private Button  wLibraryButton;
   private Text    wSourceText;
   
-  protected LibraryDialog(Shell parentShell, IOsgiLibrary library, String title) {
+  public LibraryDialog(Shell parentShell, IOsgiLibrary library, String title) {
     super(parentShell);
     
     this.library = library;

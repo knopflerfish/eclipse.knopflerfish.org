@@ -32,29 +32,61 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.ui.preferences.model;
 
-import java.util.jar.Manifest;
-
-import org.eclipse.jdt.core.IJavaProject;
+import org.knopflerfish.eclipse.core.IOsgiBundle;
 
 /**
  * @author ar
  */
-public interface IBundleProject {
+public class LibraryElementBundle implements ILibraryTreeElement {
 
-  public IJavaProject getJavaProject();
+  private final ILibraryTreeElement parent;
+  private IOsgiBundle bundle;
   
-  public Manifest getManifest();
+  public LibraryElementBundle(ILibraryTreeElement parent, IOsgiBundle bundle) {
+    this.parent = parent;
+    this.bundle = bundle;
+  }
   
-  public String getName();
-  
-  public String getVersion();
+  public IOsgiBundle getBundle() {
+    return bundle;
+  }
 
-  public String getActivator();
+  public void setBundle(IOsgiBundle bundle) {
+    this.bundle = bundle;
+  }
 
-  public PackageDescription[] getImportedPackages(); 
-
-  public PackageDescription[] getExportedPackages(); 
+  /****************************************************************************
+   * org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement methods
+   ***************************************************************************/
   
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getChildren()
+   */
+  public ILibraryTreeElement[] getChildren() {
+    return null;
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getParent()
+   */
+  public ILibraryTreeElement getParent() {
+    return parent;
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#hasChildren()
+   */
+  public boolean hasChildren() {
+    return false;
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getType()
+   */
+  public int getType() {
+    return TYPE_BUNDLE;
+  }
+
 }

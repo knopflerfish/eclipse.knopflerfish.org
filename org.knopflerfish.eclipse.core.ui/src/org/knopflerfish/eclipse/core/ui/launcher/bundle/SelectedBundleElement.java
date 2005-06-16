@@ -34,10 +34,10 @@
 
 package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
-import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
+import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 
 /**
@@ -88,32 +88,35 @@ public class SelectedBundleElement {
     if (bundle != null) {
       return bundle.getName();
     } else {
-      return project.getName();
+      return project.getBundleManifest().getName();
     }
   }
   
   public String getVersion() {
     if (bundle != null) {
-      return bundle.getVersion();
+      if (bundle.getBundleManifest() == null) return null;
+      return bundle.getBundleManifest().getVersion();
     } else {
-      return project.getVersion();
+      return project.getBundleManifest().getVersion();
     }
   }
   
   public PackageDescription[] getImportedPackages() {
     if (bundle != null) {
-      return bundle.getImportedPackages();
+      if (bundle.getBundleManifest() == null) return null;
+      return bundle.getBundleManifest().getImportedPackages();
     } else {
-      return project.getImportedPackages();
+      return project.getBundleManifest().getImportedPackages();
     }
   }
   
 
   public PackageDescription[] getExportedPackages() {
     if (bundle != null) {
-      return bundle.getExportedPackages();
+      if (bundle.getBundleManifest() == null) return null;
+      return bundle.getBundleManifest().getExportedPackages();
     } else {
-      return project.getExportedPackages();
+      return project.getBundleManifest().getExportedPackages();
     }
   }
   

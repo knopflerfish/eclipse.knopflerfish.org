@@ -46,7 +46,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.IOsgiBundle;
+import org.knopflerfish.eclipse.core.BundleManifest;
 
 /**
  * @author ar
@@ -59,9 +59,9 @@ public class OverviewDocumentationSection extends ManifestSectionPart {
   
   // Initialize attributes, use array to keep order of attributes
   static private String[][] widgetAttributes = new String[][] {
-    new String[] {IOsgiBundle.BUNDLE_DESCRIPTION, "Description:", 
+    new String[] {BundleManifest.BUNDLE_DESCRIPTION, "Description:", 
         "A short description of this bundle."},  
-    new String[] {IOsgiBundle.BUNDLE_DOCURL, "Documentation URL:",
+    new String[] {BundleManifest.BUNDLE_DOCURL, "Documentation URL:",
         "A URL to documentation about this bundle."},  
   };
   

@@ -53,10 +53,12 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiInstall;
@@ -69,7 +71,8 @@ public class ProjectWizardPage extends WizardPage {
   private static final String DEFAULT_SRC_FOLDER = "src";
   private static final String DEFAULT_OUT_FOLDER = "out";
   
-  private static final String ERROR = "error";
+  private static final String ERROR     = "error";
+  private static final String WARNING   = "warning";
 
   private int MARGIN_HEIGHT = 11;
   private int MARGIN_WIDTH = 9;
@@ -85,7 +88,9 @@ public class ProjectWizardPage extends WizardPage {
   private Button  wProjectContentsBrowseButton;  
   private Text    wProjectSettingsSrcText;
   private Text    wProjectSettingsOutText;
+  private Label   wProjectLibrariesEnvLabel;
   private Combo   wProjectLibrariesEnvCombo;
+  private Button  wProjectLibrariesDefaultButton;
   
 
   public ProjectWizardPage(ISelection selection) {
@@ -140,7 +145,7 @@ public class ProjectWizardPage extends WizardPage {
     wProjectContentsGroup.setLayoutData(gd);
     
     wProjectContentsDefaultButton = new Button(wProjectContentsGroup, SWT.CHECK);
-    wProjectContentsDefaultButton.setText("Use default");
+    wProjectContentsDefaultButton.setText("Use default ");
     wProjectContentsDefaultButton.setSelection(true);
     
     wProjectContentsDefaultButton.addSelectionListener(new SelectionAdapter(){
@@ -223,36 +228,66 @@ public class ProjectWizardPage extends WizardPage {
     gd = new GridData(GridData.FILL_HORIZONTAL);
     gd.horizontalSpan = 2;
     wProjectLibrariesGroup.setLayoutData(gd);
+
+    wProjectLibrariesDefaultButton = new Button(wProjectLibrariesGroup, SWT.CHECK);
+    wProjectLibrariesDefaultButton.setText("Use default");
+    wProjectLibrariesDefaultButton.setSelection(true);
     
-    Label wProjectLibrariesEnvLabel = new Label(wProjectLibrariesGroup, SWT.LEFT);
+    wProjectLibrariesDefaultButton.addSelectionListener(new SelectionAdapter(){
+      public void widgetSelected(SelectionEvent e) {
+        boolean selection = ((Button) e.widget).getSelection();
+        // Enable/disbale manual location widgets
+        wProjectLibrariesEnvLabel.setEnabled(!selection);
+        wProjectLibrariesEnvCombo.setEnabled(!selection);
+      }
+    });
+    gd = new GridData(GridData.FILL_HORIZONTAL);
+    gd.horizontalSpan = 2;
+    wProjectLibrariesDefaultButton.setLayoutData(gd);
+    
+    wProjectLibrariesEnvLabel = new Label(wProjectLibrariesGroup, SWT.LEFT);
     wProjectLibrariesEnvLabel.setText("OSGi Environment:");
+    wProjectLibrariesEnvLabel.setEnabled(false);
     wProjectLibrariesEnvCombo = new Combo(wProjectLibrariesGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
     IOsgiVendor v = Osgi.getVendor(OsgiVendor.VENDOR_NAME);
     List l = null;
-    int selectIdx = 0;
-    if (v != null && (l = v.getOsgiInstalls()) != null) {
+    if (v != null) {
+      l = v.getOsgiInstalls();
+    }
+    IOsgiInstall defaultInstall = null;
+    if (l != null && l.size() > 0) {
       for(int i=0; i<l.size();i++) {
         OsgiInstall osgiInstall = (OsgiInstall) l.get(i);
         
         wProjectLibrariesEnvCombo.add(osgiInstall.getName());
-        if (osgiInstall.isDefaultDefinition()) selectIdx=i;
-      }
+        if (osgiInstall.isDefaultDefinition()) {
+          defaultInstall = osgiInstall;
+        }
+      } 
+      wProjectLibrariesEnvCombo.select(0);
+    } else {
+      // No OSGi enviroments installed
+      //wProjectLibrariesEnvCombo.setData(ERROR, "No OSGi environments are installed.");
+      wProjectLibrariesDefaultButton.setEnabled(false);
     }
-    wProjectLibrariesEnvCombo.select(selectIdx);
+    wProjectLibrariesEnvCombo.setEnabled(false);
+    
     gd = new GridData(GridData.FILL_HORIZONTAL);
     wProjectLibrariesEnvCombo.setLayoutData(gd);
+    wProjectLibrariesDefaultButton.setText("Use default Knopflerfish"+(defaultInstall != null ? " ("+defaultInstall.getName()+")" : ""));
     
     // Update state
     wProjectNameText.setData(ERROR, verifyProjectName());
     updateLocation();
-    updateStatus();
     
     setControl(composite);
+    updateStatus();
   }
   
   /****************************************************************************
    * UI control methods
    ***************************************************************************/
+  
   private void updateLocation() {
     if (isDefaultProjectLocation()) {
       IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -263,20 +298,50 @@ public class ProjectWizardPage extends WizardPage {
   }
   
   private void updateStatus() {
+    Control c = getControl();
+    Composite composite = (Composite) c;
+    composite.getChildren();
     
-    // Check that widgets contains valid values
-    
-    String error = (String) wProjectNameText.getData(ERROR);
+    // Loop through widgets checking for errors
+    String error = (String) getData(getControl(), ERROR);
     if (error != null) {
       setPageComplete(false);
-      //setErrorMessage(error);
-      //setMessage(error, DialogPage.WARNING);
       setMessage(error, DialogPage.ERROR);
       return;
     }
     
+    // Loop through widgets checking for warnings
+    String warning = (String) getData(getControl(), WARNING);
+    if (warning != null) {
+      setPageComplete(true);
+      setMessage(warning, DialogPage.WARNING);
+      return;
+    }
+
+    // Everything is ok
     setPageComplete(true);
     setMessage(null);
+   
+  }
+  
+  private Object getData(Control c, String key) {
+    if (c == null || key == null) return null;
+    
+    // Check if this control contains the key
+    Object data = c.getData(key);
+    if (data != null) return data;
+    
+    if (c instanceof Composite) {
+      // Check if any children contain the key
+      Control [] children = ((Composite) c).getChildren();
+      if (children != null) {
+        for(int i=0; i<children.length; i++) {
+          data = getData(children[i], key);
+          if (data != null) return data;
+        }
+      }
+    }
+    return null;
   }
   
   /****************************************************************************
@@ -299,7 +364,7 @@ public class ProjectWizardPage extends WizardPage {
   }
   
   private boolean verifyProjectLocation() {
-    String location = getProjectLocation();
+    String location = wProjectContentsDirectoryText.getText();
     
     // TODO:Check that project location is valid folder name
     
@@ -311,43 +376,35 @@ public class ProjectWizardPage extends WizardPage {
   /****************************************************************************
    * Getters/Setters
    ***************************************************************************/
-  protected String getProjectName() {
+  public String getProjectName() {
     return wProjectNameText.getText();
   }
   
-  protected boolean isDefaultProjectLocation() {
+  public boolean isDefaultProjectLocation() {
     return wProjectContentsDefaultButton.getSelection();
   }
 
-  protected String getProjectLocation() {
-    return wProjectContentsDirectoryText.getText();
-  }
-  
-  protected String getSourceFolder() {
-    return wProjectSettingsSrcText.getText();
-  }
-
-  protected String getOutputFolder() {
-    return wProjectSettingsOutText.getText();
-  }
-  
-  protected String getEnvironmentName() {
-    return wProjectLibrariesEnvCombo.getText();
-  }
-
-  public BundleProject getProject() {
-    BundleProject project = new BundleProject(getProjectName());
+  public IPath getProjectLocation() {
     if (isDefaultProjectLocation()) {
-      project.setLocation(null);
+      return null;
     } else {
-      project.setLocation(new Path(getProjectLocation()));
+      return new Path(wProjectContentsDirectoryText.getText());
     }
-    
-    project.setSourceFolder(new Path(getSourceFolder()));
-    project.setOutputFolder(new Path(getOutputFolder()));
-    IOsgiVendor v = Osgi.getVendor(OsgiVendor.VENDOR_NAME);
-    project.setOsgiInstall(v.getOsgiInstall(getEnvironmentName()));
-    
-    return project;
+  }
+  
+  public IPath getSourceFolder() {
+    return new Path(wProjectSettingsSrcText.getText());
+  }
+
+  public IPath getOutputFolder() {
+    return new Path(wProjectSettingsOutText.getText());
+  }
+
+  public boolean isDefaultProjectLibrary() {
+    return wProjectLibrariesDefaultButton.getSelection();
+  }
+  
+  public String getEnvironmentName() {
+    return wProjectLibrariesEnvCombo.getText();
   }
 }

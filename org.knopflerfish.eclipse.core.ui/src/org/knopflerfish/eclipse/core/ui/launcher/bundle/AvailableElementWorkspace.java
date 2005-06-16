@@ -41,8 +41,8 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
-import org.knopflerfish.eclipse.core.BundleProject;
 import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
  * @author ar

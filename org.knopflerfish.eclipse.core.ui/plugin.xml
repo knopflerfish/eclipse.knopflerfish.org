@@ -3,7 +3,7 @@
 <plugin
    id="org.knopflerfish.eclipse.core.ui"
    name="Osgi Ui Plug-in"
-   version="0.5.0"
+   version="0.5.6"
    provider-name=""
    class="org.knopflerfish.eclipse.core.ui.OsgiUiPlugin">
 
@@ -95,6 +95,14 @@
           category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPreferencePage"
           name="Bundle Sets"
           id="org.knopflerfish.eclipse.core.ui.preferences.BundleSetPreferencePage"/>
+ </extension>
+ <extension
+       point="org.eclipse.jdt.ui.quickFixProcessors">
+	<quickFixProcessor 
+		id="org.knopflerfish.eclipse.core.ui.quickfix.ImportQuickFix"
+		name="Import Quick Fix Processor"
+		class="org.knopflerfish.eclipse.core.ui.assist.ImportQuickFix">
+	</quickFixProcessor>
  </extension>
 
 </plugin>

@@ -39,48 +39,29 @@ package org.knopflerfish.eclipse.core;
  */
 public interface IOsgiBundle extends IOsgiLibrary {
 
-  public static final String BUNDLE_SYMBOLIC_NAME = "Bundle-SymbolicName";
-  public static final String BUNDLE_NAME          = "Bundle-Name";
-  public static final String BUNDLE_VERSION       = "Bundle-Version";
-  public static final String BUNDLE_ACTIVATOR     = "Bundle-Activator";
-  public static final String BUNDLE_VENDOR        = "Bundle-Vendor";
-  public static final String BUNDLE_CONTACT       = "Bundle-ContactAddress";
-  public static final String BUNDLE_COPYRIGHT     = "Bundle-Copyright";
-  public static final String BUNDLE_DESCRIPTION   = "Bundle-Description";
-  public static final String BUNDLE_DOCURL        = "Bundle-DocURL";
-  public static final String EXPORT_PACKAGE       = "Export-Package";
-  public static final String IMPORT_PACKAGE       = "Import-Package";
-
-  public static final String BUILT_FROM         = "Built-From";
+  /** 
+   * Returns the bunde manifest or null if none exist.
+   * 
+   * @return bundle manifest
+   */
+  public BundleManifest getBundleManifest();
   
-  /**
-   * @return Returns the name.
+  /** 
+   * Returns true if bundle exports a compatible package.
+   * 
+   * @param pkg package
+   * @return true if bundle exports a compatible package; 
+   *  otherwise false
    */
-  public String getName();
+  public boolean hasExportedPackage(PackageDescription pkg);
   
-  /**
-   * @return Returns the version.
+  /** 
+   * Returns true if bundle has the specified category.
+   * 
+   * @param cat category
+   * @return true if bundle has the specified category; 
+   *  otherwise false
    */
-  public String getVersion();
-
-  /**
-   * @return Returns the activator.
-   */
-  public String getActivator();
+  public boolean hasCategory(String cat);
   
-  public PackageDescription[] getImportedPackages(); 
-
-  public PackageDescription[] getExportedPackages(); 
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#getPath()
-   */
-  public String getPath();
-
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#getSourceDirectory()
-   */
-  public String getSourceDirectory();
 }
