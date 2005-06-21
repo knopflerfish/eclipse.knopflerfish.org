@@ -39,7 +39,7 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.ui.editors.text.FileDocumentProvider;
 
 /**
- * @author ar
+ * @author Anders Rimén
  *
  * TODO To change the template for this generated type comment go to
  * Window - Preferences - Java - Code Style - Code Templates

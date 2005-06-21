@@ -46,9 +46,9 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
-abstract public class ManifestSectionPart extends SectionPart {
+abstract public class ManifestSectionTextPart extends SectionPart {
 
   // Widget properties
   public static final String PROP_DIRTY = "dirty";
@@ -60,7 +60,7 @@ abstract public class ManifestSectionPart extends SectionPart {
   private Manifest manifest = null;
 
 
-  public ManifestSectionPart(Composite parent, FormToolkit toolkit, int style, int numAttributes) {
+  public ManifestSectionTextPart(Composite parent, FormToolkit toolkit, int style, int numAttributes) {
     super(parent, toolkit, style);
     wAttributesText = new Text[numAttributes];
     
@@ -83,10 +83,16 @@ abstract public class ManifestSectionPart extends SectionPart {
     IManagedForm managedForm = getManagedForm();
     IDocument doc = (IDocument) managedForm.getInput();
 
-    for(int i=0; i<wAttributesText.length; i++) {
-      if (((Boolean) wAttributesText[i].getData(PROP_DIRTY)).booleanValue()) {
+    for(int i=0; wAttributesText != null && i<wAttributesText.length; i++) {
+      if (wAttributesText[i] == null) continue;
+      
+      Boolean dirty = (Boolean) wAttributesText[i].getData(PROP_DIRTY);
+      if (dirty != null && dirty.booleanValue()) {
         try {
-          ManifestSectionUtil.setManifestAttribute(doc, (String) wAttributesText[i].getData(PROP_NAME), wAttributesText[i].getText());
+          String attribute = (String) wAttributesText[i].getData(PROP_NAME);
+          if (attribute != null) {
+            ManifestSectionUtil.setManifestAttribute(doc, attribute, wAttributesText[i].getText());
+          }
         } catch (Exception e) {
           e.printStackTrace();
         }
@@ -126,9 +132,14 @@ abstract public class ManifestSectionPart extends SectionPart {
     Boolean dirty = new Boolean(true);
     if (manifest != null) {
       Attributes attributes = manifest.getMainAttributes();
-      String oldValue = attributes.getValue((String) w.getData(PROP_NAME));
-      if (oldValue == null) oldValue = "";
-      if (newValue.equals(oldValue)) {
+      String attribute = (String) w.getData(PROP_NAME);
+      if (attribute != null) {
+        String oldValue = attributes.getValue((String) w.getData(PROP_NAME));
+        if (oldValue == null) oldValue = "";
+        if (newValue.equals(oldValue)) {
+          dirty = new Boolean(false);
+        }
+      } else {
         dirty = new Boolean(false);
       }
     }
@@ -141,12 +152,17 @@ abstract public class ManifestSectionPart extends SectionPart {
     
     Attributes attributes = manifest.getMainAttributes();
     
-    for (int i = 0; i<wAttributesText.length ; i++) {
-      String value = attributes.getValue((String) wAttributesText[i].getData(PROP_NAME));
-      if (value != null) {
-        wAttributesText[i].setText(value);
-      } else {
-        wAttributesText[i].setText("");
+    for (int i = 0; wAttributesText != null && i<wAttributesText.length ; i++) {
+      if (wAttributesText[i] == null) continue;
+      
+      String attribute = (String) wAttributesText[i].getData(PROP_NAME);
+      if (attribute != null) {
+        String value = attributes.getValue(attribute);
+        if (value != null) {
+          wAttributesText[i].setText(value);
+        } else {
+          wAttributesText[i].setText("");
+        }
       }
     }
   }
@@ -154,8 +170,13 @@ abstract public class ManifestSectionPart extends SectionPart {
   public void updateDirtyState() {
     // Loop through components and check dirty state
     boolean dirty = false;
-    for(int i=0; i<wAttributesText.length; i++) {
-      dirty = dirty || ((Boolean) wAttributesText[i].getData(PROP_DIRTY)).booleanValue();
+    for(int i=0; wAttributesText != null && i<wAttributesText.length; i++) {
+      if (wAttributesText[i] == null) continue;
+      
+      Boolean attribute = (Boolean) wAttributesText[i].getData(PROP_DIRTY);
+      if (attribute != null) {
+        dirty = dirty || attribute.booleanValue();
+      }
     }    
     
     if (dirty) {

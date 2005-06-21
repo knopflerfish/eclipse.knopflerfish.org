@@ -46,7 +46,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class OsgiPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
   private static String DESCRIPTION = 

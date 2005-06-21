@@ -35,7 +35,7 @@
 package org.knopflerfish.eclipse.core;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public interface IOsgiInstall {
 

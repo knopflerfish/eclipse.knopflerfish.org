@@ -42,7 +42,7 @@ import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class LibraryTreeLabelProvider extends LabelProvider {
   private static String IMAGE_FISH        = "icons/obj16/knopflerfish_obj.gif";

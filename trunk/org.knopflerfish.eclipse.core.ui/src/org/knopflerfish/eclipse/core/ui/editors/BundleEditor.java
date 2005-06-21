@@ -41,7 +41,7 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.forms.editor.FormEditor;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class BundleEditor extends FormEditor {
 

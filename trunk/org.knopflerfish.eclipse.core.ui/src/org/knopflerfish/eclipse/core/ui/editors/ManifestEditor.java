@@ -37,7 +37,7 @@ package org.knopflerfish.eclipse.core.ui.editors;
 import org.eclipse.ui.editors.text.TextEditor;
 
 /**
- * @author ar
+ * @author Anders Rimén
  *
  * TODO To change the template for this generated type comment go to
  * Window - Preferences - Java - Code Style - Code Templates

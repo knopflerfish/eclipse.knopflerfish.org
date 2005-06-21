@@ -46,7 +46,7 @@ import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class ProjectImportCompletionProposal implements IJavaCompletionProposal {
 

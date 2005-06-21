@@ -37,7 +37,7 @@ package org.knopflerfish.eclipse.core.ui.preferences.model;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class LibraryElementBuild implements ILibraryTreeElement {
 

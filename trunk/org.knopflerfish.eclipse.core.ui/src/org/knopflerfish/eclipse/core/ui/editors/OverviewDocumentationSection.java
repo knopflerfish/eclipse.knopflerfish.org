@@ -49,9 +49,9 @@ import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.BundleManifest;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
-public class OverviewDocumentationSection extends ManifestSectionPart {
+public class OverviewDocumentationSection extends ManifestSectionTextPart {
 
   // Section title and description
   private static final String TITLE = "Documentation";

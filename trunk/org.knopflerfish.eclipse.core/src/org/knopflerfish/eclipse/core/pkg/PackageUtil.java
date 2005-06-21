@@ -53,7 +53,7 @@ import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class PackageUtil {
 

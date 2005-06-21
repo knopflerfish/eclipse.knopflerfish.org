@@ -37,7 +37,7 @@ package org.knopflerfish.eclipse.core;
 import java.util.List;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class SystemProperty {
   private final String name;

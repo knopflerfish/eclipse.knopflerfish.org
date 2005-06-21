@@ -56,7 +56,7 @@ import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.OsgiLibrary;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class LibraryDialog extends Dialog {
 

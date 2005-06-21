@@ -39,7 +39,7 @@ import org.knopflerfish.eclipse.core.BundleManifest;
 import org.knopflerfish.eclipse.core.PackageDescription;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public interface IBundleProject {
 

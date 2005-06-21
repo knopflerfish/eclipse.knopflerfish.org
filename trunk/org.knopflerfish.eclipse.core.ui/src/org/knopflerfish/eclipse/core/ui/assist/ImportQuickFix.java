@@ -42,7 +42,6 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.IPackageBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.ui.text.java.IInvocationContext;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
@@ -54,7 +53,7 @@ import org.knopflerfish.eclipse.core.pkg.PackageUtil;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class ImportQuickFix implements IQuickFixProcessor {
 

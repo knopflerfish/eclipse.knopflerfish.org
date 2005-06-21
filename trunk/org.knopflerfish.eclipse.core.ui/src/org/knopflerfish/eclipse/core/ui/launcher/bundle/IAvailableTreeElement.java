@@ -35,7 +35,7 @@
 package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public interface IAvailableTreeElement {
 

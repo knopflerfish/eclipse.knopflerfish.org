@@ -52,7 +52,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class BundleWizardPage extends WizardPage {
   private static final String PROP_INITIALIZED = "initialized";

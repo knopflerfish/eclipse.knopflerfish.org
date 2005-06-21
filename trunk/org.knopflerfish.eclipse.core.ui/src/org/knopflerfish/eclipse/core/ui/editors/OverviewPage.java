@@ -49,7 +49,7 @@ import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class OverviewPage extends FormPage {
 
@@ -108,16 +108,21 @@ public class OverviewPage extends FormPage {
         Section.DESCRIPTION | Section.TWISTIE | Section.EXPANDED);
     generalSection.initialize(managedForm);
 
+    OverviewCategorySection categorySection = new OverviewCategorySection(body, toolkit, 
+        Section.DESCRIPTION | Section.TWISTIE);
+    categorySection.initialize(managedForm);
+    
     OverviewVendorSection vendorSection = new OverviewVendorSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TWISTIE | Section.EXPANDED);
+        Section.DESCRIPTION | Section.TWISTIE);
     vendorSection.initialize(managedForm);
     
     OverviewDocumentationSection docSection = new OverviewDocumentationSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TWISTIE | Section.EXPANDED);
+        Section.DESCRIPTION | Section.TWISTIE);
     docSection.initialize(managedForm);
     
     // Add sections to form
     managedForm.addPart(generalSection);
+    managedForm.addPart(categorySection);
     managedForm.addPart(vendorSection);
     managedForm.addPart(docSection);
   }
