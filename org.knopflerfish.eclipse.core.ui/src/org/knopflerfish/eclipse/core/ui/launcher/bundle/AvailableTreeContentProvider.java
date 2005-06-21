@@ -38,7 +38,7 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class AvailableTreeContentProvider implements ITreeContentProvider {
 

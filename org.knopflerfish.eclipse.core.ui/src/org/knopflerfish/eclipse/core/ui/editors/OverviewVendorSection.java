@@ -49,9 +49,9 @@ import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.BundleManifest;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
-public class OverviewVendorSection extends ManifestSectionPart {
+public class OverviewVendorSection extends ManifestSectionTextPart {
 
   // Section title and description
   private static final String TITLE = "Vendor Information";

@@ -41,7 +41,7 @@ import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class SelectedBundleElement {
   static public int TYPE_BUNDLE_PROJECT    = 0;

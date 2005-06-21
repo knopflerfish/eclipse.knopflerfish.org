@@ -98,7 +98,7 @@ import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class BundleTab extends AbstractLaunchConfigurationTab {
   private static String TITLE_ADD_LIBRARY = "Add external bundle";

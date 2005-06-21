@@ -42,24 +42,25 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class BundleManifest extends Manifest {
 
-  public static final String BUNDLE_SYMBOLIC_NAME = "Bundle-SymbolicName";
-  public static final String BUNDLE_NAME          = "Bundle-Name";
-  public static final String BUNDLE_CATEGORY      = "Bundle-Category";
-  public static final String BUNDLE_VERSION       = "Bundle-Version";
-  public static final String BUNDLE_ACTIVATOR     = "Bundle-Activator";
-  public static final String BUNDLE_VENDOR        = "Bundle-Vendor";
-  public static final String BUNDLE_CONTACT       = "Bundle-ContactAddress";
-  public static final String BUNDLE_COPYRIGHT     = "Bundle-Copyright";
-  public static final String BUNDLE_DESCRIPTION   = "Bundle-Description";
-  public static final String BUNDLE_DOCURL        = "Bundle-DocURL";
-  public static final String EXPORT_PACKAGE       = "Export-Package";
-  public static final String IMPORT_PACKAGE       = "Import-Package";
+  public static final String BUNDLE_SYMBOLIC_NAME  = "Bundle-SymbolicName";
+  public static final String BUNDLE_NAME           = "Bundle-Name";
+  public static final String BUNDLE_CATEGORY       = "Bundle-Category";
+  public static final String BUNDLE_VERSION        = "Bundle-Version";
+  public static final String BUNDLE_ACTIVATOR      = "Bundle-Activator";
+  public static final String BUNDLE_VENDOR         = "Bundle-Vendor";
+  public static final String BUNDLE_CONTACT        = "Bundle-ContactAddress";
+  public static final String BUNDLE_COPYRIGHT      = "Bundle-Copyright";
+  public static final String BUNDLE_DESCRIPTION    = "Bundle-Description";
+  public static final String BUNDLE_DOCURL         = "Bundle-DocURL";
+  public static final String BUNDLE_UPDATELOCATION = "Bundle-UpdateLocation";
+  public static final String EXPORT_PACKAGE        = "Export-Package";
+  public static final String IMPORT_PACKAGE        = "Import-Package";
 
-  public static final String BUILT_FROM           = "Built-From";
+  public static final String BUILT_FROM            = "Built-From";
   
   public BundleManifest() {
     super();
@@ -135,18 +136,42 @@ public class BundleManifest extends Manifest {
   public void setActivator(String value) {
     setAttribute(BUNDLE_ACTIVATOR, value);
   }
+
+  public String getUpdateLocation() {
+    return getAttribute(BUNDLE_UPDATELOCATION);
+  }
+
+  public void setUpdateLocation(String value) {
+    setAttribute(BUNDLE_UPDATELOCATION, value);
+  }
+  
   
   public String[] getCategories() {
     String attr = getAttribute(BUNDLE_CATEGORY);
-    if (attr == null) return null;
-    
     ArrayList categories = new ArrayList();
-    StringTokenizer st = new StringTokenizer(attr, ",");
-    while(st.hasMoreTokens()) {
-      categories.add(st.nextToken().trim());
+    if (attr != null) {
+      StringTokenizer st = new StringTokenizer(attr, ",");
+      while(st.hasMoreTokens()) {
+        categories.add(st.nextToken().trim());
+      }
     }
     
     return (String[]) categories.toArray(new String[categories.size()]);
+  }
+
+  public void setCategories(String[]  value) {
+    if (value == null) {
+      setAttribute(BUNDLE_CATEGORY, null);
+    } else {
+      StringBuffer buf = new StringBuffer("");
+      for(int i=0; i<value.length;i++) {
+        if (i != 0) {
+          buf.append(", ");
+        }
+        buf.append(value[i]);
+      }
+      setAttribute(BUNDLE_CATEGORY, buf.toString());
+    }
   }
   
   public PackageDescription[] getImportedPackages() {

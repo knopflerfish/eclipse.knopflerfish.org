@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class PackageDescription {
   public static String SPECIFICATION_VERSION = "specification-version";

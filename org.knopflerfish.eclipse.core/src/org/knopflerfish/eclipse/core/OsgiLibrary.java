@@ -40,7 +40,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class OsgiLibrary implements IOsgiLibrary {
 

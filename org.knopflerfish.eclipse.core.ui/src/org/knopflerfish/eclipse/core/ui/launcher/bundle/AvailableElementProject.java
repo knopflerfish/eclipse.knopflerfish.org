@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class AvailableElementProject implements IAvailableTreeElement {
 

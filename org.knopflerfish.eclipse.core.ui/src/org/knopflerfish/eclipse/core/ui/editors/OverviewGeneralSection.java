@@ -69,9 +69,9 @@ import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.BundleManifest;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
-public class OverviewGeneralSection extends ManifestSectionPart {
+public class OverviewGeneralSection extends ManifestSectionTextPart {
 
   // Section title and description
   private static final String TITLE = "General Information";
@@ -79,13 +79,15 @@ public class OverviewGeneralSection extends ManifestSectionPart {
   
   // Initialize attributes, use array to keep order of attributes
   static private String[][] widgetAttributes = new String[][] {
-      new String[] {BundleManifest.BUNDLE_SYMBOLIC_NAME, "Bundle Symbolic Name:", 
-      "A unique, non localizable, name for this bundle. This name should be based on the reverse domain name convention."},  
-      new String[] {BundleManifest.BUNDLE_VERSION, "Bundle Version:",
-      "The version of this bundle."},  
-    new String[] {BundleManifest.BUNDLE_NAME, "Bundle Name:", 
+      new String[] {BundleManifest.BUNDLE_SYMBOLIC_NAME, "Symbolic Name:", 
+        "A unique, non localizable, name for this bundle. This name should be based on the reverse domain name convention."},  
+      new String[] {BundleManifest.BUNDLE_VERSION, "Version:",
+        "The version of this bundle."},  
+      new String[] {BundleManifest.BUNDLE_NAME, "Name:", 
         "Name for this bundle. This should be a short, human readable, name and should contain no spaces."},  
-    new String[] {BundleManifest.BUNDLE_ACTIVATOR, "Bundle Activator:",
+      new String[] {BundleManifest.BUNDLE_UPDATELOCATION, "Update Location:", 
+        "If the bundle is updated, this location should be used (if present) to retrieve the updated JAR file."},  
+      new String[] {BundleManifest.BUNDLE_ACTIVATOR, "Activator:",
         "The name of the class that is used to start and stop the bundle."}  
   };
   

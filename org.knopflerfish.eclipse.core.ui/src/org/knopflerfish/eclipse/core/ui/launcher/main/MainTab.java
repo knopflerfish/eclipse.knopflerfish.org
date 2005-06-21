@@ -83,7 +83,7 @@ import org.knopflerfish.eclipse.core.launcher.SourcePathComputer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class MainTab extends AbstractLaunchConfigurationTab {
   private static String IMAGE = "icons/obj16/knopflerfish_obj.gif";

@@ -55,7 +55,7 @@ import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.PackageDescription;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class BundleProject implements IBundleProject {
   private static final String MANIFEST_FILE = "bundle.manifest";

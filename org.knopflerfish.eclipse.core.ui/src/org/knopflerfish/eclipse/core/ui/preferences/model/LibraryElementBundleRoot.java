@@ -37,7 +37,7 @@ package org.knopflerfish.eclipse.core.ui.preferences.model;
 import java.util.ArrayList;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class LibraryElementBundleRoot implements ILibraryTreeElement {
 

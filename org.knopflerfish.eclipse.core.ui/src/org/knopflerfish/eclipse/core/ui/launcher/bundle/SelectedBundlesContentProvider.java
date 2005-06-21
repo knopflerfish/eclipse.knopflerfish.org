@@ -38,7 +38,7 @@ import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class SelectedBundlesContentProvider implements IStructuredContentProvider {
 

@@ -46,7 +46,7 @@ import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class SelectedBundlesModel {
   

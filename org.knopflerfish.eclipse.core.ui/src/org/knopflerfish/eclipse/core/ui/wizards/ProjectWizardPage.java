@@ -65,7 +65,7 @@ import org.knopflerfish.eclipse.core.OsgiInstall;
 import org.knopflerfish.eclipse.core.OsgiVendor;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class ProjectWizardPage extends WizardPage {
   private static final String DEFAULT_SRC_FOLDER = "src";

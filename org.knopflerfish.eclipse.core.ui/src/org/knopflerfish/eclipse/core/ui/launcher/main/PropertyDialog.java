@@ -58,7 +58,7 @@ import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.SystemProperty;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class PropertyDialog extends Dialog {
   private final static int STATE_OK       = 0;

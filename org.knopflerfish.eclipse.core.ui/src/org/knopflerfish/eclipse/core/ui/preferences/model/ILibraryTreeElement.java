@@ -35,7 +35,7 @@
 package org.knopflerfish.eclipse.core.ui.preferences.model;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public interface ILibraryTreeElement {
 

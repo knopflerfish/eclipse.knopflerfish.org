@@ -45,7 +45,7 @@ import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.OsgiLibrary;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class LibraryElementRoot implements ILibraryTreeElement {
   

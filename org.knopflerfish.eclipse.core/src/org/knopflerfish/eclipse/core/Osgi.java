@@ -49,7 +49,7 @@ import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class Osgi {
   public static String NATURE_ID = "org.knopflerfish.eclipse.core.bundlenature";

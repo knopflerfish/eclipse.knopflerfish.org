@@ -45,7 +45,7 @@ import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class AvailableElementWorkspace implements IAvailableTreeElement {
 

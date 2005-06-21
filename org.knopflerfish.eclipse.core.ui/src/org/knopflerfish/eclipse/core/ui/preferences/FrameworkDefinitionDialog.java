@@ -91,7 +91,7 @@ import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryTreeContentProv
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryTreeLabelProvider;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class FrameworkDefinitionDialog extends Dialog {
   private static String [] PATH_FRAMEWORK_LIB = new String [] {

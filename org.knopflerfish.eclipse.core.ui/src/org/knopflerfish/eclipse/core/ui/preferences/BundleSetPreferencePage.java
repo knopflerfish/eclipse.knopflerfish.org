@@ -63,7 +63,7 @@ import org.knopflerfish.eclipse.core.OsgiVendor;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class BundleSetPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
   private static String DESCRIPTION = 

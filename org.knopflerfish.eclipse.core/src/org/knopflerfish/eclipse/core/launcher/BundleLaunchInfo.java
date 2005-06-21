@@ -37,7 +37,7 @@ package org.knopflerfish.eclipse.core.launcher;
 import java.util.StringTokenizer;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class BundleLaunchInfo {
   public static String [] MODES = new String[] {"Install", "Start"};

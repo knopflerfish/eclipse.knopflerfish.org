@@ -40,7 +40,7 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class AvailableElementInstall implements IAvailableTreeElement {
 

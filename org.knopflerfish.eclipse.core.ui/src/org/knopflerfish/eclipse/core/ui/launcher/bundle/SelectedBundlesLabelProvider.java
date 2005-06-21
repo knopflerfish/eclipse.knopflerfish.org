@@ -44,7 +44,7 @@ import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class SelectedBundlesLabelProvider implements ITableLabelProvider {
 

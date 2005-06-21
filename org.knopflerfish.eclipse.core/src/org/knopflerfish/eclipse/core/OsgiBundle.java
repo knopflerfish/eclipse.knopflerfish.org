@@ -38,7 +38,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * @author ar
+ * @author Anders Rimén
  */
 public class OsgiBundle extends OsgiLibrary implements IOsgiBundle {
 

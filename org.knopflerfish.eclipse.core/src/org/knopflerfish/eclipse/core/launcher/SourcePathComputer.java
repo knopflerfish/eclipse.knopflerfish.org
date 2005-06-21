@@ -50,7 +50,6 @@ import org.eclipse.debug.core.sourcelookup.ISourcePathComputer;
 import org.eclipse.debug.core.sourcelookup.containers.DirectorySourceContainer;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.launching.sourcelookup.containers.ClasspathContainerSourceContainer;
 import org.eclipse.jdt.launching.sourcelookup.containers.JavaProjectSourceContainer;
 import org.eclipse.jdt.launching.sourcelookup.containers.JavaSourcePathComputer;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
@@ -59,10 +58,7 @@ import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
 
 /**
- * @author ar
- *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
+ * @author Anders Rimén
  */
 public class SourcePathComputer extends JavaSourcePathComputer implements ISourcePathComputer {
   public static String ID="org.knopflerfish.eclipse.core.launcher.SourcePathComputer";
