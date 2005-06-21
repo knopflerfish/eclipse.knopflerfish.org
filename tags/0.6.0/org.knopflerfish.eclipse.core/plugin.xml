@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin
+   id="org.knopflerfish.eclipse.core"
+   name="Osgi Plug-in"
+   version="0.6.0"
+   class="org.knopflerfish.eclipse.core.internal.OsgiPlugin">
+
+   <runtime>
+      <library name="osgi.jar">
+         <export name="org.knopflerfish.eclipse.core.*"/>
+         <export name="org.knopflerfish.eclipse.core.launcher.*"/>
+         <export name="org.knopflerfish.eclipse.core.pkg.*"/>
+         <export name="org.knopflerfish.eclipse.core.project.*"/>
+      </library>
+   </runtime>
+
+   <requires>
+      <import plugin="org.eclipse.core.runtime"/>
+      <import plugin="org.eclipse.debug.core"/>
+      <import plugin="org.eclipse.jdt.core"/>
+      <import plugin="org.eclipse.jdt.launching"/>
+      <import plugin="org.eclipse.core.resources"/>
+   </requires>
+
+   <extension-point id="vendors" name="OSGi Vendors" schema="schema/vendors.exsd"/>
+
+   <extension point="org.eclipse.debug.core.sourcePathComputers">
+	<sourcePathComputer 
+        id="org.knopflerfish.eclipse.core.launcher.SourcePathComputer" 
+        class="org.knopflerfish.eclipse.core.launcher.SourcePathComputer">
+    </sourcePathComputer>
+   </extension>
+   <!--
+          sourcePathComputerId="org.gstproject.eclipse.osgi.launcher.SourcePathComputer"
+   -->
+   <extension
+         point="org.eclipse.debug.core.sourceLocators">
+		<sourceLocator 
+			id="org.knopflerfish.eclipse.core.launcher.BundleLookupDirector"
+			class="org.knopflerfish.eclipse.core.launcher.BundleLookupDirector"
+			name="Bundle Source Locator">
+		</sourceLocator>
+
+   </extension>
+          <!--sourceLocatorId="org.gstproject.eclipse.osgi.launcher.BundleLookupDirector"-->
+   <extension point="org.eclipse.debug.core.launchConfigurationTypes">
+	   <launchConfigurationType
+          delegate="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
+          public="true"
+          name="Knopflerfish"
+          id="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
+          modes="run, debug">
+	   </launchConfigurationType>
+   </extension>
+   <extension
+         id="bundlebuilder"
+         name="Bundle Builder"
+         point="org.eclipse.core.resources.builders">
+      <builder hasNature="true">
+         <run 
+            class="org.knopflerfish.eclipse.core.resources.BundleBuilder">
+            <parameter name="optimize" value="true" />
+            <parameter name="comment" value="Builder comment" />
+         </run>
+      </builder>
+         
+   </extension>
+   <extension
+         id="bundlenature"
+         name="Bundle Nature"
+         point="org.eclipse.core.resources.natures">
+	  <runtime>
+		<run class="org.knopflerfish.eclipse.core.resources.BundleNature">
+		  <parameter name="installBuilder" value="true"/>
+		</run>
+	  </runtime>
+	  <requires-nature id="org.eclipse.jdt.core.javanature"/>
+	  <builder id="org.knopflerfish.eclipse.core.bundlebuilder"/>
+   </extension>
+   <extension point="org.knopflerfish.eclipse.core.vendors">
+ 	   <vendor
+          id="org.knopflerfish.eclipse.core.vendor"
+          name="Knopflerfish"
+          class="org.knopflerfish.eclipse.core.OsgiVendor">
+       </vendor>
+   </extension>
+   <extension
+         point="org.eclipse.jdt.core.classpathContainerInitializer">
+		<classpathContainerInitializer 
+		  id="org.knopflerfish.eclipse.core.KF_CONTAINER"
+		  class="org.knopflerfish.eclipse.core.project.OsgiContainerInitializer"/>
+   </extension>
+
+</plugin>
