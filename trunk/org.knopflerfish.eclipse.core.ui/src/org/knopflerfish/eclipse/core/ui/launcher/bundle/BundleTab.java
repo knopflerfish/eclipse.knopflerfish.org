@@ -95,6 +95,7 @@ import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
 
 /**
@@ -382,7 +383,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
             updateLaunchConfigurationDialog();
             
             // Resize columns in selected table 
-            packTableColumns(wSelectedBundleTableViewer.getTable());
+            UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
           } catch (IOException ioe) {
             ioe.printStackTrace();
           }
@@ -501,7 +502,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
 
     
     wAvailableBundleTreeViewer.refresh();
-    packTableColumns(wSelectedBundleTableViewer.getTable());
+    UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
   }
 
   /* (non-Javadoc)
@@ -609,7 +610,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     updateLaunchConfigurationDialog();
     
     // Resize columns in selected table 
-    packTableColumns(wSelectedBundleTableViewer.getTable());
+    UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
   }
   
   private void unselectBundle() {
@@ -631,7 +632,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     updateLaunchConfigurationDialog();
     
     // Resize columns in selected table 
-    packTableColumns(wSelectedBundleTableViewer.getTable());
+    UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
   }
   
   public void updatePackages() {
@@ -712,15 +713,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
   }
   
   
-  private void packTableColumns(Table table) {
-    if(table == null) return;
-    TableColumn [] columns = table.getColumns();
-    if (columns == null) return;
-    for(int i=0;i<columns.length;i++) {
-      columns[i].pack();
-    }
-  }
-  
   /****************************************************************************
    * Inner classes
    ***************************************************************************/
@@ -731,7 +723,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
      */
     public String isValid(Object value) {
       String errorMsg = null;
-      String s = (String) value;
       try {
         int i = Integer.parseInt((String) value);
         if (i < 1) {

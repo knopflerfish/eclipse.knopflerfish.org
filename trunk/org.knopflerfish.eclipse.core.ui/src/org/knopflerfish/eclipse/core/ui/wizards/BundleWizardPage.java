@@ -67,7 +67,6 @@ public class BundleWizardPage extends WizardPage {
   private int MARGIN_WIDTH = 9;
   private int MARGIN = 5;
 
-  private ISelection selection;
   private ProjectWizardPage projectPage;
   
   // Widgets
@@ -87,7 +86,6 @@ public class BundleWizardPage extends WizardPage {
     super("bundleWizardPage");
     setTitle("Bundle Data");
     setDescription("Enter bundle data.");
-    this.selection = selection;
     this.projectPage = projectPage;
   }
   
@@ -359,11 +357,11 @@ public class BundleWizardPage extends WizardPage {
   }
   
   private void verifyBundleSymbolicName() {
-    String name = getBundleSymbolicName();
+    //String name = getBundleSymbolicName();
   }
   
   private void verifyBundleName() {
-    String name = getBundleName();
+    //String name = getBundleName();
     
     // TODO:Check that project name is not empty
     
@@ -374,15 +372,15 @@ public class BundleWizardPage extends WizardPage {
   }
 
   private void verifyBundleVersion() {
-    String version = getBundleVersion();
+    //String version = getBundleVersion();
   }
   
   private void verifyBundleDescription() {
-    String description = getBundleDescription();
+    //String description = getBundleDescription();
   }
   
   private void verifyBundleVendor() {
-    String vendor = getBundleVendor();
+    //String vendor = getBundleVendor();
   }
 
   private void verifyActivatorPackageName() {

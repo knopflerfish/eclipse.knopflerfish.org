@@ -71,6 +71,7 @@ public class PackageDescription {
         if (value.startsWith("\"") && value.endsWith("\"") ) {
           value = value.substring(1, value.length()-1);
         }
+        attributes.put(attr, value);
       }
     }
   }

@@ -66,7 +66,6 @@ public class PropertyDialog extends Dialog {
   private final static int STATE_INFO     = 2;
 
   private static final int NUM_CHARS_WIDTH = 60;
-  private static final int NUM_ROWS_DESCRIPTION = 5;
   
   private SystemProperty property;
   private final String title;
@@ -75,7 +74,6 @@ public class PropertyDialog extends Dialog {
   private Text    wNameText;
   private Combo   wValueCombo;
   private Text    wValueText;
-  //private Text    wDescriptionText;
   private Button  wDefaultButton;
   private Label   wErrorMsgLabel;
   private Label   wErrorImgLabel;
@@ -133,15 +131,6 @@ public class PropertyDialog extends Dialog {
       value = wValueCombo.getText();
     }
     property.setValue(value);
-    
-    // Description
-    /*
-    String description = null;
-    if (wDescriptionText.getText().trim().length() > 0) {
-      description = wDescriptionText.getText().trim();
-    }
-    property.setDescription(description);
-    */
     
     // Set return code and close window
     setReturnCode(Window.OK);
@@ -221,24 +210,6 @@ public class PropertyDialog extends Dialog {
     } else {
       wValueText.setLayoutData(data);
     }
-    // Property Description
-    /*
-    Label wDescriptionLabel = new Label(composite, SWT.LEFT);
-    wDescriptionLabel.setText("Description:");
-    data = new GridData(GridData.FILL_HORIZONTAL);
-    data.horizontalSpan = 3;
-    wDescriptionLabel.setLayoutData(data);
-    if (property != null && !MainTab.USER_GROUP.equals(property.getGroup())) {
-      wDescriptionText = new Text(composite, SWT.BORDER | SWT.MULTI | SWT.WRAP);
-    } else {
-      wDescriptionText = new Text(composite, SWT.BORDER | SWT.MULTI | SWT.WRAP);
-    }
-    data = new GridData(GridData.FILL_HORIZONTAL);
-    data.horizontalSpan = 3;
-    data.heightHint = convertHeightInCharsToPixels(NUM_ROWS_DESCRIPTION);
-    data.widthHint = convertWidthInCharsToPixels(NUM_CHARS_WIDTH);
-    wDescriptionText.setLayoutData(data);
-    */
     
     // Error label
     Composite wErrorComposite = new Composite(composite, SWT.NONE);
@@ -265,12 +236,6 @@ public class PropertyDialog extends Dialog {
     if (!verifyName()) {
       return false;
     }
-    
-    /*
-    if (!verifyValue()) {
-      return false;
-    }
-    */
     
     return true;
   }
@@ -377,19 +342,6 @@ public class PropertyDialog extends Dialog {
       } else if (wValueText != null && value != null) {
         wValueText.setText(value);
       }
-
-      // Description
-      /*
-      String description = prop.getDescription();
-      if (description != null) {
-        wDescriptionText.setText(description);
-      }
-      if (MainTab.USER_GROUP.equals(prop.getGroup())) {
-        wDescriptionText.setEditable(true);
-      } else {
-        wDescriptionText.setEditable(false);
-      }
-      */
     }
 
     verifyAll();

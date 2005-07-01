@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
+package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
 
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -44,6 +44,7 @@ import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
+import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
 /**
  * @author Anders Rimén
@@ -91,7 +92,7 @@ abstract public class ManifestSectionTextPart extends SectionPart {
         try {
           String attribute = (String) wAttributesText[i].getData(PROP_NAME);
           if (attribute != null) {
-            ManifestSectionUtil.setManifestAttribute(doc, attribute, wAttributesText[i].getText());
+            ManifestUtil.setManifestAttribute(doc, attribute, wAttributesText[i].getText());
           }
         } catch (Exception e) {
           e.printStackTrace();
@@ -101,7 +102,7 @@ abstract public class ManifestSectionTextPart extends SectionPart {
     }
     
     // Update manifest from document
-    ManifestSectionUtil.createManifest(doc);
+    ManifestUtil.createManifest(doc);
   }
   
   /*
@@ -112,7 +113,7 @@ abstract public class ManifestSectionTextPart extends SectionPart {
     super.refresh();
 
     // Refresh values from document
-    manifest = ManifestSectionUtil.createManifest((IDocument) getManagedForm().getInput());
+    manifest = ManifestUtil.createManifest((IDocument) getManagedForm().getInput());
     updateValues();
   }
   

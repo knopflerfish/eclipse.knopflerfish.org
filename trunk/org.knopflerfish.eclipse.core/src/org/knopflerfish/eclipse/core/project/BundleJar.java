@@ -32,38 +32,11 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
-
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jface.text.IDocument;
-import org.eclipse.ui.editors.text.FileDocumentProvider;
+package org.knopflerfish.eclipse.core.project;
 
 /**
  * @author Anders Rimén
- *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
  */
-public class ManifestDocumentProvider extends FileDocumentProvider {
+public class BundleJar {
 
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.ui.texteditor.AbstractDocumentProvider#createDocument(java.lang.Object)
-   */
-  protected IDocument createDocument(Object element) throws CoreException {
-    IDocument document = super.createDocument(element);
-    /*
-    if (document != null) {
-      IDocumentPartitioner partitioner =
-        new DefaultPartitioner(
-          new XMLPartitionScanner(),
-          new String[] {
-            XMLPartitionScanner.XML_TAG,
-            XMLPartitionScanner.XML_COMMENT });
-      partitioner.connect(document);
-      document.setDocumentPartitioner(partitioner);
-    }
-    */
-    return document;
-  }
 }

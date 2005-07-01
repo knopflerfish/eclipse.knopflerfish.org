@@ -95,7 +95,6 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     File instanceDir =  verifyInstanceDirectory(configuration);
     
     // Bundles
-    ArrayList workspaceBundles = new ArrayList();
     Map bundleMap = verifyBundles(configuration);
     Map projectMap = verifyProjects(configuration);
     

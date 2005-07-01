@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
+package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
 
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
@@ -47,17 +47,18 @@ import org.eclipse.ui.forms.widgets.ColumnLayout;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
+import org.knopflerfish.eclipse.core.ui.editors.manifest.text.ManifestTextEditor;
 
 /**
  * @author Anders Rimén
  */
-public class OverviewPage extends FormPage {
+public class ManifestFormEditor extends FormPage {
 
   private static final String TITLE = "Overview";
   
-  private final ManifestEditor manifestEditor;
+  private final ManifestTextEditor manifestEditor;
   
-  public OverviewPage(FormEditor editor, String id, String title, ManifestEditor manifestEditor) {
+  public ManifestFormEditor(FormEditor editor, String id, String title, ManifestTextEditor manifestEditor) {
     super(editor, id, title);
     this.manifestEditor = manifestEditor;
   }
@@ -100,24 +101,28 @@ public class OverviewPage extends FormPage {
     // Set layout manager
     ColumnLayout layout = new ColumnLayout();
     layout.maxNumColumns = 2;
-    layout.minNumColumns = 1;
+    layout.minNumColumns = 2;
     body.setLayout(layout);
     
     // Create sections
+    /*
     OverviewGeneralSection generalSection = new OverviewGeneralSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TWISTIE | Section.EXPANDED);
+        Section.DESCRIPTION | Section.TWISTIE | Section.EXPANDED | Section.TITLE_BAR);
+    */
+    OverviewGeneralSection generalSection = new OverviewGeneralSection(body, toolkit, 
+        Section.DESCRIPTION | Section.TITLE_BAR);
     generalSection.initialize(managedForm);
 
     OverviewCategorySection categorySection = new OverviewCategorySection(body, toolkit, 
-        Section.DESCRIPTION | Section.TWISTIE);
+        Section.DESCRIPTION | Section.TITLE_BAR);
     categorySection.initialize(managedForm);
     
     OverviewVendorSection vendorSection = new OverviewVendorSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TWISTIE);
+        Section.DESCRIPTION | Section.TITLE_BAR);
     vendorSection.initialize(managedForm);
     
     OverviewDocumentationSection docSection = new OverviewDocumentationSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TWISTIE);
+        Section.DESCRIPTION | Section.TITLE_BAR);
     docSection.initialize(managedForm);
     
     // Add sections to form

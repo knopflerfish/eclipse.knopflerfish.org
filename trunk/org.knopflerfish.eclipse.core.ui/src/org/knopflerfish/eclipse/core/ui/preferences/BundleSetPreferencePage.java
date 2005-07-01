@@ -59,8 +59,8 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiInstall;
-import org.knopflerfish.eclipse.core.OsgiVendor;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.ui.UiUtils;
 
 /**
  * @author Anders Rimén
@@ -72,7 +72,6 @@ public class BundleSetPreferencePage extends PreferencePage implements IWorkbenc
   private static String TABLE_TITLE =
     "Defined bundle sets:";
 
-  private OsgiVendor osgiVendor;
   private List bundleSets;
   private Image bundleSetImage = null;
   
@@ -166,7 +165,7 @@ public class BundleSetPreferencePage extends PreferencePage implements IWorkbenc
           }
           bundleSets.add(osgiInstall);
           addOsgiInstall(osgiInstall);
-          packTableColumns(wBundleSetTable);
+          UiUtils.packTableColumns(wBundleSetTable);
         }
       }
     });
@@ -189,7 +188,7 @@ public class BundleSetPreferencePage extends PreferencePage implements IWorkbenc
           if (dialog.open() == Window.OK) {
             bundleSets.set(idx, dialog.getOsgiInstall());
             updateOsgiInstall(idx);
-            packTableColumns(wBundleSetTable);
+            UiUtils.packTableColumns(wBundleSetTable);
           }
         }
       }
@@ -213,7 +212,7 @@ public class BundleSetPreferencePage extends PreferencePage implements IWorkbenc
             updateOsgiInstall(0);
           }
           updateButtons();
-          packTableColumns(wBundleSetTable);
+          UiUtils.packTableColumns(wBundleSetTable);
         }
       }
     });
@@ -283,7 +282,7 @@ public class BundleSetPreferencePage extends PreferencePage implements IWorkbenc
     }
     
     updateButtons();
-    packTableColumns(wBundleSetTable);
+    UiUtils.packTableColumns(wBundleSetTable);
     
     return page;
   }
@@ -346,14 +345,5 @@ public class BundleSetPreferencePage extends PreferencePage implements IWorkbenc
     }
     
     return names;
-  }
-
-  private void packTableColumns(Table table) {
-    if(table == null) return;
-    TableColumn [] columns = table.getColumns();
-    if (columns == null) return;
-    for(int i=0;i<columns.length;i++) {
-      columns[i].pack();
-    }
   }
 }

@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
+package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;

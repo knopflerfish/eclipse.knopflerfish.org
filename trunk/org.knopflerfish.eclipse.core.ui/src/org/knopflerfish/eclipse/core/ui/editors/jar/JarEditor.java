@@ -32,24 +32,26 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
+package org.knopflerfish.eclipse.core.ui.editors.jar;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.forms.editor.FormEditor;
+import org.knopflerfish.eclipse.core.ui.editors.jar.form.JarFormEditor;
+import org.knopflerfish.eclipse.core.ui.editors.jar.text.JarTextEditor;
 
 /**
  * @author Anders Rimén
  */
-public class BundleEditor extends FormEditor {
+public class JarEditor extends FormEditor {
 
   private static final String PAGE_OVERVIEW_ID      = "overviewId";
-  private static final String PAGE_OVERVIEW_TITLE   = "Bundle Manifest";
+  private static final String PAGE_OVERVIEW_TITLE   = "Overview";
   
-  private OverviewPage overviewPage;
-  private ManifestEditor manifestEditor;
+  private JarFormEditor formEditor;
+  private JarTextEditor textEditor;
 
   /****************************************************************************
    * org.eclipse.ui.forms.editor.FormEditor methods
@@ -62,19 +64,19 @@ public class BundleEditor extends FormEditor {
     // Set tab name to project name
     IFileEditorInput input = (IFileEditorInput) getEditorInput();
     IFile file = input.getFile();
-    setPartName(file.getProject().getName());
+    setPartName("Jar "+file.getProject().getName());
     
     // Text manifest editor
-    manifestEditor = new ManifestEditor();
+    textEditor = new JarTextEditor();
     
     // Graphical manifest Editor
-    overviewPage =  new OverviewPage(this, PAGE_OVERVIEW_ID, PAGE_OVERVIEW_TITLE, manifestEditor);
+    formEditor =  new JarFormEditor(this, PAGE_OVERVIEW_ID, PAGE_OVERVIEW_TITLE, textEditor);
     
     try {
       // Add editor pages to form editor
-      addPage(overviewPage);
-      addPage(manifestEditor, getEditorInput());
-      setPageText(1, "Manifest.mf");
+      addPage(formEditor);
+      addPage(textEditor, getEditorInput());
+      setPageText(1, file.getName());
     } catch (PartInitException e) {
       e.printStackTrace();
     }
@@ -89,8 +91,8 @@ public class BundleEditor extends FormEditor {
    */
   public void doSave(IProgressMonitor monitor) {
     // Commit form pages
-    overviewPage.doSave(monitor);
-    manifestEditor.doSave(monitor);
+    formEditor.doSave(monitor);
+    textEditor.doSave(monitor);
   }
 
   /* (non-Javadoc)
@@ -116,8 +118,8 @@ public class BundleEditor extends FormEditor {
    */
   public boolean isDirty() {
     boolean dirty = super.isDirty();
-    if (overviewPage != null) {
-      dirty = dirty || overviewPage.isDirty();
+    if (formEditor != null) {
+      dirty = dirty || formEditor.isDirty();
     }
     return dirty;
   }
