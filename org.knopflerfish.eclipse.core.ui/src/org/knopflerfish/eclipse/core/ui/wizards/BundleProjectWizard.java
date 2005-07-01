@@ -42,11 +42,8 @@ import java.util.Date;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IClasspathEntry;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
@@ -225,12 +222,6 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
     IPackageFragment fragment = rootFragment.createPackageFragment((packageName == null ? "":packageName), true, null);
     
     // Create compilation unit
-    ICompilationUnit unit = fragment.createCompilationUnit(unitName+".java", skeleton, true, null);
+    fragment.createCompilationUnit(unitName+".java", skeleton, true, null);
   }
-  
-	private void throwCoreException(String message) throws CoreException {
-		IStatus status =
-			new Status(IStatus.ERROR, "org.gstproject.eclipse.osgi.ui", IStatus.OK, message, null);
-		throw new CoreException(status);
-	}
 }

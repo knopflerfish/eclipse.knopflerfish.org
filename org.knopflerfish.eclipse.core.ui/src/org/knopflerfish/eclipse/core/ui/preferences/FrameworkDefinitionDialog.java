@@ -108,7 +108,6 @@ public class FrameworkDefinitionDialog extends Dialog {
   private static String TITLE_ADD_BUNDLE = "Add bundle";
   private static String TITLE_EDIT_BUNDLE = "Edit bundle";
   
-  private final static int NUM_ROWS_LIBRARY_TREE = 15;
   private final static int NUM_CHARS_NAME = 60;
   
   private final static int STATE_OK       = 0;
@@ -325,8 +324,6 @@ public class FrameworkDefinitionDialog extends Dialog {
     wLibraryTreeViewer.setInput(frameworkLibraryModel);
     wLibraryTreeViewer.addSelectionChangedListener(new ISelectionChangedListener() {
       public void selectionChanged(SelectionChangedEvent event) {
-        IStructuredSelection selection = 
-          (IStructuredSelection) wLibraryTreeViewer.getSelection();
         updateButtons();
       }
     });
@@ -418,15 +415,17 @@ public class FrameworkDefinitionDialog extends Dialog {
         int type = element.getType();
 
         IOsgiLibrary lib = null;
+        String title = TITLE_EDIT_LIBRARY;;
         if (type == ILibraryTreeElement.TYPE_BUILD) {
           lib = ((LibraryElementBuild) element).getLibrary();
         } else if (type == ILibraryTreeElement.TYPE_RUNTIME) {
           lib = ((LibraryElementRuntime) element).getLibrary();
         } else if (type == ILibraryTreeElement.TYPE_BUNDLE) {
           lib = ((LibraryElementBundle) element).getBundle();
+          title = TITLE_EDIT_BUNDLE;
         }
         LibraryDialog dialog = 
-          new LibraryDialog(((Button) e.widget).getShell(), lib, TITLE_EDIT_BUNDLE); 
+          new LibraryDialog(((Button) e.widget).getShell(), lib, title); 
         if (dialog.open() == Window.OK) {
           try {
             OsgiBundle bundle = new OsgiBundle(new File(dialog.getLibrary().getPath()));

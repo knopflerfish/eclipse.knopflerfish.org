@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
+package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -46,7 +46,7 @@ import org.eclipse.jface.text.IDocument;
 /**
  * @author Anders Rimén
  */
-public class ManifestSectionUtil {
+public class ManifestUtil {
 
   /**
    * Adds a main attribute to a manifest file. The document passed shall 
@@ -146,7 +146,6 @@ public class ManifestSectionUtil {
    * @return manifest object
    */
   static public Manifest createManifest(IDocument doc) {
-    String contents = doc.get();
     Manifest manifest = null;
     try {
       manifest = new Manifest(new ByteArrayInputStream(doc.get().getBytes()));

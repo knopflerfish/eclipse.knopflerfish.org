@@ -123,7 +123,6 @@ public class OsgiConfiguration implements IOsgiConfiguration {
     // Add start entries
     for (Iterator i=bundles.entrySet().iterator();i.hasNext();) {
       Map.Entry entry = (Map.Entry) i.next();
-      Integer initLevel = (Integer) entry.getKey();
       
       // Add bundle install entries for this start level
       ArrayList l = (ArrayList) entry.getValue();

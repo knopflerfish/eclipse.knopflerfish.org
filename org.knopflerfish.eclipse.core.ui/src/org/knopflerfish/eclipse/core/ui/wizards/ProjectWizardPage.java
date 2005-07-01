@@ -78,8 +78,6 @@ public class ProjectWizardPage extends WizardPage {
   private int MARGIN_WIDTH = 9;
   private int MARGIN = 5;
 
-  private ISelection selection;
-  
   // Widgets
   private Text    wProjectNameText;
   private Button  wProjectContentsDefaultButton;
@@ -97,7 +95,6 @@ public class ProjectWizardPage extends WizardPage {
     super("projectWizardPage");
     setTitle("Bundle Project");
     setDescription("Create a new bundle project.");
-    this.selection = selection;
   }
 
   /****************************************************************************
@@ -364,7 +361,7 @@ public class ProjectWizardPage extends WizardPage {
   }
   
   private boolean verifyProjectLocation() {
-    String location = wProjectContentsDirectoryText.getText();
+    //String location = wProjectContentsDirectoryText.getText();
     
     // TODO:Check that project location is valid folder name
     

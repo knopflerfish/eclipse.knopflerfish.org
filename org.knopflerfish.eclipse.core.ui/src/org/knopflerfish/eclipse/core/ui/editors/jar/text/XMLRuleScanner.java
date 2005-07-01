@@ -32,37 +32,37 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
+package org.knopflerfish.eclipse.core.ui.editors.jar.text;
 
-import org.eclipse.ui.editors.text.TextEditor;
+import org.eclipse.jface.text.TextAttribute;
+import org.eclipse.jface.text.rules.EndOfLineRule;
+import org.eclipse.jface.text.rules.IRule;
+import org.eclipse.jface.text.rules.IToken;
+import org.eclipse.jface.text.rules.RuleBasedScanner;
+import org.eclipse.jface.text.rules.SingleLineRule;
+import org.eclipse.jface.text.rules.Token;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.RGB;
+import org.eclipse.swt.widgets.Display;
 
 /**
  * @author Anders Rimén
- *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
  */
-public class ManifestEditor extends TextEditor {
-
-
-  public ManifestEditor() {
-    super();
-    //colorManager = new ColorManager();
-    //setSourceViewerConfiguration(new XMLConfiguration(colorManager));
-    //setDocumentProvider(new ManifestDocumentProvider());
-  }
-  public void dispose() {
-    //colorManager.dispose();
-    super.dispose();
+public class XMLRuleScanner extends RuleBasedScanner {
+  private static Color TAG_COLOR =
+    new Color (Display.getCurrent(), new RGB (200,0,0));
+  private static Color COMMENT_COLOR =
+    new Color (Display.getCurrent(), new RGB (0,200,0));
+  
+  public XMLRuleScanner () {
+    IToken tagToken = new Token (new TextAttribute (TAG_COLOR));
+    IToken commentToken = new Token (new
+        TextAttribute (COMMENT_COLOR));
+    
+    IRule[] rules = new IRule[2];
+    rules[0] = new SingleLineRule ("<mytag","mytag>",tagToken);
+    rules[1] = (new EndOfLineRule ("//",commentToken));
+    setRules(rules);
   }
   
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.ui.IWorkbenchPart#getTitle()
-   */
-  /*
-  public String getTitle() {
-    return "manifest.mf";
-  }
-  */
 }

@@ -72,6 +72,7 @@ import org.knopflerfish.eclipse.core.OsgiVendor;
 import org.knopflerfish.eclipse.core.project.OsgiClasspathContainer;
 import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.ui.UiUtils;
 
 public class KnopflerfishPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
   private static String DESCRIPTION = 
@@ -176,7 +177,7 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
           }
           osgiInstalls.add(osgiInstall);
           addOsgiInstall(osgiInstall);
-          packTableColumns(wDefinitionsTable);
+          UiUtils.packTableColumns(wDefinitionsTable);
         }
       }
     });
@@ -199,7 +200,7 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
           if (dialog.open() == Window.OK) {
             osgiInstalls.set(idx, dialog.getOsgiInstall());
             updateOsgiInstall(idx);
-            packTableColumns(wDefinitionsTable);
+            UiUtils.packTableColumns(wDefinitionsTable);
           }
         }
       }
@@ -223,7 +224,7 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
             updateOsgiInstall(0);
           }
           updateButtons();
-          packTableColumns(wDefinitionsTable);
+          UiUtils.packTableColumns(wDefinitionsTable);
         }
       }
     });
@@ -293,7 +294,7 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
     }
     
     updateButtons();
-    packTableColumns(wDefinitionsTable);
+    UiUtils.packTableColumns(wDefinitionsTable);
     return page;
   }
 
@@ -382,14 +383,5 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
     }
     
     return names;
-  }
-
-  private void packTableColumns(Table table) {
-    if(table == null) return;
-    TableColumn [] columns = table.getColumns();
-    if (columns == null) return;
-    for(int i=0;i<columns.length;i++) {
-      columns[i].pack();
-    }
   }
 }

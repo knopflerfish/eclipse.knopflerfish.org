@@ -58,7 +58,6 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
@@ -81,6 +80,7 @@ import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.launcher.SourcePathComputer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.ui.UiUtils;
 
 /**
  * @author Anders Rimén
@@ -414,9 +414,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     fd.left = new FormAttachment(0, 0);
     fd.right = new FormAttachment(wPropertyTableTree, 0, SWT.RIGHT);
     fd.bottom = new FormAttachment(wDefaultText, -5,SWT.TOP);
-    GC gc = new GC(wDescriptionText);
-    fd.height = gc.getFontMetrics().getHeight()*NUM_ROWS_DESCRIPTION;
-    gc.dispose();
+    fd.height = UiUtils.convertHeightInCharsToPixels(wDescriptionText, NUM_ROWS_DESCRIPTION);
     wDescriptionText.setLayoutData(fd);
 
     fd = new FormData();
@@ -439,7 +437,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
       fontChanged = new Font(wPropertyTableTree.getDisplay(), fontData);
     }
     
-    packTableColumns(wPropertyTableTree.getTable());
+    UiUtils.packTableColumns(wPropertyTableTree.getTable());
     
     showPropertyInfo();
   }
@@ -636,7 +634,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     }
     
     // Pack columns
-    packTableColumns(wPropertyTableTree.getTable());
+    UiUtils.packTableColumns(wPropertyTableTree.getTable());
   }
   
   private TableTreeItem addSystemProperty(SystemProperty prop) {
@@ -793,15 +791,4 @@ public class MainTab extends AbstractLaunchConfigurationTab {
       wRemovePropertyButton.setEnabled(false);
     }
   }
-
-  private void packTableColumns(Table table) {
-    if(table == null) return;
-    TableColumn [] columns = table.getColumns();
-    
-    if (columns == null) return;
-    for(int i=0;i<columns.length;i++) {
-      columns[i].pack();
-    }
-  }
-  
 }

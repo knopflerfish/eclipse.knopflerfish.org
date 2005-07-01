@@ -32,34 +32,14 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
+package org.knopflerfish.eclipse.core.ui.editors.jar.form;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-
-import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.IStructuredContentProvider;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.FontMetrics;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.ui.forms.IManagedForm;
+import org.eclipse.swt.widgets.Tree;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.events.ExpansionAdapter;
 import org.eclipse.ui.forms.events.ExpansionEvent;
@@ -68,50 +48,27 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.BundleManifest;
-import org.knopflerfish.eclipse.core.ui.dialogs.PropertyDialog;
+import org.knopflerfish.eclipse.core.ui.UiUtils;
 
 /**
  * @author Anders Rimén
  */
-public class OverviewCategorySection extends SectionPart {
+public class ResourceSection extends SectionPart {
 
-  private static int NUM_TABLE_ROWS = 5;
-  private static final int MIN_COL_WIDTH = 10;
-  private static final int COL_MARGIN = 10;
-
-  private static String TITLE_ADD_CATEGORY = "Add Category";
-  private static String TITLE_EDIT_CATEGORY = "Edit Category";
+  private static final int NUM_TREE_ROWS    = 5;
   
-
-  // Widget properties
-  public static final String PROP_DIRTY = "dirty";
-  public static final String PROP_NAME  = "name";
-
-
   // Section title and description
-  private static final String TITLE = "Categories";
-  private static final String DESCRIPTION = "This section describes categories this bundle is part of.";
-
-  // Initialize attributes, use array to keep order of attributes
-  static private String[][] widgetAttributes = new String[][] {
-    new String[] {BundleManifest.BUNDLE_CATEGORY,  "Category:",
-        "A comma separated list of category names."},  
-  };
+  private static final String TITLE = 
+    "Resources";
+  private static final String DESCRIPTION = 
+    "This section lists the resources to be inluded in bundle JAR-file.";
 
   // SWT Widgets
-  private Button    wCategoryAddButton;
-  private Button    wCategoryRemoveButton;
+  private Button    wResourceAddButton;
+  private Button    wResourceRemoveButton;
   
-  // jFace Widgets 
-  private TableViewer   wCategoryTableViewer;
-  
-  // Model objest
-  private BundleManifest manifest = null;
-  private BundleManifest manifestWorkingCopy = null;
 
-  
-  public OverviewCategorySection(Composite parent, FormToolkit toolkit, int style) {
+  public ResourceSection(Composite parent, FormToolkit toolkit, int style) {
     super(parent, toolkit, style);
     
     Section section = getSection();
@@ -132,6 +89,7 @@ public class OverviewCategorySection extends SectionPart {
     super.commit(onSave);
     
     // Flush values to document
+    /*
     IManagedForm managedForm = getManagedForm();
     IDocument doc = (IDocument) managedForm.getInput();
 
@@ -148,6 +106,7 @@ public class OverviewCategorySection extends SectionPart {
     } catch (Exception e) {
       e.printStackTrace();
     }
+    */
   }
   
   /*
@@ -158,6 +117,7 @@ public class OverviewCategorySection extends SectionPart {
     super.refresh();
 
     // Refresh values from document
+    /*
     manifest = new BundleManifest(ManifestSectionUtil.createManifest((IDocument) getManagedForm().getInput()));
     manifestWorkingCopy = new BundleManifest(manifest);
     if (wCategoryTableViewer != null) {
@@ -165,6 +125,7 @@ public class OverviewCategorySection extends SectionPart {
     }
     //wCategoryTableViewer.getTable().pack(true);
     packTableColumns(wCategoryTableViewer.getTable());
+    */
   }
   
   /****************************************************************************
@@ -192,6 +153,41 @@ public class OverviewCategorySection extends SectionPart {
     container.setLayout(layout);
 
     // Create widgets
+    // Resource Tree
+    Tree wResourceTree = toolkit.createTree(container, SWT.MULTI | SWT.FULL_SELECTION);
+    wResourceTree.setData(FormToolkit.KEY_DRAW_BORDER, FormToolkit.TEXT_BORDER);
+
+    TableWrapData wd = new TableWrapData();
+    wd.rowspan = 2;
+    wd.grabHorizontal = true;
+    wd.grabVertical = true;
+    wd.align = TableWrapData.FILL;
+    wd.heightHint = UiUtils.convertHeightInCharsToPixels(wResourceTree, NUM_TREE_ROWS);
+    wResourceTree.setLayoutData(wd);
+    
+    // Resource Buttons
+    wResourceAddButton = toolkit.createButton(container, "Add...", SWT.PUSH);
+    wResourceAddButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        // TODO
+      }
+    });
+    wd = new TableWrapData();
+    wd.align = TableWrapData.FILL;
+    wResourceAddButton.setLayoutData(wd);
+    
+    wResourceRemoveButton = toolkit.createButton(container, "Remove", SWT.PUSH);
+    wResourceRemoveButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        // TODO
+      }
+    });
+    wResourceRemoveButton.setEnabled(false);
+    wd = new TableWrapData();
+    wd.align = TableWrapData.FILL;
+    wResourceRemoveButton.setLayoutData(wd);
+    
+    /*
     Table wCategoryTable = toolkit.createTable(container, SWT.MULTI | SWT.FULL_SELECTION);
     wCategoryTable.setData(FormToolkit.KEY_DRAW_BORDER, FormToolkit.TEXT_BORDER);
     wCategoryTable.setData(PROP_DIRTY, new Boolean(false));
@@ -220,21 +216,6 @@ public class OverviewCategorySection extends SectionPart {
     TableColumn wNameTableColumn = new TableColumn(wCategoryTable, SWT.LEFT);
     wNameTableColumn.setText("Name");
     
-    TableWrapData wd = new TableWrapData();
-    wd.rowspan = 2;
-    wd.grabHorizontal = true;
-    wd.grabVertical = true;
-    wd.align = TableWrapData.FILL;
-    GC gc = null;
-    try {
-      gc = new GC(wCategoryTable);
-      FontMetrics fm = gc.getFontMetrics();
-      wd.heightHint = fm.getHeight()*NUM_TABLE_ROWS;
-    } finally {
-      if (gc != null) gc.dispose();
-    }
-    
-    wCategoryTable.setLayoutData(wd);
 
     wCategoryRemoveButton = toolkit.createButton(container, "Remove", SWT.PUSH);
     wCategoryRemoveButton.setEnabled(false);
@@ -295,6 +276,7 @@ public class OverviewCategorySection extends SectionPart {
     wd = new TableWrapData();
     wd.align = TableWrapData.FILL;
     wCategoryAddButton.setLayoutData(wd);
+    */
     
     toolkit.paintBordersFor(container);
     section.setClient(container);
@@ -302,8 +284,9 @@ public class OverviewCategorySection extends SectionPart {
 
   public void updateDirtyState() {
     // Loop through components and check dirty state
-    boolean dirty = false;
+    //boolean dirty = false;
 
+    /*
     if (manifest == null || manifestWorkingCopy == null) return;
     
     String cat = manifest.getAttribute(BundleManifest.BUNDLE_CATEGORY);
@@ -314,63 +297,7 @@ public class OverviewCategorySection extends SectionPart {
     if (!catWC.equals(cat)) {
       markDirty();
     }
+    */
   }
   
-  private void packTableColumns(Table table) {
-    if(table == null) return;
-    Rectangle r = table.getBounds();
-    TableColumn [] columns = table.getColumns();
-    if (columns == null) return;
-    
-    int columnWidth = (r.width - 10) / columns.length;
-
-    GC gc = null;
-    try {
-      gc = new GC(table);
-      //FontMetrics fm = gc.getFontMetrics();
-      TableItem[] items = table.getItems();
-      for(int i=0;i<columns.length;i++) {
-        int width = MIN_COL_WIDTH;
-        for (int j=0; j<items.length;j++) {
-          String text = items[j].getText(i);
-          int textWidth = gc.textExtent(text).x;
-          if (textWidth > width) width = textWidth;
-        }
-        columns[i].setWidth(width+COL_MARGIN);
-      }
-    } finally {
-      if (gc != null) gc.dispose();
-    }
-  }
-  
-  
-  /****************************************************************************
-   * Inner classes
-   ***************************************************************************/
-
-  class CategoryContentProvider  implements IStructuredContentProvider {
-
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
-     */
-    public Object[] getElements(Object inputElement) {
-      if ( !(inputElement instanceof BundleManifest)) return null;
-        
-      BundleManifest manifest = (BundleManifest) inputElement; 
-      
-      return manifest.getCategories();
-    }
-
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IContentProvider#dispose()
-     */
-    public void dispose() {
-    }
-
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-     */
-    public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-    }
-  }
 }

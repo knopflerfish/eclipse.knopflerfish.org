@@ -32,46 +32,34 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
+package org.knopflerfish.eclipse.core.ui.editors.manifest.text;
 
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.ui.forms.IFormPart;
-import org.eclipse.ui.forms.IManagedForm;
-import org.eclipse.ui.forms.IPartSelectionListener;
-import org.eclipse.ui.forms.editor.FormEditor;
-import org.eclipse.ui.forms.editor.FormPage;
+import org.eclipse.ui.editors.text.TextEditor;
 
 /**
  * @author Anders Rimén
- *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
  */
-public class ManifestPage extends FormPage implements IPartSelectionListener {
+public class ManifestTextEditor extends TextEditor {
 
-  private final ManifestEditor manifestEditor;
+
+  public ManifestTextEditor() {
+    super();
+    //colorManager = new ColorManager();
+    //setSourceViewerConfiguration(new XMLConfiguration(colorManager));
+    //setDocumentProvider(new ManifestDocumentProvider());
+  }
+  public void dispose() {
+    //colorManager.dispose();
+    super.dispose();
+  }
   
-  /**
-   * @param editor
-   * @param id
-   * @param title
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.ui.IWorkbenchPart#getTitle()
    */
-  public ManifestPage(FormEditor editor, String id, String title, ManifestEditor manifestEditor) {
-    super(editor, id, title);
-    this.manifestEditor = manifestEditor;
+  /*
+  public String getTitle() {
+    return "manifest.mf";
   }
-
-  public void createFormContent(IManagedForm managedForm) {
-    System.err.println("ManifestPage - createFormContent()");
-    System.err.println("ManifestPage managedForm "+managedForm);
-  }
-
-  /* (non-Javadoc)
-   * @see org.eclipse.ui.forms.IPartSelectionListener#selectionChanged(org.eclipse.ui.forms.IFormPart, org.eclipse.jface.viewers.ISelection)
-   */
-  public void selectionChanged(IFormPart part, ISelection selection) {
-    System.err.println("ManifestPage - selctionChanged");
-    // TODO Auto-generated method stub
-    
-  }
+  */
 }

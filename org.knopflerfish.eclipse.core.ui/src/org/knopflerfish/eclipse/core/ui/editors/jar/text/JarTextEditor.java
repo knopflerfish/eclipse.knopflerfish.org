@@ -32,16 +32,34 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
+package org.knopflerfish.eclipse.core.ui.editors.jar.text;
 
-import org.eclipse.jface.text.rules.RuleBasedPartitionScanner;
+import org.eclipse.ui.editors.text.TextEditor;
 
 /**
  * @author Anders Rimén
- *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
  */
-public class ManifestPartitionScanner extends RuleBasedPartitionScanner {
+public class JarTextEditor extends TextEditor {
 
+
+  public JarTextEditor() {
+    super();
+    setSourceViewerConfiguration(new XMLSourceViewerConfig());
+    //colorManager = new ColorManager();
+    //setDocumentProvider(new ManifestDocumentProvider());
+  }
+  public void dispose() {
+    //colorManager.dispose();
+    super.dispose();
+  }
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.ui.IWorkbenchPart#getTitle()
+   */
+  /*
+  public String getTitle() {
+    return "manifest.mf";
+  }
+  */
 }

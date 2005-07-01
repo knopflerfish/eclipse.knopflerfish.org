@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors;
+package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
 
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -51,21 +51,23 @@ import org.knopflerfish.eclipse.core.BundleManifest;
 /**
  * @author Anders Rimén
  */
-public class OverviewDocumentationSection extends ManifestSectionTextPart {
+public class OverviewVendorSection extends ManifestSectionTextPart {
 
   // Section title and description
-  private static final String TITLE = "Documentation";
-  private static final String DESCRIPTION = "This section contains description and documentation references for this bundle.";
-  
+  private static final String TITLE = "Vendor Information";
+  private static final String DESCRIPTION = "This section describes vendor information for this bundle.";
+
   // Initialize attributes, use array to keep order of attributes
   static private String[][] widgetAttributes = new String[][] {
-    new String[] {BundleManifest.BUNDLE_DESCRIPTION, "Description:", 
-        "A short description of this bundle."},  
-    new String[] {BundleManifest.BUNDLE_DOCURL, "Documentation URL:",
-        "A URL to documentation about this bundle."},  
+    new String[] {BundleManifest.BUNDLE_VENDOR,    "Vendor Name:",
+        "A text description of the vendor."},  
+    new String[] {BundleManifest.BUNDLE_CONTACT,   "Contact Address:",
+        "Contact address if it is necessary to contact the vendor."},  
+    new String[] {BundleManifest.BUNDLE_COPYRIGHT, "Copyright:",
+        "Copyright specification for this bundle."}  
   };
   
-  public OverviewDocumentationSection(Composite parent, FormToolkit toolkit, int style) {
+  public OverviewVendorSection(Composite parent, FormToolkit toolkit, int style) {
     super(parent, toolkit, style, widgetAttributes.length);
     
     Section section = getSection();
@@ -123,4 +125,5 @@ public class OverviewDocumentationSection extends ManifestSectionTextPart {
     
     updateValues();
   }
+
 }
