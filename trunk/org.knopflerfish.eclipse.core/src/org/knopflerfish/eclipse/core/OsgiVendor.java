@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.core.runtime.preferences.ConfigurationScope;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
@@ -66,7 +66,8 @@ public class OsgiVendor implements IOsgiVendor {
    */
   public List getOsgiInstalls() {
     // Load all osgi install definitions from preferences
-    Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
     ArrayList osgiInstalls = new ArrayList();
     
     try {
@@ -87,7 +88,8 @@ public class OsgiVendor implements IOsgiVendor {
   public IOsgiInstall getOsgiInstall(String name) {
     if (name == null || name.length() == 0) return null;
     
-    Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
     IOsgiInstall osgiInstall = null;
     try  {
       if (node.nodeExists(name)) {
@@ -129,7 +131,8 @@ public class OsgiVendor implements IOsgiVendor {
    ***************************************************************************/
   public void setOsgiInstalls(List osgiInstalls) throws BackingStoreException {
     // Remove previous definitions
-    Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
     String [] names = node.childrenNames();
     if (names != null) {
       for(int i=0; i<names.length; i++) {

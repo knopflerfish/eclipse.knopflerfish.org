@@ -43,7 +43,7 @@ import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.preferences.ConfigurationScope;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jdt.core.IJavaProject;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
@@ -112,7 +112,8 @@ public class Osgi {
 
   public static List getBundleSets() {
     // Load all osgi install definitions from preferences
-    Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
     ArrayList bundleSets = new ArrayList();
     
     try {
@@ -128,7 +129,8 @@ public class Osgi {
   }
 
   public BundleSet getBundleSet(String name) {
-    Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
     BundleSet bundleSet = null;
     try  {
       if (node.nodeExists(name)) {
@@ -156,7 +158,8 @@ public class Osgi {
 
   public void setBundleSets(List bundleSets) throws BackingStoreException {
     // Remove previous bundle sets
-    Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
     String [] names = node.childrenNames();
     if (names != null) {
       for(int i=0; i<names.length; i++) {
