@@ -91,6 +91,11 @@ public class OsgiBundle extends OsgiLibrary implements IOsgiBundle {
     return false;
   }
   
+  public String getDescription()
+  {
+  	return bundleManifest.getDescription();
+  }
+  
   /****************************************************************************
    * java.lang.Object methods
    ***************************************************************************/
