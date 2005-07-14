@@ -64,4 +64,10 @@ public interface IOsgiBundle extends IOsgiLibrary {
    */
   public boolean hasCategory(String cat);
   
+  /** 
+   * Returns the description of a bundle.
+   * 
+   * @return String description; 
+   */
+  public String getDescription();
 }
