@@ -102,7 +102,7 @@ abstract public class ManifestSectionTextPart extends SectionPart {
     }
     
     // Update manifest from document
-    ManifestUtil.createManifest(doc);
+    //ManifestUtil.createManifest(doc);
   }
   
   /*
