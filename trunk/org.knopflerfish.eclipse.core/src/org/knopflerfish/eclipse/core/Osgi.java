@@ -56,7 +56,11 @@ public class Osgi {
   public static String BUILDER_ID = "org.knopflerfish.eclipse.core.bundlebuilder";
   
   private static String EXTENSION_POINT_VENDORS = "org.knopflerfish.eclipse.core.vendors";
-  private static String PREFERENCE_NODE = "org.knopflerfish.eclipse.core.bundlesets";
+  
+  // Preference nodes
+  public static String PREFERENCE_ROOT_NODE = "org.knopflerfish.eclipse.core.osgi";
+  public static String PREFERENCE_FRAMEWORKS_NODE = "frameworks";
+  public static String PREFERENCE_BUNDLESETS_NODE = "bundlesets";
                                                    
   public static List getVendorNames()  {
     ArrayList vendors = new ArrayList();
@@ -113,7 +117,7 @@ public class Osgi {
   public static List getBundleSets() {
     // Load all osgi install definitions from preferences
     //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
-    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_BUNDLESETS_NODE);
     ArrayList bundleSets = new ArrayList();
     
     try {
@@ -130,7 +134,7 @@ public class Osgi {
 
   public BundleSet getBundleSet(String name) {
     //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
-    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_BUNDLESETS_NODE);
     BundleSet bundleSet = null;
     try  {
       if (node.nodeExists(name)) {
@@ -159,7 +163,7 @@ public class Osgi {
   public void setBundleSets(List bundleSets) throws BackingStoreException {
     // Remove previous bundle sets
     //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
-    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_BUNDLESETS_NODE);
     String [] names = node.childrenNames();
     if (names != null) {
       for(int i=0; i<names.length; i++) {

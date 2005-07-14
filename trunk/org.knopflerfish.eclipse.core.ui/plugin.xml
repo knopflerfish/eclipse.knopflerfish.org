@@ -117,16 +117,8 @@
 		    icon="icons/obj16/knopflerfish_obj.gif"
             id="org.knopflerfish.eclipse.core.ui.exportOSGiPreferences">
             <mapping scope="instance">
-	          <entry node="org.knopflerfish.eclipse.core.frameworks"/>
+	          <entry node="org.knopflerfish.eclipse.core.osgi"/>
             </mapping>
-    </transfer>
-   <transfer
-     icon="icons/obj16/knopflerfish_obj.gif"
-     name="Export OSGi preferences"
-     id="org.knopflerfish.eclipse.core.ui.exportOSGiPreferences2">
-       <mapping scope="configuration">
-         <entry node="org.knopflerfish.eclipse.core.frameworks"/>
-       </mapping>
       <description>
         Preferences related to build, run and debug OSGi bundle projects.
       </description>
