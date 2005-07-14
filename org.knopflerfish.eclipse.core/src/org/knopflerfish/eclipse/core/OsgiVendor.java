@@ -49,7 +49,6 @@ import org.osgi.service.prefs.Preferences;
 public class OsgiVendor implements IOsgiVendor {
 
   public static String VENDOR_NAME = "Knopflerfish";
-  private static String PREFERENCE_NODE = "org.knopflerfish.eclipse.core.frameworks";
 
   /****************************************************************************
    * org.gstproject.eclipse.osgi.IOsgiVendor Methods
@@ -67,7 +66,7 @@ public class OsgiVendor implements IOsgiVendor {
   public List getOsgiInstalls() {
     // Load all osgi install definitions from preferences
     //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
-    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(Osgi.PREFERENCE_ROOT_NODE).node(Osgi.PREFERENCE_FRAMEWORKS_NODE);
     ArrayList osgiInstalls = new ArrayList();
     
     try {
@@ -89,7 +88,7 @@ public class OsgiVendor implements IOsgiVendor {
     if (name == null || name.length() == 0) return null;
     
     //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
-    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(Osgi.PREFERENCE_ROOT_NODE).node(Osgi.PREFERENCE_FRAMEWORKS_NODE);
     IOsgiInstall osgiInstall = null;
     try  {
       if (node.nodeExists(name)) {
@@ -132,7 +131,7 @@ public class OsgiVendor implements IOsgiVendor {
   public void setOsgiInstalls(List osgiInstalls) throws BackingStoreException {
     // Remove previous definitions
     //Preferences node = new ConfigurationScope().getNode(PREFERENCE_NODE);
-    Preferences node = new InstanceScope().getNode(PREFERENCE_NODE);
+    Preferences node = new InstanceScope().getNode(Osgi.PREFERENCE_ROOT_NODE).node(Osgi.PREFERENCE_FRAMEWORKS_NODE);
     String [] names = node.childrenNames();
     if (names != null) {
       for(int i=0; i<names.length; i++) {
