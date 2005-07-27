@@ -34,10 +34,12 @@
 
 package org.knopflerfish.eclipse.core.ui.editors.jar.form;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.forms.IFormPart;
 import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
@@ -56,11 +58,11 @@ public class JarFormEditor extends FormPage {
 
   private static final String TITLE = "Overview";
   
-  private final JarTextEditor manifestEditor;
+  private final JarTextEditor jarTextEditor;
   
-  public JarFormEditor(FormEditor editor, String id, String title, JarTextEditor manifestEditor) {
+  public JarFormEditor(FormEditor editor, String id, String title, JarTextEditor jarTextEditor) {
     super(editor, id, title);
-    this.manifestEditor = manifestEditor;
+    this.jarTextEditor = jarTextEditor;
   }
 
   /****************************************************************************
@@ -74,7 +76,8 @@ public class JarFormEditor extends FormPage {
   public void createFormContent(IManagedForm managedForm) {
     
     // Attach document to managed form and add document change listener
-    IDocument doc = manifestEditor.getDocumentProvider().getDocument(getEditorInput());
+    IDocument doc = jarTextEditor.getDocumentProvider().getDocument(getEditorInput());
+    
     managedForm.setInput(doc);
     doc.addDocumentListener(new IDocumentListener() {
       public void documentAboutToBeChanged(DocumentEvent event) {
@@ -104,31 +107,18 @@ public class JarFormEditor extends FormPage {
     layout.minNumColumns = 1;
     body.setLayout(layout);
     
-    
-    
     // Create sections
+    IFileEditorInput input = (IFileEditorInput) getEditorInput();
+    IProject project = input.getFile().getProject();
+    
     ExportSection exportSection = new ExportSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR);
+        Section.DESCRIPTION | Section.TITLE_BAR, project);
     exportSection.initialize(managedForm);
     
-    ResourceSection resourceSection = new ResourceSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR);
+    ContentsSection resourceSection = new ContentsSection(body, toolkit, 
+        Section.DESCRIPTION | Section.TITLE_BAR, project);
     resourceSection.initialize(managedForm);
 
-    /*
-    OverviewCategorySection categorySection = new OverviewCategorySection(body, toolkit, 
-        Section.DESCRIPTION | Section.TWISTIE);
-    categorySection.initialize(managedForm);
-    
-    OverviewVendorSection vendorSection = new OverviewVendorSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TWISTIE);
-    vendorSection.initialize(managedForm);
-    
-    OverviewDocumentationSection docSection = new OverviewDocumentationSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TWISTIE);
-    docSection.initialize(managedForm);
-    */
-    
     // Add sections to form
     managedForm.addPart(exportSection);
     managedForm.addPart(resourceSection);

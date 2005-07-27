@@ -34,7 +34,10 @@
 
 package org.knopflerfish.eclipse.core.internal;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Plugin;
+import org.eclipse.core.runtime.Status;
 import org.osgi.framework.BundleContext;
 import java.util.*;
 
@@ -101,4 +104,10 @@ public class OsgiPlugin extends Plugin {
 	public ResourceBundle getResourceBundle() {
 		return resourceBundle;
 	}
+    
+    public static void throwCoreException(String message, Throwable t) throws CoreException {
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, message, t);
+      throw new CoreException(status);
+    }
 }

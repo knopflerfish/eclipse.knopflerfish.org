@@ -66,7 +66,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.BundleManifest;
+import org.knopflerfish.eclipse.core.project.BundleManifest;
 
 /**
  * @author Anders Rimén

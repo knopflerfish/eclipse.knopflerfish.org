@@ -34,6 +34,8 @@
 
 package org.knopflerfish.eclipse.core;
 
+import org.knopflerfish.eclipse.core.project.BundleManifest;
+
 /**
  * @author Anders Rimén
  */

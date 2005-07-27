@@ -35,19 +35,12 @@
 package org.knopflerfish.eclipse.core.launcher;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
 
-import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -69,15 +62,13 @@ import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
+import org.knopflerfish.eclipse.core.project.BundleJar;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
  * Implementation of OSGi launch configuration delegate.
  */
 public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
-
-  private static final String SEPARATOR = "/";
 
   /* (non-Javadoc)
    * @see org.eclipse.debug.core.model.ILaunchConfigurationDelegate#launch(org.eclipse.debug.core.ILaunchConfiguration, java.lang.String, org.eclipse.debug.core.ILaunch, org.eclipse.core.runtime.IProgressMonitor)
@@ -129,7 +120,12 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
         IJavaProject project = (IJavaProject) entry.getKey();
         // Build bundle jar
         try {
-          File jarFile = buildBundleJar(new BundleProject(project), jarDirectory);
+          // TODO: This shall be changed, takes to long time if many projects exist
+          BundleProject bundleProject = new BundleProject(project);
+          BundleJar bundleJar = bundleProject.getBundleJarDescription();
+          String name = project.getProject().getName()+ ".jar";
+          File path = new File(jarDirectory, name);
+          File jarFile = bundleJar.export(bundleProject, path.getAbsolutePath());
           IOsgiBundle bundle = new OsgiBundle(jarFile);
           osgiConf.addBundle(bundle, (BundleLaunchInfo) entry.getValue());
         } catch (IOException e) {
@@ -377,86 +373,5 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     Map projects = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_BUNDLE_PROJECTS, (Map) null);
     
     return projects;
-  }
-
-  /**
-   * Creates a bundle jar file from the bundle project specified. The resulting
-   * jar file is placed in the specified directory. The jar file is named after 
-   * the project name.
-   *  
-   * @param project bundle project to build jar file from.
-   * @param jarDirectory directory to place the jar file.
-   * @return Reference to bundle jar file
-   * @throws CoreException
-   */
-  private File buildBundleJar(IBundleProject project, File jarDirectory) throws IOException, CoreException {
-    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-    String name = project.getJavaProject().getProject().getName()+".jar";
-    JarOutputStream jos = null;
-    InputStream is = null;
-    File jarFile = null;
-
-    try {
-      
-      // Create jar file
-      jarFile = new File(jarDirectory, name);
-      if (jarFile.exists()) jarFile.delete();
-
-      // Get manifest
-      Manifest manifest = project.getBundleManifest(); 
-      
-      // Create manifest output stream
-      jos = new JarOutputStream(new FileOutputStream(jarFile), manifest);
-      
-      // Get output folder and class files to jar file
-      IFolder outFolder = root.getFolder(project.getJavaProject().getOutputLocation());
-      File outDir = new File(outFolder.getRawLocation().toString());
-      addDirToJar(jos, outDir, "");
-      
-    } finally {
-      if (is != null) {
-        is.close();
-      }
-      if (jos != null) {
-        //jos.flush();
-        //jos.finish();
-        jos.close();
-      }
-    }
-    
-    return jarFile;
-  }
-
-  private void addDirToJar(JarOutputStream jos, File dir, String path) throws IOException {
-    File [] files = dir.listFiles();
-    
-    if (files  == null) return;
-    
-    for (int i=0; i<files.length; i++) {
-      if(files[i].isDirectory()) {
-        String newPath = path+files[i].getName()+SEPARATOR;
-        JarEntry entry = new JarEntry(newPath);
-        jos.putNextEntry(entry);
-        addDirToJar(jos, files[i], newPath);
-        
-      } else if (files[i].getName().endsWith(".class")) {
-        JarEntry entry = new JarEntry(path+files[i].getName());
-        jos.putNextEntry(entry);
-        FileInputStream fis = null;
-        try {
-          fis = new FileInputStream(files[i]);
-          byte [] buf = new byte[2048];
-          int numRead = 0;
-          while ( (numRead = fis.read(buf)) != -1) {
-            jos.write(buf, 0, numRead);
-          }
-        } finally {
-          if (fis != null) {
-            fis.close();
-          }
-          //jos.closeEntry();
-        }
-      }
-    }
   }
 }

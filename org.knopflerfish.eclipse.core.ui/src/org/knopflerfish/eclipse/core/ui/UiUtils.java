@@ -34,6 +34,7 @@
 
 package org.knopflerfish.eclipse.core.ui;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
@@ -50,6 +51,7 @@ public class UiUtils {
 
   private static final int MIN_COL_WIDTH    = 15;
   private static final int COL_MARGIN       = 15;
+  private static final int CHECKBOX_WIDTH   = 15;
 
 
   public static void packTableColumns(Table table) {
@@ -74,9 +76,14 @@ public class UiUtils {
         for (int j=0; j<items.length;j++) {
           String text = items[j].getText(i);
           int textWidth = gc.textExtent(text).x;
+          // Check if image is shown
           Image img = items[j].getImage();
           if (img != null) {
             textWidth += img.getBounds().width;
+          }
+          int style = items[j].getParent().getStyle();
+          if ( (style & SWT.CHECK) != 0 && j==0) {
+            textWidth += CHECKBOX_WIDTH;
           }
           if (textWidth > width) width = textWidth;
         }
