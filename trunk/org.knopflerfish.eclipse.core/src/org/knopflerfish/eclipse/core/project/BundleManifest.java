@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.project;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +40,8 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+
+import org.knopflerfish.eclipse.core.PackageDescription;
 
 /**
  * @author Anders Rimén

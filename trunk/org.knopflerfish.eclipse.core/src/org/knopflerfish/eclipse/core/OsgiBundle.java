@@ -37,6 +37,8 @@ package org.knopflerfish.eclipse.core;
 import java.io.File;
 import java.io.IOException;
 
+import org.knopflerfish.eclipse.core.project.BundleManifest;
+
 /**
  * @author Anders Rimén
  */

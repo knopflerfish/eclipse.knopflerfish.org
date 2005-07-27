@@ -54,7 +54,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
-import org.knopflerfish.eclipse.core.BundleManifest;
+import org.knopflerfish.eclipse.core.project.BundleManifest;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
@@ -63,12 +63,12 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
   
   private ProjectWizardPage projectPage;
   private BundleWizardPage bundlePage;
-	private ISelection selection;
-
+  private ISelection selection;
+  
   /****************************************************************************
    * org.eclipse.ui.IWorkbenchWizard methods
    ***************************************************************************/
-
+  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.ui.IWorkbenchWizard#init(org.eclipse.ui.IWorkbench, org.eclipse.jface.viewers.IStructuredSelection)
@@ -78,7 +78,7 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
     setWindowTitle("New Bundle Project");
     setDefaultPageImageDescriptor(OsgiUiPlugin.BUNDLE_WIZARD_BANNER);
   }
-
+  
   /****************************************************************************
    * org.eclipse.jface.wizard.IWizard methods
    ***************************************************************************/
@@ -87,21 +87,21 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
    *  (non-Javadoc)
    * @see org.eclipse.jface.wizard.IWizard#addPages()
    */
-	public void addPages() {
-	  // Project settings wizard Page (e.g. name, src and bin folders)
+  public void addPages() {
+    // Project settings wizard Page (e.g. name, src and bin folders)
     projectPage = new ProjectWizardPage(selection);
     addPage(projectPage);
     
     // Bundle settings wizard page (e.g. package, activator and manifest entries)
     bundlePage = new BundleWizardPage(selection, projectPage);
     addPage(bundlePage);
-	}
-
+  }
+  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.wizard.IWizard#performFinish()
    */
-	public boolean performFinish() {
+  public boolean performFinish() {
     try {
       doFinish();
       return true;
@@ -109,14 +109,14 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
       e.printStackTrace();
       return false;
     }
-	}
-	
+  }
+  
   /****************************************************************************
    * Private worker methods
    ***************************************************************************/
   
-	private void doFinish() throws CoreException {
-		// Create project
+  private void doFinish() throws CoreException {
+    // Create project
     BundleProject project = BundleProject.create(
         projectPage.getProjectName(),
         projectPage.getProjectLocation(),
@@ -142,7 +142,7 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
     
     // Create classpath
     ArrayList classPath = new ArrayList();
-
+    
     // Source folder
     Path projectFolder = new Path("/"+project.getJavaProject().getProject().getName());
     classPath.add(JavaCore.newSourceEntry(projectFolder.append(projectPage.getSourceFolder())));
@@ -159,7 +159,7 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
     
     // Set classpath
     project.getJavaProject().setRawClasspath((IClasspathEntry []) classPath.toArray(new IClasspathEntry[classPath.size()]), null);
-
+    
     // Check if bundle activator shall be created
     if (bundlePage.isCreateBundleActivator()) {
       String className = bundlePage.getActivatorClassName();
@@ -170,8 +170,8 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
           packageName, 
           className);
     }
-	}
-
+  }
+  
   /**
    * Creates a file containing skeleton for bundle activator. The file 
    * "resources/BundleSkeleton.java" is used as template.

@@ -34,6 +34,7 @@
 
 package org.knopflerfish.eclipse.core.ui.editors.jar.form;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -48,6 +49,9 @@ import org.eclipse.ui.forms.widgets.ColumnLayoutData;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
+import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
  * @author Anders Rimén
@@ -58,13 +62,17 @@ public class ExportSection extends SectionPart {
   private static final String TITLE = 
     "Export";
   private static final String DESCRIPTION = 
-    "This section yada yada yada...";
+    "Packages and exports the bundle";
 
+  private final IProject project;
+  
   // SWT Widgets
   private Button    wExportButton;
 
-  public ExportSection(Composite parent, FormToolkit toolkit, int style) {
+  public ExportSection(Composite parent, FormToolkit toolkit, int style, IProject project) {
     super(parent, toolkit, style);
+    
+    this.project = project;
     
     Section section = getSection();
     createClient(section, toolkit);
@@ -83,26 +91,6 @@ public class ExportSection extends SectionPart {
    */
   public void commit(boolean onSave) {
     super.commit(onSave);
-    
-    // Flush values to document
-    /*
-    IManagedForm managedForm = getManagedForm();
-    IDocument doc = (IDocument) managedForm.getInput();
-
-    if (manifest == null || manifestWorkingCopy == null) return;
-    
-    Table wCategoryTable = wCategoryTableViewer.getTable();
-    try {
-      String attribute = (String) wCategoryTable.getData(PROP_NAME);
-      if (attribute != null) {
-        String value = manifestWorkingCopy.getAttribute(BundleManifest.BUNDLE_CATEGORY);
-        if (value == null) value = "";
-        ManifestSectionUtil.setManifestAttribute(doc, attribute, value);
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    */
   }
   
   /*
@@ -111,17 +99,6 @@ public class ExportSection extends SectionPart {
    */
   public void refresh() {
     super.refresh();
-
-    // Refresh values from document
-    /*
-    manifest = new BundleManifest(ManifestSectionUtil.createManifest((IDocument) getManagedForm().getInput()));
-    manifestWorkingCopy = new BundleManifest(manifest);
-    if (wCategoryTableViewer != null) {
-      wCategoryTableViewer.setInput(manifestWorkingCopy);
-    }
-    //wCategoryTableViewer.getTable().pack(true);
-    packTableColumns(wCategoryTableViewer.getTable());
-    */
   }
   
   /****************************************************************************
@@ -153,42 +130,23 @@ public class ExportSection extends SectionPart {
     wExportButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.SAVE);
-        //FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN);
-        dialog.setFileName("gurka.jar");
         String path = dialog.open();
         if (path != null) {
-          /*
-          wLocationText.setText(path);
-          if (wDefaultButton.getSelection()) {
-            setDefaultSettings();
+          try {
+            // TODO: Should probably check if file is saved
+            if (project.hasNature(Osgi.NATURE_ID)) {
+              IBundleProject bundleProject = new BundleProject(project.getName());
+              bundleProject.getBundleJarDescription().export(bundleProject, path);
+            }
+          } catch (Exception exc) {
+            // TODO Auto-generated catch block
+            exc.printStackTrace();
           }
-          verifyAll();
-          */
         }
-        
       }
     });
     
     toolkit.paintBordersFor(container);
     section.setClient(container);
   }
-
-  public void updateDirtyState() {
-    // Loop through components and check dirty state
-    //boolean dirty = false;
-
-    /*
-    if (manifest == null || manifestWorkingCopy == null) return;
-    
-    String cat = manifest.getAttribute(BundleManifest.BUNDLE_CATEGORY);
-    if (cat == null) cat = "";
-    String catWC = manifestWorkingCopy.getAttribute(BundleManifest.BUNDLE_CATEGORY);
-    if (catWC == null) catWC = "";
-     
-    if (!catWC.equals(cat)) {
-      markDirty();
-    }
-    */
-  }
-  
 }

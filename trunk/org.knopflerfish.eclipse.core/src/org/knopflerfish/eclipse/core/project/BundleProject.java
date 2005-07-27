@@ -37,6 +37,7 @@ package org.knopflerfish.eclipse.core.project;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -45,35 +46,37 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
-import org.knopflerfish.eclipse.core.BundleManifest;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.PackageDescription;
+import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 
 /**
  * @author Anders Rimén
  */
 public class BundleProject implements IBundleProject {
-  private static final String MANIFEST_FILE = "bundle.manifest";
+  private static final String MANIFEST_FILE  = "bundle.manifest";
+  private static final String BUNDLEJAR_FILE = "bundle.jar";
   
   private final IJavaProject project;
   private BundleManifest manifest;
+  private BundleJar bundleJar;
 
-  public BundleProject(String name) {
+  public BundleProject(String name) throws CoreException {
     IWorkspaceRoot workspace = ResourcesPlugin.getWorkspace().getRoot();
     IProject project = workspace.getProject(name);
     IJavaProject javaProject = JavaCore.create(project);
     this.project = javaProject;
     loadManifest();
+    bundleJar = createBundleJarDescription();
   }
   
-  public BundleProject(IJavaProject project) {
+  public BundleProject(IJavaProject project) throws CoreException {
     this.project = project;
     loadManifest();
+    bundleJar = createBundleJarDescription();
   }
   
   public static BundleProject create(String name, IPath projectLocation, IPath srcFolder, IPath outFolder) throws CoreException {
@@ -81,7 +84,7 @@ public class BundleProject implements IBundleProject {
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
     IProject project = root.getProject(name);
     if (project.exists()) {
-      throwCoreException("Project \"" + name + "\" already exists.");
+      OsgiPlugin.throwCoreException("Project \"" + name + "\" already exists.", null);
     }
     
     // Create project description
@@ -125,6 +128,14 @@ public class BundleProject implements IBundleProject {
     return project;
   }
 
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getBundleJarDescription()
+   */
+  public BundleJar getBundleJarDescription() {
+    return bundleJar;
+  }
+
   /* (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IBundleProject#getManifest()
    */
@@ -150,6 +161,67 @@ public class BundleProject implements IBundleProject {
   /****************************************************************************
    * Private worker methods
    ***************************************************************************/
+  
+  public BundleJar createBundleJarDescription() throws CoreException {
+
+    // Try to load it, if it does not exist create it
+    BundleJar jar = loadBundleJarDescription();
+    try {
+      if (jar == null) {
+        // Create jar description
+        jar = new BundleJar();
+        // Add output folder as resource
+        BundleJarResource resource = new BundleJarResource(
+            project.getOutputLocation(), 
+            "", 
+            Pattern.compile(".*\\.class"));
+        jar.addResource(resource);
+        
+        // Save description
+        ByteArrayOutputStream baos = null;
+        ByteArrayInputStream bais = null;
+        try { 
+          baos = new ByteArrayOutputStream();
+          jar.save(baos);
+          bais = new ByteArrayInputStream(baos.toByteArray());
+        
+          IFile bundleJarFile = project.getProject().getFile(BUNDLEJAR_FILE);
+          if (!bundleJarFile.exists()) {
+            bundleJarFile.create(bais, false, null);
+          }
+        } finally {
+          if (baos != null) baos.close();
+          if (bais != null) bais.close();
+          
+        }
+      }
+    } catch (Exception e) {
+      OsgiPlugin.throwCoreException("Failed to create bundle jar description", e);
+    }
+    return jar;
+  }
+  
+  public BundleJar loadBundleJarDescription() throws CoreException {
+    // Read bundle jar
+    InputStream is = null;
+    BundleJar jar  = null;
+    try {
+      try {
+        IFile bundleJarFile = project.getProject().getFile(BUNDLEJAR_FILE);
+        if (bundleJarFile.exists()) {
+          is = bundleJarFile.getContents();
+          jar = new BundleJar(project.getProject(), is);
+        }
+      } finally {
+        if (is != null) {
+          is.close();
+        }
+      }
+    } catch (Exception e) {
+      OsgiPlugin.throwCoreException("Failed to load bundle jar description", e);
+    }
+    return jar;
+  }
   
   public void loadManifest() {
     // Read manifest
@@ -192,10 +264,5 @@ public class BundleProject implements IBundleProject {
     }
   }
 
-  private static void throwCoreException(String message) throws CoreException {
-    IStatus status =
-      new Status(IStatus.ERROR, "org.gstproject.eclipse.osgi.ui", IStatus.OK, message, null);
-    throw new CoreException(status);
-  }
 }
 

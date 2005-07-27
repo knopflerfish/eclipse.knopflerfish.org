@@ -56,11 +56,11 @@ public class ManifestFormEditor extends FormPage {
 
   private static final String TITLE = "Overview";
   
-  private final ManifestTextEditor manifestEditor;
+  private final ManifestTextEditor manifestTextEditor;
   
-  public ManifestFormEditor(FormEditor editor, String id, String title, ManifestTextEditor manifestEditor) {
+  public ManifestFormEditor(FormEditor editor, String id, String title, ManifestTextEditor manifestTextEditor) {
     super(editor, id, title);
-    this.manifestEditor = manifestEditor;
+    this.manifestTextEditor = manifestTextEditor;
   }
 
   /****************************************************************************
@@ -74,7 +74,7 @@ public class ManifestFormEditor extends FormPage {
   public void createFormContent(IManagedForm managedForm) {
     
     // Attach document to managed form and add document change listener
-    IDocument doc = manifestEditor.getDocumentProvider().getDocument(getEditorInput());
+    IDocument doc = manifestTextEditor.getDocumentProvider().getDocument(getEditorInput());
     managedForm.setInput(doc);
     doc.addDocumentListener(new IDocumentListener() {
       public void documentAboutToBeChanged(DocumentEvent event) {

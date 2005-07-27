@@ -64,7 +64,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.BundleManifest;
+import org.knopflerfish.eclipse.core.project.BundleManifest;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.PropertyDialog;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
@@ -96,10 +96,8 @@ public class OverviewCategorySection extends SectionPart {
   // jFace Widgets 
   private TableViewer   wCategoryTableViewer;
   
-  // Model objest
+  // Model objects
   private BundleManifest manifest = null;
-  private BundleManifest manifestWorkingCopy = null;
-
   
   public OverviewCategorySection(Composite parent, FormToolkit toolkit, int style) {
     super(parent, toolkit, style);
@@ -125,13 +123,13 @@ public class OverviewCategorySection extends SectionPart {
     IManagedForm managedForm = getManagedForm();
     IDocument doc = (IDocument) managedForm.getInput();
 
-    if (manifest == null || manifestWorkingCopy == null) return;
+    if (manifest == null) return;
     
     Table wCategoryTable = wCategoryTableViewer.getTable();
     try {
       String attribute = (String) wCategoryTable.getData(PROP_NAME);
       if (attribute != null) {
-        String value = manifestWorkingCopy.getAttribute(BundleManifest.BUNDLE_CATEGORY);
+        String value = manifest.getAttribute(BundleManifest.BUNDLE_CATEGORY);
         if (value == null) value = "";
         ManifestUtil.setManifestAttribute(doc, attribute, value);
       }
@@ -149,11 +147,9 @@ public class OverviewCategorySection extends SectionPart {
 
     // Refresh values from document
     manifest = new BundleManifest(ManifestUtil.createManifest((IDocument) getManagedForm().getInput()));
-    manifestWorkingCopy = new BundleManifest(manifest);
     if (wCategoryTableViewer != null) {
-      wCategoryTableViewer.setInput(manifestWorkingCopy);
+      wCategoryTableViewer.setInput(manifest);
     }
-    //wCategoryTableViewer.getTable().pack(true);
     UiUtils.packTableColumns(wCategoryTableViewer.getTable());
   }
   
@@ -187,13 +183,8 @@ public class OverviewCategorySection extends SectionPart {
     wCategoryTable.setData(PROP_DIRTY, new Boolean(false));
     wCategoryTable.setData(PROP_NAME, BundleManifest.BUNDLE_CATEGORY);
 
-    //Table wCategoryTable = new Table(container, SWT.MULTI | SWT.FULL_SELECTION | SWT.BORDER);
     wCategoryTableViewer = new TableViewer(wCategoryTable);
     wCategoryTableViewer.setContentProvider(new CategoryContentProvider());
-    //wCategoryTableViewer.setSorter(new SorterStartLevel());
-    
-    //wCategoryTable.setHeaderVisible(true);
-    //wCategoryTable.setLinesVisible(true);
     wCategoryTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
       public void selectionChanged(SelectionChangedEvent event) {
         IStructuredSelection selection = 
@@ -227,15 +218,14 @@ public class OverviewCategorySection extends SectionPart {
         
         if (selection == null || selection.isEmpty()) return;
         
-        List categories = new ArrayList(Arrays.asList(manifestWorkingCopy.getCategories()));
+        List categories = new ArrayList(Arrays.asList(manifest.getCategories()));
         for (Iterator i = selection.iterator(); i.hasNext(); ) {
           String name = ((String) i.next()).trim();
           categories.remove(name);
         }
-        manifestWorkingCopy.setCategories((String[]) categories.toArray(new String[categories.size()]));
+        manifest.setCategories((String[]) categories.toArray(new String[categories.size()]));
         wCategoryTableViewer.refresh();
-        updateDirtyState();
-        
+        markDirty();
       }
     });
     wd = new TableWrapData();
@@ -264,12 +254,12 @@ public class OverviewCategorySection extends SectionPart {
         if (dialog.open() == Window.OK) {
           map = dialog.getValues();
           p = (PropertyDialog.Property) map.get(key);
-          List categories = new ArrayList(Arrays.asList(manifestWorkingCopy.getCategories()));
+          List categories = new ArrayList(Arrays.asList(manifest.getCategories()));
           if (p.getValue() != null && !categories.contains(p.getValue())) {
             categories.add(p.getValue());
-            manifestWorkingCopy.setCategories((String[]) categories.toArray(new String[categories.size()]));
+            manifest.setCategories((String[]) categories.toArray(new String[categories.size()]));
             wCategoryTableViewer.refresh();
-            updateDirtyState();
+            markDirty();
           }
         }
       }
@@ -280,20 +270,6 @@ public class OverviewCategorySection extends SectionPart {
     
     toolkit.paintBordersFor(container);
     section.setClient(container);
-  }
-
-  public void updateDirtyState() {
-    // Loop through components and check dirty state
-    if (manifest == null || manifestWorkingCopy == null) return;
-    
-    String cat = manifest.getAttribute(BundleManifest.BUNDLE_CATEGORY);
-    if (cat == null) cat = "";
-    String catWC = manifestWorkingCopy.getAttribute(BundleManifest.BUNDLE_CATEGORY);
-    if (catWC == null) catWC = "";
-     
-    if (!catWC.equals(cat)) {
-      markDirty();
-    }
   }
   
   /****************************************************************************

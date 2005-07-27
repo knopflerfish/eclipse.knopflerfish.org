@@ -35,7 +35,6 @@
 package org.knopflerfish.eclipse.core.project;
 
 import org.eclipse.jdt.core.IJavaProject;
-import org.knopflerfish.eclipse.core.BundleManifest;
 import org.knopflerfish.eclipse.core.PackageDescription;
 
 /**
@@ -46,6 +45,8 @@ public interface IBundleProject {
   public IJavaProject getJavaProject();
   
   public BundleManifest getBundleManifest();
+
+  public BundleJar getBundleJarDescription();
   
   public boolean hasExportedPackage(PackageDescription pkg);
  

@@ -38,11 +38,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.knopflerfish.eclipse.core.BundleManifest;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.OsgiLibrary;
+import org.knopflerfish.eclipse.core.project.BundleManifest;
 
 /**
  * @author Anders Rimén
