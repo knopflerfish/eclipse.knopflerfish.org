@@ -1,4 +1,4 @@
-framework.property.num = 31
+framework.property.num = 32
 framework.property.0.name = org.osgi.framework.dir
 framework.property.0.description = Where we store persistent data.
 framework.property.0.group = OSGi Framework
