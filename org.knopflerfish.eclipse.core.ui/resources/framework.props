@@ -128,46 +128,51 @@ framework.property.22.default = false
 framework.property.22.allowed = true,false
 
 framework.property.23.name = org.osgi.service.http.port
-framework.property.23.description = Port used by web server.
+framework.property.23.description = This property specifies the port used for servlets and resources accessible via HTTP.
 framework.property.23.group = OSGi Web Server
-framework.property.23.default = 8080
+framework.property.23.default = 80
 
-framework.property.24.name = org.knopflerfish.http.dnslookup
-framework.property.24.description = Use DNS to lookup names.
-framework.property.24.group = Knopflerfish Web Server
-framework.property.24.default = false
-framework.property.24.allowed = true,false
+framework.property.24.name = org.osgi.service.http.port.secure
+framework.property.24.description = This property specifies the port used for servlets and resources accessible via HTTPS.
+framework.property.24.group = OSGi Web Server
+framework.property.24.default = 443
 
-framework.property.25.name = org.knopflerfish.log.out
-framework.property.25.description = Print log on std out.
-framework.property.25.group = Knopflerfish Log Service
+framework.property.25.name = org.knopflerfish.http.dnslookup
+framework.property.25.description = Use DNS to lookup names.
+framework.property.25.group = Knopflerfish Web Server
 framework.property.25.default = false
 framework.property.25.allowed = true,false
 
-framework.property.26.name = org.knopflerfish.log.level
-framework.property.26.description = Log level.
+framework.property.26.name = org.knopflerfish.log.out
+framework.property.26.description = Print log on std out.
 framework.property.26.group = Knopflerfish Log Service
-framework.property.26.default = info
-framework.property.26.allowed = debug,info,warn,error
+framework.property.26.default = false
+framework.property.26.allowed = true,false
 
-framework.property.27.name = org.knopflerfish.log.grabio
-framework.property.27.description = System out is added to log.
+framework.property.27.name = org.knopflerfish.log.level
+framework.property.27.description = Log level.
 framework.property.27.group = Knopflerfish Log Service
-framework.property.27.default = true
-framework.property.27.allowed = true,false
+framework.property.27.default = info
+framework.property.27.allowed = debug,info,warn,error
 
-framework.property.28.name = org.knopflerfish.log.file
-framework.property.28.description = Save log to file.
+framework.property.28.name = org.knopflerfish.log.grabio
+framework.property.28.description = System out is added to log.
 framework.property.28.group = Knopflerfish Log Service
 framework.property.28.default = true
 framework.property.28.allowed = true,false
 
-framework.property.29.name = java.security.manager
-framework.property.29.description = Class name of security manager. If set to empty string, uses "java.lang.SecurityManager". If unset, do not use any security manager.
-framework.property.29.group = Java
+framework.property.29.name = org.knopflerfish.log.file
+framework.property.29.description = Save log to file.
+framework.property.29.group = Knopflerfish Log Service
+framework.property.29.default = true
+framework.property.29.allowed = true,false
 
-framework.property.30.name = java.security.policy
-framework.property.30.description = Security policy file. Used by the security manager.
+framework.property.30.name = java.security.manager
+framework.property.30.description = Class name of security manager. If set to empty string, uses "java.lang.SecurityManager". If unset, do not use any security manager.
 framework.property.30.group = Java
+
+framework.property.31.name = java.security.policy
+framework.property.31.description = Security policy file. Used by the security manager.
+framework.property.31.group = Java
 
 
