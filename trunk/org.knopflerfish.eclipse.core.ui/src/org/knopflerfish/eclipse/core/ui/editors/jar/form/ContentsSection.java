@@ -387,7 +387,7 @@ public class ContentsSection extends SectionPart {
           return e.getDestination() == null ? "":e.getDestination();
         case 2:
           // Destination
-          return e.getPattern() == null ? "":e.getPattern().toString();
+          return e.getPattern() == null ? "":e.getPattern().pattern();
         case 3:
           // Error
           IPath src = e.getSource();
