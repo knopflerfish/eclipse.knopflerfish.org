@@ -93,15 +93,10 @@
           name="OSGi"
           id="org.knopflerfish.eclipse.core.ui.preferences.OsgiPreferencePage"/>
     <page
-          class="org.knopflerfish.eclipse.core.ui.preferences.KnopflerfishPreferencePage"
+          class="org.knopflerfish.eclipse.core.ui.preferences.FrameworkPreferencePage"
           category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPreferencePage"
-          name="Knopflerfish"
-          id="org.knopflerfish.eclipse.core.ui.preferences.KnopflerfishPreferencePage"/>
-    <page
-          class="org.knopflerfish.eclipse.core.ui.preferences.BundleSetPreferencePage"
-          category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPreferencePage"
-          name="Bundle Sets"
-          id="org.knopflerfish.eclipse.core.ui.preferences.BundleSetPreferencePage"/>
+          name="Frameworks"
+          id="org.knopflerfish.eclipse.core.ui.preferences.FrameworkPreferencePage"/>
  </extension>
  <extension
        point="org.eclipse.jdt.ui.quickFixProcessors">

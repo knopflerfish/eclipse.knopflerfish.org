@@ -40,6 +40,11 @@
    </element>
 
    <element name="vendor">
+      <annotation>
+         <appInfo>
+            <meta.element icon=""/>
+         </appInfo>
+      </annotation>
       <complexType>
          <attribute name="id" type="string" use="required">
             <annotation>

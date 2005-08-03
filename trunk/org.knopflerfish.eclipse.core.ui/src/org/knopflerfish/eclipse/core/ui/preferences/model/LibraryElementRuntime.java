@@ -89,4 +89,19 @@ public class LibraryElementRuntime implements ILibraryTreeElement {
     return TYPE_RUNTIME;
   }
 
+  /****************************************************************************
+   * java.lang.Object methods
+   ***************************************************************************/
+  
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof LibraryElementRuntime)) return false;
+    
+    return ((LibraryElementRuntime) obj).getLibrary().getPath().equals(getLibrary().getPath()); 
+  }
+
+
 }

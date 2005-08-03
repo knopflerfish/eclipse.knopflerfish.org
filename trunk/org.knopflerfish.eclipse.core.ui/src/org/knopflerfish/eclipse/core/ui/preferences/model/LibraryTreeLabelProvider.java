@@ -36,20 +36,28 @@ package org.knopflerfish.eclipse.core.ui.preferences.model;
 
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.viewers.IColorProvider;
+import org.eclipse.jface.viewers.IFontProvider;
 import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
  * @author Anders Rimén
  */
-public class LibraryTreeLabelProvider extends LabelProvider {
-  private static String IMAGE_FISH        = "icons/obj16/knopflerfish_obj.gif";
+public class LibraryTreeLabelProvider extends LabelProvider implements IFontProvider, IColorProvider {
+  private static String IMAGE_RUNTIME     = "icons/obj16/runtime_jar_obj.gif";
   private static String IMAGE_BUNDLE      = "icons/obj16/jar_b_obj.gif";
   private static String IMAGE_BUNDLE_SRC  = "icons/obj16/jar_bsrc_obj.gif";
   
-  private Image imageKnopflerfish = null;
+  private Font  fontUser = null;
+  private Image imageRuntime = null;
   private Image imageBundle = null;
   private Image imageBundleSrc = null;
   
@@ -63,12 +71,25 @@ public class LibraryTreeLabelProvider extends LabelProvider {
     if (id != null) {
       imageBundleSrc = id.createImage();
     }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_FISH);
+    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_RUNTIME);
     if (id != null) {
-      imageKnopflerfish = id.createImage();
+      imageRuntime = id.createImage();
     }
+    
+    // Create font used in property tree for non-default values
+    if (fontUser == null) {
+      Font font = Display.getCurrent().getSystemFont();
+      FontData fontData = font.getFontData()[0];
+      fontData.setStyle(SWT.BOLD);
+      //Display.getCurrent().getActiveShell()
+      fontUser = new Font(Display.getCurrent(), fontData);
+    }
+    
   }
 
+  /****************************************************************************
+   * org.eclipse.jface.viewers.IBaseLabelProvider methods
+   ***************************************************************************/
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
@@ -82,12 +103,19 @@ public class LibraryTreeLabelProvider extends LabelProvider {
       imageBundleSrc.dispose();
       imageBundleSrc = null;
     }
-    if (imageKnopflerfish != null) {
-      imageKnopflerfish.dispose();
-      imageKnopflerfish = null;
+    if (imageRuntime != null) {
+      imageRuntime.dispose();
+      imageRuntime = null;
     }
+    if (fontUser != null) {
+      fontUser.dispose();
+      fontUser = null;
+     }
   }  
   
+  /****************************************************************************
+   * org.eclipse.jface.viewers.ILabelProvider methods
+   ***************************************************************************/
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.viewers.ILabelProvider#getImage(java.lang.Object)
@@ -101,9 +129,9 @@ public class LibraryTreeLabelProvider extends LabelProvider {
     case ILibraryTreeElement.TYPE_ROOT:
       return null;
     case ILibraryTreeElement.TYPE_RUNTIME_ROOT:
-      return imageKnopflerfish;
+      return imageRuntime;
     case ILibraryTreeElement.TYPE_RUNTIME:
-      if (((LibraryElementRuntime) e).getLibrary().getSourceDirectory() != null) {
+      if (((LibraryElementRuntime) e).getLibrary().getSource() != null) {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR_WITH_SOURCE);
       } else {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR);
@@ -111,7 +139,7 @@ public class LibraryTreeLabelProvider extends LabelProvider {
     case ILibraryTreeElement.TYPE_BUILD_ROOT:
       return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
     case ILibraryTreeElement.TYPE_BUILD:
-      if (((LibraryElementBuild) e).getLibrary().getSourceDirectory() != null) {
+      if (((LibraryElementBuild) e).getLibrary().getSource() != null) {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_EXTERNAL_ARCHIVE_WITH_SOURCE);
       } else {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_EXTERNAL_ARCHIVE);
@@ -119,7 +147,7 @@ public class LibraryTreeLabelProvider extends LabelProvider {
     case ILibraryTreeElement.TYPE_BUNDLE_ROOT:
       return PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ISharedImages.IMG_OBJ_FOLDER);
     case ILibraryTreeElement.TYPE_BUNDLE:
-      if (((LibraryElementBundle) e).getBundle().getSourceDirectory() != null) {
+      if (((LibraryElementBundle) e).getBundle().getSource() != null) {
         return imageBundleSrc;
       } else {
         return imageBundle;
@@ -156,6 +184,69 @@ public class LibraryTreeLabelProvider extends LabelProvider {
     default :
       return "huh?";
     }
+  }
+
+  /****************************************************************************
+   * org.eclipse.jface.viewers.IFontProvider methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IFontProvider#getFont(java.lang.Object)
+   */
+  public Font getFont(Object o) {
+    if (!(o instanceof ILibraryTreeElement)) return null;
+    
+    ILibraryTreeElement e = (ILibraryTreeElement) o;
+    
+    switch (e.getType()) {
+    case ILibraryTreeElement.TYPE_ROOT:
+      return null;
+    case ILibraryTreeElement.TYPE_RUNTIME_ROOT:
+      return null;
+    case ILibraryTreeElement.TYPE_RUNTIME:
+      if (((LibraryElementRuntime) e).getLibrary().isUserDefined()) {
+        return fontUser;
+      } else {
+        return null;
+      }
+    case ILibraryTreeElement.TYPE_BUILD_ROOT:
+      return null;
+    case ILibraryTreeElement.TYPE_BUILD:
+      if (((LibraryElementBuild) e).getLibrary().isUserDefined()) {
+        return fontUser;
+      } else {
+        return null;
+      }
+    case ILibraryTreeElement.TYPE_BUNDLE_ROOT:
+      return null;
+    case ILibraryTreeElement.TYPE_BUNDLE:
+      if (((LibraryElementBundle) e).getBundle().isUserDefined()) {
+        return fontUser;
+      } else {
+        return null;
+      }
+    default :
+      return null;
+    }
+  }
+
+  /****************************************************************************
+   * org.eclipse.jface.viewers.IColorProvider methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IColorProvider#getForeground(java.lang.Object)
+   */
+  public Color getForeground(Object element) {
+    return null;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IColorProvider#getBackground(java.lang.Object)
+   */
+  public Color getBackground(Object element) {
+    return null;
   }
 
 }

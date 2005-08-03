@@ -89,4 +89,18 @@ public class LibraryElementBundle implements ILibraryTreeElement {
     return TYPE_BUNDLE;
   }
 
+  /****************************************************************************
+   * java.lang.Object methods
+   ***************************************************************************/
+  
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof LibraryElementBundle)) return false;
+    
+    return ((LibraryElementBundle) obj).getBundle().getPath().equals(getBundle().getPath()); 
+  }
+
 }

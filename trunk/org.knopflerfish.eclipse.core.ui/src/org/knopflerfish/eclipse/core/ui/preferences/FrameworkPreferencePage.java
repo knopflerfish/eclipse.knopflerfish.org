@@ -36,6 +36,8 @@ package org.knopflerfish.eclipse.core.ui.preferences;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
@@ -74,39 +76,48 @@ import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
-public class KnopflerfishPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
+public class FrameworkPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
   private static String DESCRIPTION = 
-    "Add, remove or edit Knopflerfish definitions.\n"+
-    "The checked definition will be used by default to build and run OSGi bundles.";
+    "Add, remove or edit OSGi frameworks.\n"+
+    "The checked framework will be used by default to build and run OSGi bundles.";
   private static String TABLE_TITLE =
-    "Installed OSGi environments:";
-
+    "Installed OSGi frameworks:";
+  
   private OsgiVendor osgiVendor;
   private List osgiInstalls;
-  private Image frameworkImage = null;
+  private HashMap images = new HashMap();
   
   // Widgets
   private Table     wDefinitionsTable;
   private Button    wEditDefinitionButton;
   private Button    wRemoveDefinitionButton;
   
-	public KnopflerfishPreferencePage() {
+  public FrameworkPreferencePage() {
     noDefaultAndApplyButton();
     
-    ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", "icons/obj16/knopflerfish_obj.gif");
-    if (id != null) {
-      frameworkImage = id.createImage();
+    String[] names = Osgi.getFrameworkDefinitionNames();
+    for (int i=0;i<names.length; i++) {
+      String imagePath = Osgi.getFrameworkDefinitionImage(names[i]);
+      String pluginId = Osgi.getFrameworkDefinitionId(names[i]);
+      
+      ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
+      if (id != null) {
+        Image image = id.createImage();
+        if (image != null) {
+          images.put(names[i], image);
+        }
+      }
     }
     
     // Load preferences
     osgiVendor = new OsgiVendor();
     osgiInstalls = osgiVendor.getOsgiInstalls();
-	}
-	
+  }
+  
   /****************************************************************************
    * org.eclipse.ui.IWorkbenchPreferencePage methods
    ***************************************************************************/
-
+  
   /* (non-Javadoc)
    * @see org.eclipse.ui.IWorkbenchPreferencePage#init(org.eclipse.ui.IWorkbench)
    */
@@ -116,22 +127,22 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
   /****************************************************************************
    * org.eclipse.jface.dialogs.IDialogPage methods
    ***************************************************************************/
-
+  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.dialogs.IDialogPage#dispose()
    */
   public void dispose() {
-    if (frameworkImage != null) {
-      frameworkImage.dispose();
-      frameworkImage = null;
+    for (Iterator i=images.values().iterator(); i.hasNext();){
+     Image image = (Image) i.next();
+     image.dispose();
     }
   }
   
   /****************************************************************************
    * org.eclipse.jface.preference.PreferencePage methods
    ***************************************************************************/
-
+  
   /* (non-Javadoc)
    * @see org.eclipse.jface.preference.PreferencePage#createContents(org.eclipse.swt.widgets.Composite)
    */
@@ -263,7 +274,7 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
           updateButtons();
         }
       }
-
+      
       public void widgetDefaultSelected(SelectionEvent e) {
         int idx = wDefinitionsTable.getSelectionIndex();
         if (idx != -1) {
@@ -285,7 +296,7 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
     
     TableColumn wLocationTableColumn = new TableColumn(wDefinitionsTable, SWT.LEFT);
     wLocationTableColumn.setText("Location");
-
+    
     // Add framework definitions
     if (osgiInstalls != null) {
       for (int i=0; i<osgiInstalls.size(); i++) {
@@ -297,11 +308,11 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
     UiUtils.packTableColumns(wDefinitionsTable);
     return page;
   }
-
+  
   /****************************************************************************
    * org.eclipse.jface.preference.IPreferencePage methods
    ***************************************************************************/
-
+  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.preference.IPreferencePage#performOk()
@@ -310,7 +321,7 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
     // Save Knopflerfish instances to preference store
     try {
       osgiVendor.setOsgiInstalls(osgiInstalls);
-
+      
       // Get java projects
       IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
       IProject [] projects = root.getProjects();
@@ -320,7 +331,7 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
           javaProjectList.add(JavaCore.create(projects[i]));
         }
       }
-    
+      
       IJavaProject [] javaProjects = (IJavaProject[]) javaProjectList.toArray(new IJavaProject[javaProjectList.size()]);
       IClasspathContainer [] containers = new IClasspathContainer[javaProjectList.size()];
       
@@ -336,30 +347,30 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
         path = path.append(osgiInstall.getName());
         JavaCore.setClasspathContainer(path,javaProjects,containers,null);
       }
-    
+      
     } catch (Exception e) {
       e.printStackTrace();
     }
     return true;
   }
   
-
+  
   /****************************************************************************
    * Private worker methods
    ***************************************************************************/
-
+  
   private void updateButtons() {
     boolean enabled = (wDefinitionsTable.getSelectionIndex() != -1);
     wEditDefinitionButton.setEnabled(enabled);
     wRemoveDefinitionButton.setEnabled(enabled);
   }
-
+  
   private void addOsgiInstall(OsgiInstall osgiInstall) {
     TableItem item = new TableItem(wDefinitionsTable, 0);
     item.setData(osgiInstall);
     item.setChecked(osgiInstall.isDefaultDefinition());
     item.setText(0, osgiInstall.getName());
-    item.setImage(0, frameworkImage);
+    item.setImage(0, (Image) images.get(osgiInstall.getType()));
     item.setText(1, osgiInstall.getLocation());
   }
   
@@ -370,7 +381,7 @@ public class KnopflerfishPreferencePage extends PreferencePage implements IWorkb
     item.setData(osgiInstall);
     item.setChecked(osgiInstall.isDefaultDefinition());
     item.setText(0, osgiInstall.getName());
-    item.setImage(0, frameworkImage);
+    item.setImage(0, (Image) images.get(osgiInstall.getType()));
     item.setText(1, osgiInstall.getLocation());
   }
   

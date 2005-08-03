@@ -119,8 +119,10 @@ public class PropertyDialog extends Dialog {
    */
   protected void okPressed() {
     if (property == null) {
+      /* TODO
       property = new SystemProperty(wNameText.getText());
       property.setGroup(MainTab.USER_GROUP);
+      */
     }
     
     // Value

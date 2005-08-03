@@ -36,15 +36,12 @@ package org.knopflerfish.eclipse.core.ui.preferences;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Properties;
-import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -63,21 +60,27 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
+import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
+import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
+import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.OsgiInstall;
-import org.knopflerfish.eclipse.core.SystemProperty;
-import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.OsgiVendor;
+import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.ui.dialogs.ImportLibrariesDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
 import org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement;
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementBuild;
@@ -94,11 +97,6 @@ import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryTreeLabelProvid
  * @author Anders Rimén
  */
 public class FrameworkDefinitionDialog extends Dialog {
-  private static String [] PATH_FRAMEWORK_LIB = new String [] {
-      "knopflerfish.org/osgi/framework.jar",
-      "osgi/framework.jar",
-      "framework.jar"
-  };
   
   private static String TITLE_ADD = "Add framework definition";
   private static String TITLE_EDIT = "Edit framework definition";
@@ -107,6 +105,7 @@ public class FrameworkDefinitionDialog extends Dialog {
   private static String TITLE_EDIT_LIBRARY = "Edit library";
   private static String TITLE_ADD_BUNDLE = "Add bundle";
   private static String TITLE_EDIT_BUNDLE = "Edit bundle";
+  private static String TITLE_IMPORT_LIBRARIES = "Import libraries";
   
   private final static int NUM_CHARS_NAME = 60;
   
@@ -116,6 +115,7 @@ public class FrameworkDefinitionDialog extends Dialog {
   
   // Widgets
   private Text    wNameText;
+  private Combo   wTypeCombo;
   private Text    wLocationText;
   private Button  wDefaultButton;
   private Text    wMainClassText;
@@ -127,6 +127,7 @@ public class FrameworkDefinitionDialog extends Dialog {
   private Button  wLibraryAddRuntimeButton;
   private Button  wLibraryAddBuildButton;
   private Button  wLibraryAddBundleButton;
+  private Button  wLibraryImportButton;
   private Label   wErrorMsgLabel;
   private Label   wErrorImgLabel;
 
@@ -137,7 +138,7 @@ public class FrameworkDefinitionDialog extends Dialog {
   private LibraryElementRoot frameworkLibraryModel = new LibraryElementRoot();;
   private ArrayList usedNames;
   private OsgiInstall osgiInstall;
-  private ArrayList properties = new ArrayList();
+  private TreeMap definitions = new TreeMap();
   
   /**
    * @param parentShell
@@ -146,6 +147,13 @@ public class FrameworkDefinitionDialog extends Dialog {
     super(parentShell);
     this.usedNames = usedNames;
     this.osgiInstall = osgiInstall;
+    if (osgiInstall != null && usedNames != null) {
+      usedNames.remove(osgiInstall.getName());
+    }
+    String[] names = Osgi.getFrameworkDefinitionNames();
+    for (int i=0;i<names.length; i++) {
+      definitions.put(names[i], Osgi.getFrameworkDefinition(names[i]));
+    }
   }
   
   /****************************************************************************
@@ -200,6 +208,7 @@ public class FrameworkDefinitionDialog extends Dialog {
     }
 
     osgiInstall.setName(wNameText.getText());
+    osgiInstall.setType(wTypeCombo.getText());
     osgiInstall.setLocation(wLocationText.getText());
     osgiInstall.setDefaultSettings(wDefaultButton.getSelection());
     osgiInstall.setMainClass(wMainClassText.getText());
@@ -207,7 +216,16 @@ public class FrameworkDefinitionDialog extends Dialog {
     osgiInstall.setRuntimeLibraries(frameworkLibraryModel.getRuntimeLibraries());
     osgiInstall.setBuildLibraries(frameworkLibraryModel.getBuildLibraries());
     osgiInstall.setBundles(frameworkLibraryModel.getBundles());
-    osgiInstall.setSystemProperties(properties);
+    osgiInstall.clearSystemPropertyGroups();
+    String type = wTypeCombo.getText();
+    IFrameworkDefinition def = (IFrameworkDefinition) definitions.get(type);
+    SystemPropertyGroup[] groups = def.getSystemPropertyGroups();
+    if(groups != null) {
+      for (int i=0; i<groups.length; i++) {
+        osgiInstall.addSystemPropertyGroup(groups[i]);
+        groups[i].setOsgiInstall(osgiInstall);
+      }
+    }
     
     // Set return code and close window
     setReturnCode(Window.OK);
@@ -237,6 +255,23 @@ public class FrameworkDefinitionDialog extends Dialog {
     gd.horizontalSpan = 2;
     gd.widthHint = convertWidthInCharsToPixels(NUM_CHARS_NAME);
     wNameText.setLayoutData(gd);
+    
+    // Type
+    Label wTypeLabel = new Label(composite, SWT.LEFT);
+    wTypeLabel.setText("Framework type:");
+    wTypeCombo = new Combo(composite, SWT.DROP_DOWN | SWT.READ_ONLY);
+    wTypeCombo.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        if (wDefaultButton.getSelection()) {
+          setDefaultSettings();
+        }
+        verifyAll();
+      }
+    });
+    gd = new GridData(GridData.FILL_HORIZONTAL);
+    gd.horizontalSpan = 2;
+    wTypeCombo.setLayoutData(gd);
+    
 
     // Location
     Label wLocationLabel = new Label(composite, SWT.LEFT);
@@ -429,7 +464,8 @@ public class FrameworkDefinitionDialog extends Dialog {
         if (dialog.open() == Window.OK) {
           try {
             OsgiBundle bundle = new OsgiBundle(new File(dialog.getLibrary().getPath()));
-            bundle.setSourceDirectory(dialog.getLibrary().getSourceDirectory());
+            bundle.setUserDefined(true);
+            bundle.setSource(dialog.getLibrary().getSource());
             if (type == ILibraryTreeElement.TYPE_BUILD) {
               ((LibraryElementBuild) element).setLibrary(bundle);
             } else if (type == ILibraryTreeElement.TYPE_RUNTIME) {
@@ -474,7 +510,8 @@ public class FrameworkDefinitionDialog extends Dialog {
           LibraryElementBundleRoot bundleRoot = frameworkLibraryModel.getBundleRoot();
           try {
             OsgiBundle bundle = new OsgiBundle(new File(dialog.getLibrary().getPath()));
-            bundle.setSourceDirectory(dialog.getLibrary().getSourceDirectory());
+            bundle.setUserDefined(true);
+            bundle.setSource(dialog.getLibrary().getSource());
             bundleRoot.addChild(new LibraryElementBundle(bundleRoot, bundle));
           } catch (IOException ioe) {
           }
@@ -493,6 +530,58 @@ public class FrameworkDefinitionDialog extends Dialog {
         if (dialog.open() == Window.OK) {
           LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
           buildRoot.addChild(new LibraryElementBuild(buildRoot, dialog.getLibrary()));
+          
+          wLibraryTreeViewer.refresh();
+          updateButtons();
+        }
+      }
+    });
+
+    wLibraryImportButton = new Button(wLibraryComposite, SWT.NONE);
+    wLibraryImportButton.setText("Import Libraries...");
+    wLibraryImportButton.addSelectionListener(new SelectionAdapter(){
+      public void widgetSelected(SelectionEvent e) {
+        ImportLibrariesDialog dialog = 
+          new ImportLibrariesDialog(Display.getCurrent().getActiveShell(), usedNames, TITLE_IMPORT_LIBRARIES);
+        
+        if (dialog.open() == Window.OK) {
+          String name = dialog.getFrameworkName();
+          OsgiVendor vendor = new OsgiVendor();
+          IOsgiInstall framework = vendor.getOsgiInstall(name);
+          boolean onlyUserDefined = dialog.isOnlyUserDefined();
+          
+          // Import runtime libraries
+          if (dialog.isImportRuntimeLibraries()) {
+            LibraryElementRuntimeRoot runtimeRoot = frameworkLibraryModel.getRuntimeRoot();
+            IOsgiLibrary[] libraries = framework.getRuntimeLibraries();
+            for (int i=0; i<libraries.length; i++) {
+              if (!onlyUserDefined || libraries[i].isUserDefined()) {
+                runtimeRoot.addChild(new LibraryElementRuntime(runtimeRoot, libraries[i]));
+              }
+            }
+          }
+          
+          // Import build path libraries
+          if (dialog.isImportBuildPathLibraries()) {
+            LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
+            IOsgiLibrary[] libraries = framework.getBuildLibraries();
+            for (int i=0; i<libraries.length; i++) {
+              if (!onlyUserDefined || libraries[i].isUserDefined()) {
+                buildRoot.addChild(new LibraryElementBuild(buildRoot, libraries[i]));
+              }
+            }
+          }
+          
+          // Import bundles
+          if (dialog.isImportBundles()) {
+            LibraryElementBundleRoot bundleRoot = frameworkLibraryModel.getBundleRoot();
+            IOsgiBundle[] bundles = framework.getBundles();
+            for (int i=0; i<bundles.length; i++) {
+              if (!onlyUserDefined || bundles[i].isUserDefined()) {
+                bundleRoot.addChild(new LibraryElementBundle(bundleRoot, bundles[i]));
+              }
+            }
+          }
           
           wLibraryTreeViewer.refresh();
           updateButtons();
@@ -556,6 +645,11 @@ public class FrameworkDefinitionDialog extends Dialog {
     fd.right = new FormAttachment(100, 0);
     wLibraryAddBundleButton.setLayoutData(fd);
 
+    fd = new FormData();
+    fd.left = new FormAttachment(wLibraryAddRuntimeButton, 0, SWT.LEFT);
+    fd.top = new FormAttachment(wLibraryAddBundleButton, 5, SWT.BOTTOM);
+    fd.right = new FormAttachment(100, 0);
+    wLibraryImportButton.setLayoutData(fd);
     
     // Error label
     Composite wErrorComposite = new Composite(composite, SWT.NONE);
@@ -590,7 +684,7 @@ public class FrameworkDefinitionDialog extends Dialog {
       return false;
     }
     
-    if (verifyLocation() == null) {
+    if (!verifyLocation()) {
       return false;
     }
     
@@ -606,11 +700,6 @@ public class FrameworkDefinitionDialog extends Dialog {
       return false;
     }
     
-    if (osgiInstall != null && name.equals(osgiInstall.getName())) {
-      setState(null, STATE_OK);
-      return true;
-    }
-    
     // Check that name is not already used
     if (usedNames.contains(name)) {
       setState("Framework name is already used.", STATE_ERROR);
@@ -621,13 +710,13 @@ public class FrameworkDefinitionDialog extends Dialog {
     return true;
   }
   
-  public File verifyLocation() {
+  public boolean verifyLocation() {
     String location = wLocationText.getText();
     
     // Check if location is valid
     if (location == null || location.length() == 0) {
       setState("Enter location of framework installation.", STATE_INFO);
-      return null;
+      return false;
     }
     
     File homeDir = new File(location);
@@ -635,30 +724,29 @@ public class FrameworkDefinitionDialog extends Dialog {
     // Check that home directory exists
     if (!homeDir.exists()) {
       setState("The location does not exist.", STATE_ERROR);
-      return null;
+      return false;
     }
     
     // Check that home directory is a directory
     if (!homeDir.isDirectory()) {
       setState("The location is not a directory.", STATE_ERROR);
-      return null;
+      return false;
     }
     
-    // Check that home directory contains framework.jar
-    File root = null;
-    for (int i=0; i<PATH_FRAMEWORK_LIB.length; i++) {
-      File libFile = new File(homeDir, PATH_FRAMEWORK_LIB[i]);
-      if ( libFile.exists() && libFile.isFile()) {
-        root = libFile.getParentFile();
-      }
+    // Check if location is a valid directory for this definition
+    String type = wTypeCombo.getText();
+    IFrameworkDefinition def = (IFrameworkDefinition) definitions.get(type);
+    if (def == null) {
+      setState("No framework plugin found for '"+type+"'.", STATE_ERROR);
+      return false;
     }
-    
-    if (root == null) {
-      setState("The location is not a valid root, framework.jar not found.", STATE_ERROR);
-      return root;
+
+    if (!def.isValidDir(homeDir)) {
+      setState("The location is not a valid directory for the selected framework type.", STATE_ERROR);
+      return false;
     } else {
       setState(null, STATE_OK);
-      return root;
+      return true;
     }
   }
 
@@ -714,6 +802,8 @@ public class FrameworkDefinitionDialog extends Dialog {
     wLibraryAddBuildButton.setEnabled(!wDefaultButton.getSelection());
     wLibraryAddBundleButton.setEnabled(!wDefaultButton.getSelection());
     wLibraryAddRuntimeButton.setEnabled(!wDefaultButton.getSelection());
+    wLibraryImportButton.setEnabled(!wDefaultButton.getSelection() && 
+        usedNames != null && usedNames.size() > 0);
   }
   
   private void enableCustomSettings(boolean enable) {
@@ -723,13 +813,18 @@ public class FrameworkDefinitionDialog extends Dialog {
 
   private void setDefaultSettings() {
 
-    File root = verifyLocation();
-    if (root != null) {
-      frameworkLibraryModel.loadDefaultModel(root);
-      wLibraryTreeViewer.setInput(frameworkLibraryModel);
+    // Clear model
+    frameworkLibraryModel.clear();
+    
+    if (verifyLocation()) {
+      String type = wTypeCombo.getText();
+      IFrameworkDefinition def = (IFrameworkDefinition) definitions.get(type);
+      
+      String location = wLocationText.getText();
+      File dir = new File(location);
       
       // Read framework info
-      IOsgiLibrary mainLib = frameworkLibraryModel.getMainLibrary();
+      IOsgiLibrary mainLib = def.getMainLibrary(dir);
       Manifest manifest = mainLib.getManifest();
       String mainClass = null;
       String specificationVersion = null;
@@ -741,62 +836,59 @@ public class FrameworkDefinitionDialog extends Dialog {
       wMainClassText.setText(mainClass == null ? "":mainClass);
       wSpecificationVersionText.setText(specificationVersion == null ? "":specificationVersion);
 
-      // Load and set properties
-      InputStream is = null;
-      properties.clear();
-      try {
-        try {
-          is = OsgiUiPlugin.getDefault().openStream(new Path("resources/framework.props"));
-          Properties props = new Properties();
-          props.load(is);
-          
-          int numProps = Integer.parseInt(props.getProperty("framework.property.num", "0"));
-          for (int i=0; i<numProps; i++) {
-            String propBase = "framework.property."+i;
-            String name = props.getProperty(propBase+".name");
-            if (name != null) {
-              SystemProperty property = new SystemProperty(name);
-              String description = props.getProperty(propBase+".description");
-              if (description != null) {
-                property.setDescription(description);
-              }
-              String group = props.getProperty(propBase+".group");
-              if (group != null) {
-                property.setGroup(group);
-              }
-              String defaultValue = props.getProperty(propBase+".default");
-              if (defaultValue != null) {
-                property.setDefaultValue(defaultValue);
-              }
-              String allowedValues = props.getProperty(propBase+".allowed");
-              if (allowedValues != null) {
-                ArrayList values = new ArrayList();
-                StringTokenizer st = new StringTokenizer(allowedValues, ",");
-                while(st.hasMoreTokens()) {
-                  String token = st.nextToken();
-                  values.add(token);
-                }
-                property.setAllowedValues(values);
-              }
-              properties.add(property);
-            }
-          }
-        } finally {
-          if (is != null) is.close();
+      // Set runtime libraries
+      LibraryElementRuntimeRoot runtimeRoot = frameworkLibraryModel.getRuntimeRoot();
+      IOsgiLibrary[] runtimeLibraries = def.getRuntimeLibraries(dir);
+      if (runtimeLibraries != null) {
+        for(int i=0; i<runtimeLibraries.length; i++) {
+          runtimeRoot.addChild(new LibraryElementRuntime(runtimeRoot, runtimeLibraries[i]));
         }
-      } catch (Throwable t) {
-        t.printStackTrace();
       }
+      
+      // Set build path libraries
+      LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
+      IOsgiLibrary[] buildLibraries = def.getBuildLibraries(dir);
+      if (buildLibraries != null) {
+        for(int i=0; i<buildLibraries.length; i++) {
+          buildRoot.addChild(new LibraryElementBuild(buildRoot, buildLibraries[i]));
+        }
+      }
+      
+      // Set bundles
+      LibraryElementBundleRoot bundleRoot = frameworkLibraryModel.getBundleRoot();
+      IOsgiBundle[] bundles = def.getBundles(dir);
+      if (bundles != null) {
+        for(int i=0; i<bundles.length; i++) {
+          bundleRoot.addChild(new LibraryElementBundle(bundleRoot, bundles[i]));
+        }
+      }
+    } else {
+      wMainClassText.setText("");
+      wSpecificationVersionText.setText("");
     }
+
+    // Refresh viewer
+    wLibraryTreeViewer.refresh();
   }
   
   private void setValues(OsgiInstall settings) {
     
     // Name
     if (settings != null) { 
-      wNameText.setText(osgiInstall.getName());
+      wNameText.setText(settings.getName());
     } else {
       wNameText.setText("");
+    }
+    
+    // Type
+    wTypeCombo.removeAll();
+    for(Iterator i=definitions.keySet().iterator(); i.hasNext();) {
+      wTypeCombo.add((String)i.next());
+    }
+    if (settings != null && settings.getType() != null && settings.getType().trim().length() > 0) {
+      wTypeCombo.setText(settings.getType());
+    } else {
+      wTypeCombo.select(0);
     }
     
     // Location
@@ -859,16 +951,7 @@ public class FrameworkDefinitionDialog extends Dialog {
     }
     
     // Update viewer input
-    wLibraryTreeViewer.setInput(frameworkLibraryModel);
-    
-    // Properties 
-    properties.clear();
-    if (settings != null) {
-      SystemProperty [] systemProperties = settings.getSystemProperties();
-      for (int i=0; i<systemProperties.length; i++) {
-        properties.add(systemProperties[i]);
-      }
-    }
+    wLibraryTreeViewer.refresh();
     
     verifyAll();
   }

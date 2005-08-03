@@ -35,23 +35,30 @@
 package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.viewers.IColorProvider;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ITableLabelProvider;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.PlatformUI;
+import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
  * @author Anders Rimén
  */
-public class SelectedBundlesLabelProvider implements ITableLabelProvider {
+public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColorProvider {
 
-  private static String IMAGE_BUNDLE = "icons/obj16/bundle_obj.gif";
+  private static String IMAGE_BUNDLE      = "icons/obj16/jar_b_obj.gif";
+  private static String IMAGE_BUNDLE_SRC  = "icons/obj16/jar_bsrc_obj.gif";
   private static String IMAGE_BUNDLE_OVR  = "icons/ovr16/bundle_ovr.gif";
   
+  // Resources
+  private Color colorError    = null;
   private Image imageBundle = null;
+  private Image imageBundleSrc = null;
   private Image imageProject = null;
   private Image sharedImageWorkspace  = PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT );
   
@@ -59,6 +66,10 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider {
     ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
     if (id != null) {
       imageBundle = id.createImage();
+    }
+    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_SRC);
+    if (id != null) {
+      imageBundleSrc = id.createImage();
     }
     id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_OVR);
     if (id != null) {
@@ -70,8 +81,13 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider {
       gc.dispose();      
       bundleOvrImage.dispose();
     }
+
+    colorError = new Color(null, 255,0,0);
   }
   
+  /****************************************************************************
+   * org.eclipse.jface.viewers.IBaseLabelProvider Methods
+   ***************************************************************************/
   /* (non-Javadoc)
    * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
    */
@@ -80,12 +96,42 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider {
       imageBundle.dispose();
       imageBundle = null;
     }
+    if (imageBundleSrc != null) {
+      imageBundleSrc.dispose();
+      imageBundleSrc = null;
+    }
     if (imageProject != null) {
       imageProject.dispose();
       imageProject = null;
     }
+    if (colorError != null) {
+      colorError.dispose();
+      colorError = null;
+    }
   }
 
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
+   */
+  public void addListener(ILabelProviderListener listener) {
+  }
+
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
+   */
+  public boolean isLabelProperty(Object element, String property) {
+    return false;
+  }
+
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
+   */
+  public void removeListener(ILabelProviderListener listener) {
+  }
+
+  /****************************************************************************
+   * org.eclipse.jface.viewers.ITableLabelProvider Methods
+   ***************************************************************************/
   /* (non-Javadoc)
    * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.Object, int)
    */
@@ -94,7 +140,12 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider {
     
     if (columnIndex == 0) {
       if (e.getType() == SelectedBundleElement.TYPE_BUNDLE) {
-        return imageBundle;
+        IOsgiBundle bundle = e.getBundle();
+        if (bundle != null && bundle.getSource() != null) {
+          return imageBundleSrc;
+        } else {
+          return imageBundle;
+        }
       } else {
         return imageProject;
       }
@@ -140,22 +191,28 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider {
     }
   }
 
-  /* (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
+  /****************************************************************************
+   * org.eclipse.jface.window.Window Methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IColorProvider#getForeground(java.lang.Object)
    */
-  public void addListener(ILabelProviderListener listener) {
+  public Color getForeground(Object o) {
+    SelectedBundleElement e = (SelectedBundleElement) o;
+    String error = e.getError();
+    if (error != null && error.trim().length() > 0) {
+      return colorError;
+    } else {
+      return null;
+    }
   }
 
-  /* (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IColorProvider#getBackground(java.lang.Object)
    */
-  public boolean isLabelProperty(Object element, String property) {
-    return false;
-  }
-
-  /* (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
-   */
-  public void removeListener(ILabelProviderListener listener) {
+  public Color getBackground(Object element) {
+    return null;
   }
 }

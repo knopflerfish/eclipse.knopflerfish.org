@@ -48,11 +48,13 @@ import org.osgi.service.prefs.Preferences;
  */
 public class OsgiInstall implements IOsgiInstall {
 
+  /*
   public static String TYPE_OSGI_R2 = "OSGi R2";
   public static String TYPE_OSGI_R3 = "OSGi R3";
   public static String TYPE_OSGI_R4 = "OSGi R4";
   
   public static String [] TYPES = {TYPE_OSGI_R2, TYPE_OSGI_R3, TYPE_OSGI_R4};
+  */
 
   private static String PREF_LOCATION               = "Location";
   private static String PREF_SPECIFICATION_VERISION = "SpecificationVersion";
@@ -63,26 +65,25 @@ public class OsgiInstall implements IOsgiInstall {
   private static String PREF_BUNDLES                = "Bundles";
   private static String PREF_JAR                    = "Jar";
   private static String PREF_SOURCE                 = "Source";
+  private static String PREF_USER_DEFINED           = "UserDefined";
   private static String PREF_DEFAULT_SETTINGS       = "DefaultSettings";
   private static String PREF_DEFAULT_DEFINITION     = "DefaultDefinition";
-  private static String PREF_PROPERTIES             = "Properties";
-  private static String PREF_PROPERTY_NAME          = "Name";
+  private static String PREF_PROPERTY_GROUPS        = "PropertyGroups";
   private static String PREF_PROPERTY_DEFAULT       = "Default";
   private static String PREF_PROPERTY_DESCRIPTION   = "Description";
-  private static String PREF_PROPERTY_GROUP         = "Group";
   private static String PREF_PROPERTY_ALLOWED       = "Allowed";
   
   private String name;
   private String specificationVersion;
   private String location;
-  private String type = TYPE_OSGI_R3;
+  private String type;
   private boolean defaultDefinition;
   private boolean defaultSettings;
   private String mainClass;
   private ArrayList runtimeLibs = new ArrayList();  
   private ArrayList buildLibs = new ArrayList();  
   private ArrayList bundles = new ArrayList();
-  private ArrayList properties = new ArrayList();
+  private ArrayList propertyGroups = new ArrayList();
   
   public OsgiInstall() {
   }
@@ -116,7 +117,8 @@ public class OsgiInstall implements IOsgiInstall {
       Preferences libraryNode = librariesNode.node("Library "+idx);
       try {
         OsgiLibrary library = new OsgiLibrary(new File(libraryNode.get(PREF_JAR, "")));
-        library.setSourceDirectory(libraryNode.get(PREF_SOURCE, null));
+        library.setSource(libraryNode.get(PREF_SOURCE, null));
+        library.setUserDefined("true".equalsIgnoreCase(libraryNode.get(PREF_USER_DEFINED, "false")));
         runtimeLibs.add(library);
       } catch (Exception e) {}
       idx++;
@@ -130,7 +132,8 @@ public class OsgiInstall implements IOsgiInstall {
       Preferences libraryNode = buildLibNode.node("Library "+idx);
       try {
         OsgiLibrary library = new OsgiLibrary(new File(libraryNode.get(PREF_JAR, "")));
-        library.setSourceDirectory(libraryNode.get(PREF_SOURCE, null));
+        library.setSource(libraryNode.get(PREF_SOURCE, null));
+        library.setUserDefined("true".equalsIgnoreCase(libraryNode.get(PREF_USER_DEFINED, "false")));
         buildLibs.add(library);
       } catch (Exception e) {}
       idx++;
@@ -148,54 +151,52 @@ public class OsgiInstall implements IOsgiInstall {
         Preferences bundleNode = bundlesNode.node(bundleNames[i]);
         try {
           OsgiBundle bundle = new OsgiBundle(new File(bundleNode.get(PREF_JAR, "")));
-          bundle.setSourceDirectory(bundleNode.get(PREF_SOURCE, null));
+          bundle.setSource(bundleNode.get(PREF_SOURCE, null));
+          bundle.setUserDefined("true".equalsIgnoreCase(bundleNode.get(PREF_USER_DEFINED, "false")));
           bundles.add(bundle);
         } catch (Exception e) {}
       }
     }
 
-    // Properties
-    Preferences propertiesNode = node.node(PREF_PROPERTIES);
-    properties.clear();
-    idx = 0;
-    while (propertiesNode.nodeExists("Property "+idx)) {
-      Preferences propertyNode = propertiesNode.node("Property "+idx);
-      idx++;
-      // Name
-      String value = propertyNode.get(PREF_PROPERTY_NAME, null);
-      if (value == null) continue;
+    // Property Groups
+    Preferences propertyGroupsNode = node.node(PREF_PROPERTY_GROUPS);
+    propertyGroups.clear();
+    String[] propertyGroupNodeNames = propertyGroupsNode.childrenNames();
+    for (int i=0; i<propertyGroupNodeNames.length; i++) {
+      SystemPropertyGroup propertyGroup = new SystemPropertyGroup(propertyGroupNodeNames[i]);
+      Preferences propertyGroupNode = propertyGroupsNode.node(propertyGroup.getName());
       
-      SystemProperty property = new SystemProperty(value);
-      
-      // Default value
-      value = propertyNode.get(PREF_PROPERTY_DEFAULT, null);
-      if (value != null && value.trim().length() > 0) {
-        property.setDefaultValue(value);
-      }
-      // Description
-      value = propertyNode.get(PREF_PROPERTY_DESCRIPTION, null);
-      if (value != null && value.trim().length() > 0) {
-        property.setDescription(value);
-      }
-      // Group
-      value = propertyNode.get(PREF_PROPERTY_GROUP, null);
-      if (value != null && value.trim().length() > 0) {
-        property.setGroup(value);
-      }
-      
-      // Allowed values
-      value = propertyNode.get(PREF_PROPERTY_ALLOWED, null);
-      if (value != null && value.trim().length() > 0) {
-        ArrayList values = new ArrayList();
-        StringTokenizer st = new StringTokenizer(value, ",");
-        while(st.hasMoreTokens()) {
-          String token = st.nextToken();
-          values.add(token);
+      // Properties
+      String[] propertyNodeNames = propertyGroupNode.childrenNames();
+      for (int j=0; j<propertyNodeNames.length; j++) {
+        SystemProperty property = new SystemProperty(propertyGroup, propertyNodeNames[j]);
+        Preferences propertyNode = propertyGroupNode.node(property.getName());
+        
+        // Default value
+        String value = propertyNode.get(PREF_PROPERTY_DEFAULT, null);
+        if (value != null && value.trim().length() > 0) {
+          property.setDefaultValue(value);
         }
-        property.setAllowedValues(values);
+        // Description
+        value = propertyNode.get(PREF_PROPERTY_DESCRIPTION, null);
+        if (value != null && value.trim().length() > 0) {
+          property.setDescription(value);
+        }
+        
+        // Allowed values
+        value = propertyNode.get(PREF_PROPERTY_ALLOWED, null);
+        if (value != null && value.trim().length() > 0) {
+          ArrayList values = new ArrayList();
+          StringTokenizer st = new StringTokenizer(value, ",");
+          while(st.hasMoreTokens()) {
+            String token = st.nextToken();
+            values.add(token);
+          }
+          property.setAllowedValues(values);
+        }
       }
       
-      properties.add(property);
+      addSystemPropertyGroup(propertyGroup);
     }
   }
 
@@ -238,9 +239,10 @@ public class OsgiInstall implements IOsgiInstall {
       OsgiLibrary library = (OsgiLibrary) runtimeLibs.get(i);
       Preferences libraryNode = librariesNode.node("Library "+i);
       libraryNode.put(PREF_JAR, library.getPath());
-      if (library.getSourceDirectory() != null) {
-        libraryNode.put(PREF_SOURCE, library.getSourceDirectory());
+      if (library.getSource() != null) {
+        libraryNode.put(PREF_SOURCE, library.getSource());
       }
+      libraryNode.putBoolean(PREF_USER_DEFINED, library.isUserDefined());
     }
     
     // Build Libraries
@@ -250,9 +252,10 @@ public class OsgiInstall implements IOsgiInstall {
       OsgiLibrary library = (OsgiLibrary) buildLibs.get(i);
       Preferences libraryNode = buildLibNode.node("Library "+i);
       libraryNode.put(PREF_JAR, library.getPath());
-      if (library.getSourceDirectory() != null) {
-        libraryNode.put(PREF_SOURCE, library.getSourceDirectory());
+      if (library.getSource() != null) {
+        libraryNode.put(PREF_SOURCE, library.getSource());
       }
+      libraryNode.putBoolean(PREF_USER_DEFINED, library.isUserDefined());
     }
     
     // Default definition
@@ -265,48 +268,47 @@ public class OsgiInstall implements IOsgiInstall {
       OsgiBundle bundle = (OsgiBundle) bundles.get(i);
       Preferences bundleNode = bundlesNode.node("Bundle "+i);
       bundleNode.put(PREF_JAR, bundle.getPath());
-      if (bundle.getSourceDirectory() != null) {
-        bundleNode.put(PREF_SOURCE, bundle.getSourceDirectory());
+      if (bundle.getSource() != null) {
+        bundleNode.put(PREF_SOURCE, bundle.getSource());
       }
+      bundleNode.putBoolean(PREF_USER_DEFINED, bundle.isUserDefined());
     }
 
-    // Properties
-    subNode.node(PREF_PROPERTIES).removeNode();
-    Preferences propertiesNode = subNode.node(PREF_PROPERTIES);
-    for (int i=0; i<properties.size(); i++) {
-      SystemProperty property = (SystemProperty) properties.get(i);
-      Preferences propertyNode = propertiesNode.node("Property "+i);
-      // Name
-      String value = property.getName();
-      if (value != null && value.trim().length() > 0) {
-        propertyNode.put(PREF_PROPERTY_NAME, value);
-      }
-      // Default value
-      value = property.getDefaultValue();
-      if (value != null && value.trim().length() > 0) {
-        propertyNode.put(PREF_PROPERTY_DEFAULT, value);
-      }
-      // Description
-      value = property.getDescription();
-      if (value != null && value.trim().length() > 0) {
-        propertyNode.put(PREF_PROPERTY_DESCRIPTION, value);
-      }
-      // Group
-      value = property.getGroup();
-      if (value != null && value.trim().length() > 0) {
-        propertyNode.put(PREF_PROPERTY_GROUP, value);
-      }
-      // Allowed values
-      List values = property.getAllowedValues();
-      if (values != null && values.size() >0) {
-        StringBuffer buf = new StringBuffer();
-        for (int j=0; j<values.size();j++) {
-          buf.append(values.get(j));
-          buf.append(",");
+    // Property Groups
+    subNode.node(PREF_PROPERTY_GROUPS).removeNode();
+    Preferences propertyGroupsNode = subNode.node(PREF_PROPERTY_GROUPS);
+    for (int i=0; i<propertyGroups.size(); i++) {
+      SystemPropertyGroup propertyGroup = (SystemPropertyGroup) propertyGroups.get(i);
+      Preferences propertyGroupNode = propertyGroupsNode.node(propertyGroup.getName());
+      
+      // Properties
+      SystemProperty[] properties = propertyGroup.getProperties();
+      for (int j=0; j<properties.length; j++) {
+        SystemProperty property = properties[j];
+        Preferences propertyNode = propertyGroupNode.node(property.getName());
+
+        // Default value
+        String value = property.getDefaultValue();
+        if (value != null && value.trim().length() > 0) {
+          propertyNode.put(PREF_PROPERTY_DEFAULT, value);
         }
-        // Remove last ','
-        buf.setLength(buf.length()-1);
-        propertyNode.put(PREF_PROPERTY_ALLOWED, buf.toString());
+        // Description
+        value = property.getDescription();
+        if (value != null && value.trim().length() > 0) {
+          propertyNode.put(PREF_PROPERTY_DESCRIPTION, value);
+        }
+        // Allowed values
+        List values = property.getAllowedValues();
+        if (values != null && values.size() >0) {
+          StringBuffer buf = new StringBuffer();
+          for (int k=0; k<values.size();k++) {
+            buf.append(values.get(k));
+            buf.append(",");
+          }
+          // Remove last ','
+          buf.setLength(buf.length()-1);
+          propertyNode.put(PREF_PROPERTY_ALLOWED, buf.toString());
+        }
       }
     }
   }
@@ -447,11 +449,21 @@ public class OsgiInstall implements IOsgiInstall {
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IOsgiInstall#getSystemProperties()
    */
-  public SystemProperty[] getSystemProperties() {
-    return (SystemProperty[]) properties.toArray(new SystemProperty[properties.size()]);
+  public SystemPropertyGroup[] getSystemPropertyGroups() {
+    return (SystemPropertyGroup[]) propertyGroups.toArray(new SystemPropertyGroup[propertyGroups.size()]);
   }
 
-  public void setSystemProperties(ArrayList properties) {
-    this.properties = properties;
+  public void setSystemPropertyGroups(ArrayList propertyGroups) {
+    this.propertyGroups = propertyGroups;
+  }
+
+  public void addSystemPropertyGroup(SystemPropertyGroup group) {
+    if (group != null && !propertyGroups.contains(group)) {
+      propertyGroups.add(group);
+    }
+  }
+
+  public void clearSystemPropertyGroups() {
+    propertyGroups.clear();
   }
 }

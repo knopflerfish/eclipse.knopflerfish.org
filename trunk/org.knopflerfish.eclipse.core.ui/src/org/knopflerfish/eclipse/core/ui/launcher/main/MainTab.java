@@ -48,9 +48,15 @@ import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.sourcelookup.ISourcePathComputer;
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
 import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.window.Window;
+import org.eclipse.jface.viewers.IOpenListener;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ITreeViewerListener;
+import org.eclipse.jface.viewers.OpenEvent;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.TreeExpansionEvent;
+import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.TableTree;
 import org.eclipse.swt.custom.TableTreeItem;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -69,9 +75,9 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.TreeColumn;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
@@ -81,6 +87,7 @@ import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.launcher.SourcePathComputer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
+import org.knopflerfish.eclipse.core.ui.launcher.bundle.IAvailableTreeElement;
 
 /**
  * @author Anders Rimén
@@ -107,16 +114,13 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   private static final String ITEM_PROPERTY       = "item_property";
   private static final String ITEM_DEFAULT        = "default";
   
-  protected static final String USER_GROUP          = "User Defined";
-  
+  protected static final String USER_GROUP        = "User Defined";
   
   // Widgets
   private Composite wPageComposite;
-  //private Combo     wOsgiVendorCombo;
   private Combo     wOsgiInstallCombo;
   private Text      wInstanceDirText;
   private Button    wInitButton;
-  private TableTree wPropertyTableTree;
   private Button    wAddPropertyButton;
   private Button    wEditPropertyButton;
   private Button    wRemovePropertyButton;
@@ -124,6 +128,9 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   private Label     wDescriptionText;
   private Label     wDefaultLabel;
   private Label     wDefaultText;
+  
+  // jFace Widgets 
+  private TreeViewer    wPropertyTreeViewer;
   
   private Image image = null;
   private Font  fontChanged = null;
@@ -184,7 +191,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     layout.numColumns = 1;
     wPageComposite.setLayout(layout);
     
-    /*** Location Group ***/
+    // Location Group
     Group wLocationGroup = new Group(wPageComposite, SWT.SHADOW_IN);
     layout = new GridLayout();
     layout.marginHeight = MARGIN;
@@ -209,7 +216,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wBrowseLocationButton.setText("Browse...");
 
     
-    /*** Framework Group ***/
+    // Framework Group
     Group wFrameworkGroup = new Group(wPageComposite, SWT.SHADOW_IN);
     layout = new GridLayout();
     layout.marginHeight = MARGIN;
@@ -220,27 +227,6 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wFrameworkGroup.setLayoutData(gd);
     wFrameworkGroup.setText("Framework to Run");
 
-    
-    // OSGi vendors 
-    /*
-    Label wVendorLabel = new Label(wFrameworkGroup, SWT.LEFT | SWT.WRAP);
-    wVendorLabel.setText("OSGi Vendor:");
-    wOsgiVendorCombo = new Combo(wFrameworkGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
-    wOsgiVendorCombo.addSelectionListener(new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e) {
-        updateOsgiInstalls();
-        updateLaunchConfigurationDialog();
-      }
-    });
-    List vendors = Osgi.getVendorNames();
-    for (int i=0; i<vendors.size(); i++) {
-      wOsgiVendorCombo.add((String) vendors.get(i));
-    }
-    gd = new GridData(GridData.FILL_HORIZONTAL);
-    gd.horizontalSpan=2;
-    wOsgiVendorCombo.setLayoutData(gd);
-    */
-    
     // OSGi framework
     Label wFrameworkLabel = new Label(wFrameworkGroup, SWT.LEFT | SWT.WRAP);
     wFrameworkLabel.setText("OSGi Install:");
@@ -271,35 +257,36 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     gd.horizontalSpan=3;
     wInitButton.setLayoutData(gd);
     
-    /*** Properties Group ***/
+    // Properties Group
     Group wPropertyGroup = new Group(wPageComposite, SWT.SHADOW_IN);
     FormLayout formLayout = new FormLayout();
     formLayout.marginHeight = MARGIN;
     formLayout.marginWidth = MARGIN;
     wPropertyGroup.setLayout(formLayout);
     gd = new GridData(GridData.FILL_BOTH);
-    //gd.grabExcessVerticalSpace = true;
     wPropertyGroup.setLayoutData(gd);
     wPropertyGroup.setText("System Properties");
     
-    wPropertyTableTree = new TableTree(wPropertyGroup, SWT.BORDER | SWT.FULL_SELECTION);
-    Table wPropertyTable = wPropertyTableTree.getTable();
-    wPropertyTable.setHeaderVisible(true);
-    wPropertyTable.setLinesVisible(true);
-    // Table columns
-    TableColumn wPropertyTableColumn = new TableColumn(wPropertyTable, SWT.LEFT);
-    wPropertyTableColumn.setText("Property");
-    TableColumn wValueTableColumn = new TableColumn(wPropertyTable, SWT.LEFT);
-    wValueTableColumn.setText("Value");
-    
-    wPropertyTableTree.addSelectionListener(new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e) {
-        if (e.item instanceof TableTreeItem) {
-          TableTreeItem item = (TableTreeItem) e.item;
-          showPropertyInfo();
-        }
+    Tree wPropertyTree = new Tree(wPropertyGroup, SWT.BORDER | SWT.FULL_SELECTION);
+    wPropertyTreeViewer = new TreeViewer(wPropertyTree);
+    wPropertyTreeViewer.setContentProvider(new SystemPropertyContentProvider());
+    wPropertyTreeViewer.setLabelProvider(new SystemPropertyLabelProvider());
+    wPropertyTree.setHeaderVisible(true);
+    wPropertyTree.setLinesVisible(true);
+    // Tree columns
+    TreeColumn wPropertyTreeColumn = new TreeColumn(wPropertyTree, SWT.LEFT);
+    wPropertyTreeColumn.setText("Property");
+    TreeColumn wValueTreeColumn = new TreeColumn(wPropertyTree, SWT.LEFT);
+    wValueTreeColumn.setText("Value");
+    wPropertyTreeViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+      public void selectionChanged(SelectionChangedEvent event) {
+        showPropertyInfo();
       }
-      public void widgetDefaultSelected(SelectionEvent e) {
+    });
+    wPropertyTreeViewer.addOpenListener(new IOpenListener() {
+      public void open(OpenEvent event) {
+        event.getSelection();
+        /*
         int count = wPropertyTableTree.getSelectionCount();
         if (count != -1) {
           TableTreeItem item = wPropertyTableTree.getSelection()[0];
@@ -316,6 +303,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
             }
           }
         }
+        */
       }
     });
     
@@ -323,6 +311,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wAddPropertyButton.setText("Add...");
     wAddPropertyButton.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
+        /*
         PropertyDialog dialog = 
           new PropertyDialog(((Button) e.widget).getShell(), 
               null,
@@ -336,6 +325,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
           }
           updateLaunchConfigurationDialog();
         }
+        */
       }
     });
     wRemovePropertyButton = new Button(wPropertyGroup, SWT.PUSH);
@@ -351,6 +341,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wEditPropertyButton.setText("Edit..");
     wEditPropertyButton.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
+        /*
         int count = wPropertyTableTree.getSelectionCount();
         if (count != -1) {
           TableTreeItem item = wPropertyTableTree.getSelection()[0];
@@ -367,6 +358,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
             }
           }
         }
+        */
       }
     });
     
@@ -384,12 +376,12 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     fd.top = new FormAttachment(0,0);
     fd.right = new FormAttachment(wRemovePropertyButton,-5,SWT.LEFT);
     fd.bottom = new FormAttachment(wDescriptionLabel, -5, SWT.TOP);
-    wPropertyTableTree.setLayoutData(fd);
+    wPropertyTree.setLayoutData(fd);
     
     fd = new FormData();
     //data.left = new FormAttachment(wBundleAttachButton, 0, SWT.LEFT);
     fd.right = new FormAttachment(100, 0);
-    fd.top = new FormAttachment(wPropertyTableTree,0,SWT.TOP);
+    fd.top = new FormAttachment(wPropertyTree,0,SWT.TOP);
     wRemovePropertyButton.setLayoutData(fd);
     
     fd = new FormData();
@@ -406,13 +398,13 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
     fd = new FormData();
     fd.left = new FormAttachment(0, 0);
-    fd.right = new FormAttachment(wPropertyTableTree, 0, SWT.RIGHT);
+    fd.right = new FormAttachment(wPropertyTree, 0, SWT.RIGHT);
     fd.bottom = new FormAttachment(wDescriptionText, -5,SWT.TOP);
     wDescriptionLabel.setLayoutData(fd);
 
     fd = new FormData();
     fd.left = new FormAttachment(0, 0);
-    fd.right = new FormAttachment(wPropertyTableTree, 0, SWT.RIGHT);
+    fd.right = new FormAttachment(wPropertyTree, 0, SWT.RIGHT);
     fd.bottom = new FormAttachment(wDefaultText, -5,SWT.TOP);
     fd.height = UiUtils.convertHeightInCharsToPixels(wDescriptionText, NUM_ROWS_DESCRIPTION);
     wDescriptionText.setLayoutData(fd);
@@ -425,19 +417,19 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
     fd = new FormData();
     fd.left = new FormAttachment(wDefaultLabel, 5, SWT.RIGHT);
-    fd.right = new FormAttachment(wPropertyTableTree, 0, SWT.RIGHT);
+    fd.right = new FormAttachment(wPropertyTree, 0, SWT.RIGHT);
     fd.bottom = new FormAttachment(100, 0);
     wDefaultText.setLayoutData(fd);
 
     // Create font used in property tree for non-default values
     if (fontChanged == null) {
-      Font font = wPropertyTableTree.getFont();
+      Font font = wPropertyTree.getFont();
       FontData fontData = font.getFontData()[0];
       fontData.setStyle(SWT.BOLD);
-      fontChanged = new Font(wPropertyTableTree.getDisplay(), fontData);
+      fontChanged = new Font(wPropertyTree.getDisplay(), fontData);
     }
     
-    UiUtils.packTableColumns(wPropertyTableTree.getTable());
+    UiUtils.packTreeColumns(wPropertyTree);
     
     showPropertyInfo();
   }
@@ -538,6 +530,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
       if (properties != null) {
         for(Iterator i=properties.keySet().iterator(); i.hasNext();) {
           String name = (String) i.next();
+          /*
           TableTreeItem item = (TableTreeItem) propertyValues.get(name);
           if (item !=null) {
             SystemProperty property = (SystemProperty) item.getData(ITEM_PROPERTY);
@@ -552,6 +545,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
             property.setValue((String) properties.get(name));
             addSystemProperty(property);
           }
+          */
         }
       }
     } catch (CoreException e) {
@@ -619,6 +613,10 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     String name = OsgiVendor.VENDOR_NAME;
     IOsgiVendor vendor = Osgi.getVendor(name);
     IOsgiInstall osgiInstall = vendor.getOsgiInstall(wOsgiInstallCombo.getText());
+    wPropertyTreeViewer.setInput(osgiInstall);
+    wPropertyTreeViewer.expandAll();
+    UiUtils.packTreeColumns(wPropertyTreeViewer.getTree());
+    /*
     wPropertyTableTree.removeAll();
     propertyGroups.clear();
     propertyValues.clear();
@@ -635,8 +633,10 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     
     // Pack columns
     UiUtils.packTableColumns(wPropertyTableTree.getTable());
+    */
   }
   
+  /*
   private TableTreeItem addSystemProperty(SystemProperty prop) {
     if (prop == null) return null;
     
@@ -717,15 +717,18 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     
     item.setData(ITEM_PROPERTY, prop);
   }
+  */
 
   private Map getSystemProperties() {
     HashMap properties = new HashMap();
+    /*
     TableTreeItem [] items = wPropertyTableTree.getItems();
     if (items != null) {
       for(int i=0; i<items.length; i++) {
         getSystemProperties(items[i], properties);
       }
     }
+    */
     return properties;
   }
 
@@ -752,12 +755,23 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   }
   
   private void showPropertyInfo() {
+    IStructuredSelection selection = 
+      (IStructuredSelection) wPropertyTreeViewer.getSelection();
+
+    SystemProperty property = null;
+    if (selection != null && !selection.isEmpty() && selection.getFirstElement() instanceof SystemProperty) {
+      property = (SystemProperty) selection.getFirstElement();
+    }
     
-    if (wPropertyTableTree.getSelectionCount() == 1 && 
-        PROPERTY_TYPE.equals(wPropertyTableTree.getSelection()[0].getData(ITEM_TYPE))) {
-      TableTreeItem item = wPropertyTableTree.getSelection()[0];
-      SystemProperty property = (SystemProperty) item.getData(ITEM_PROPERTY);
+    if (property == null) {
+      wDescriptionLabel.setEnabled(false);
+      wDescriptionText.setText("");
+      wDefaultLabel.setEnabled(false);
+      wDefaultText.setText("");
       
+      wEditPropertyButton.setEnabled(false);
+      wRemovePropertyButton.setEnabled(false);
+    } else {
       // Description
       wDescriptionLabel.setEnabled(true);
       if (property.getDescription() != null) {
@@ -776,19 +790,13 @@ public class MainTab extends AbstractLaunchConfigurationTab {
       
       // Buttons
       wEditPropertyButton.setEnabled(true);
+      /* TODO
       if (USER_GROUP.equals(property.getGroup())) {
         wRemovePropertyButton.setEnabled(true);
       } else {
         wRemovePropertyButton.setEnabled(false);
       }
-    } else {
-      wDescriptionLabel.setEnabled(false);
-      wDescriptionText.setText("");
-      wDefaultLabel.setEnabled(false);
-      wDefaultText.setText("");
-      
-      wEditPropertyButton.setEnabled(false);
-      wRemovePropertyButton.setEnabled(false);
+      */
     }
   }
 }

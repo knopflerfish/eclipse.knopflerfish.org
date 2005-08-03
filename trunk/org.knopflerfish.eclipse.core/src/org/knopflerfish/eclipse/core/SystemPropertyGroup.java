@@ -36,70 +36,51 @@ package org.knopflerfish.eclipse.core;
 
 import java.util.ArrayList;
 
-import org.osgi.service.prefs.BackingStoreException;
-import org.osgi.service.prefs.Preferences;
-
 /**
  * @author Anders Rimén
  */
-public class BundleSet {
+public class SystemPropertyGroup {
 
-  private String name;
-  private String description;
-  private boolean defaultDefinition;
-  private ArrayList bundles = new ArrayList();
-
-  public BundleSet() {
-  }
+  private final String name;
+  private IOsgiInstall osgiInstall;
+  private ArrayList properties = new ArrayList();
   
-  public BundleSet(Preferences node) throws BackingStoreException {
-    load(node);
-  }
-  
-  private void load(Preferences node) throws BackingStoreException {
-    
-  }
-
-  protected void save(Preferences node) throws BackingStoreException {
-    // Save preferences in node
-    Preferences subNode = node.node(name);
-    
-  }
-
-  /****************************************************************************
-   * Getters and Setters
-   ***************************************************************************/
-  
-  public boolean isDefaultDefinition() {
-    return defaultDefinition;
-  }
-  
-  public void setDefaultDefinition(boolean defaultDefinition) {
-    this.defaultDefinition = defaultDefinition;
-  }
-  
-  public String getDescription() {
-    return description;
-  }
-  
-  public void setDescription(String description) {
-    this.description = description;
-  }
-  
-  public String getName() {
-    return name;
-  }
-  
-  public void setName(String name) {
+  public SystemPropertyGroup(String name) {
     this.name = name;
   }
 
-  public IOsgiBundle[] getBundles() {
-    return (OsgiBundle[]) bundles.toArray(new OsgiBundle[bundles.size()]);
+  public String getName() {
+    return name;
   }
 
-  public void setBundles(ArrayList bundles) {
-    this.bundles = bundles;
+  public IOsgiInstall getOsgiInstall() {
+    return osgiInstall;
   }
 
+  public void setOsgiInstall(IOsgiInstall osgiInstall) {
+    this.osgiInstall = osgiInstall;
+  }
+  
+  public SystemProperty[] getProperties() {
+    return (SystemProperty[]) properties.toArray(new SystemProperty[properties.size()]);
+  }
+
+  public void addSystemProperty(SystemProperty property) {
+    if (property != null && !properties.contains(property)) {
+      properties.add(property);
+    }
+  }
+  
+  /****************************************************************************
+   * java.lang.Object methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  public boolean equals(Object o) {
+    if (o == null || !(o instanceof SystemPropertyGroup)) return false;
+    
+    return ((SystemPropertyGroup) o).getName().equals(getName());
+  }
 }

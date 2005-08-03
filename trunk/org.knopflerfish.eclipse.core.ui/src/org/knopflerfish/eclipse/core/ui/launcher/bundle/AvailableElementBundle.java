@@ -51,6 +51,10 @@ public class AvailableElementBundle implements IAvailableTreeElement {
     this.parent = parent;
     this.bundle = bundle;
   }
+  
+  public IOsgiBundle getBundle() {
+    return bundle;
+  }
 
   /****************************************************************************
    * org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement methods

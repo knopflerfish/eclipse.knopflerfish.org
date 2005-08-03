@@ -56,20 +56,30 @@ public interface IOsgiLibrary {
   public String getPath();
   
   /**
-   * Returns the full path to a directory containing source
+   * Returns the full path to a directory or file containing source
    * for this library.
    * 
-   * @return path to source directory.
+   * @return path to source directory or file.
    */
-  public String getSourceDirectory();
+  public String getSource();
 
   /**
-   * Sets the full path to a directory containing source
+   * Sets the full path to a directory or file containing source
    * for this library.
    * 
-   * @param dir path to source directory.
+   * @param path path to source directory or file.
    */
-  public void setSourceDirectory(String dir);
+  public void setSource(String path);
   
   public Manifest getManifest();
+
+  /**
+   * Returns true if this library is defined by user.
+   * 
+   * @return true if user defined; otherwise false
+   */
+  public boolean isUserDefined();
+
+  public void setUserDefined(boolean userDefined);
+
 }

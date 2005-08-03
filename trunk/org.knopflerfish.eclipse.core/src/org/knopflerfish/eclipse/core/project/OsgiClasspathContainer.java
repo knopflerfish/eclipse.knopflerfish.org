@@ -64,9 +64,9 @@ public class OsgiClasspathContainer implements IClasspathContainer {
     for (int i=0; i<libraries.length; i++) {
       Path path = new Path(libraries[i].getPath());
       Path src = null;
-      if (libraries[i].getSourceDirectory() != null) {
+      if (libraries[i].getSource() != null) {
         try {
-          src = new Path(libraries[i].getSourceDirectory());
+          src = new Path(libraries[i].getSource());
         } catch (Exception e) {
         }
       }

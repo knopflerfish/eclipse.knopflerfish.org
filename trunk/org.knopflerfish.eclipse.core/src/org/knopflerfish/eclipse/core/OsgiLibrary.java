@@ -48,6 +48,7 @@ public class OsgiLibrary implements IOsgiLibrary {
   private final JarFile jar;
   private final Manifest manifest;
   private String source;
+  private boolean userDefined =false;
 
   public OsgiLibrary(File f) throws IOException {
     file = f;
@@ -79,17 +80,17 @@ public class OsgiLibrary implements IOsgiLibrary {
   }
 
   /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#getSourceDirectory()
+   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#getSource()
    */
-  public String getSourceDirectory() {
+  public String getSource() {
     return source;
   }
   
   /*
    *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#setSourceDirectory(java.lang.String)
+   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#setSource(java.lang.String)
    */
-  public void setSourceDirectory(String source) {
+  public void setSource(String source) {
     this.source = source;
   }
 
@@ -98,6 +99,22 @@ public class OsgiLibrary implements IOsgiLibrary {
    */
   public Manifest getManifest() {
     return manifest;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#isUserDefined()
+   */
+  public boolean isUserDefined() {
+    return userDefined;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IOsgiLibrary#setUserDefined(boolean)
+   */
+  public void setUserDefined(boolean userDefined) {
+    this.userDefined = userDefined;
   }
   
   /****************************************************************************

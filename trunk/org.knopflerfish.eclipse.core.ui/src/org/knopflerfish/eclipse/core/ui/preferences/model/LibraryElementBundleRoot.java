@@ -53,7 +53,9 @@ public class LibraryElementBundleRoot implements ILibraryTreeElement {
   }
   
   public void addChild(LibraryElementBundle e) {
-    children.add(e);
+    if (e != null && !children.contains(e)) {
+      children.add(e);
+    }
   }
 
   public boolean remove(ILibraryTreeElement e) {

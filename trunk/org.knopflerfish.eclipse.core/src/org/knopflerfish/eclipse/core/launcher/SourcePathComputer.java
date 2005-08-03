@@ -34,6 +34,7 @@
 
 package org.knopflerfish.eclipse.core.launcher;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
@@ -43,11 +44,11 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.sourcelookup.ISourceContainer;
 import org.eclipse.debug.core.sourcelookup.ISourcePathComputer;
 import org.eclipse.debug.core.sourcelookup.containers.DirectorySourceContainer;
+import org.eclipse.debug.core.sourcelookup.containers.ExternalArchiveSourceContainer;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.sourcelookup.containers.JavaProjectSourceContainer;
@@ -110,10 +111,14 @@ public class SourcePathComputer extends JavaSourcePathComputer implements ISourc
     IOsgiLibrary [] libraries = osgiInstall.getRuntimeLibraries();
     if (libraries != null) {
       for (int i=0; i<libraries.length;i++) {
-        String src = libraries[i].getSourceDirectory();
+        String src = libraries[i].getSource();
         if (src != null) {
-          Path path = new Path(src);
-          containerList.add(new DirectorySourceContainer(path, true));
+          File file = new File(src);
+          if (file.isDirectory()) {
+            containerList.add(new DirectorySourceContainer(file, true));
+          } else {
+            containerList.add(new ExternalArchiveSourceContainer(file.getAbsolutePath(), true));
+          }
         }
       }
     }
