@@ -68,6 +68,10 @@ public class SelectedBundleElement {
     return launchInfo;
   }
 
+  public IOsgiBundle getBundle() {
+    return bundle;
+  }
+
   public String getPath() {
     if (bundle != null) {
       return bundle.getPath();

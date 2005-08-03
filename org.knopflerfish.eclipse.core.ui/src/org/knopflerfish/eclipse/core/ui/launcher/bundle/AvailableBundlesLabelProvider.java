@@ -39,6 +39,7 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.PlatformUI;
+import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
@@ -46,11 +47,13 @@ import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
  */
 public class AvailableBundlesLabelProvider extends LabelProvider {
   
-  private static String IMAGE_BUNDLE      = "icons/obj16/bundle_obj.gif";
+  private static String IMAGE_BUNDLE      = "icons/obj16/jar_b_obj.gif";
+  private static String IMAGE_BUNDLE_SRC  = "icons/obj16/jar_bsrc_obj.gif";
   private static String IMAGE_FISH        = "icons/obj16/knopflerfish_obj.gif";
   private static String IMAGE_BUNDLE_OVR  = "icons/ovr16/bundle_ovr.gif";
   
   private Image imageBundle = null;
+  private Image imageBundleSrc = null;
   private Image imageKnopflerfish = null;
   private Image imageProject = null;
   private Image sharedImageWorkspace  = PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT );
@@ -59,7 +62,12 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
     ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
     if (id != null) {
       imageBundle = id.createImage();
-    }    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_FISH);
+    }
+    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_SRC);
+    if (id != null) {
+      imageBundleSrc = id.createImage();
+    }
+    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_FISH);
     if (id != null) {
       imageKnopflerfish = id.createImage();
     }
@@ -84,6 +92,10 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
       imageBundle.dispose();
       imageBundle = null;
     }
+    if (imageBundleSrc != null) {
+      imageBundleSrc.dispose();
+      imageBundleSrc = null;
+    }
     if (imageKnopflerfish != null) {
       imageKnopflerfish.dispose();
       imageKnopflerfish = null;
@@ -105,7 +117,12 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
     
     switch (e.getType()) {
       case IAvailableTreeElement.TYPE_BUNDLE:
-        return imageBundle;
+        IOsgiBundle bundle = ((AvailableElementBundle) e).getBundle();
+        if (bundle != null && bundle.getSource() != null) {
+          return imageBundleSrc;
+        } else {
+          return imageBundle;
+        }
       case IAvailableTreeElement.TYPE_OSGI_INSTALL:
         return imageKnopflerfish;
       case IAvailableTreeElement.TYPE_PROJECT:

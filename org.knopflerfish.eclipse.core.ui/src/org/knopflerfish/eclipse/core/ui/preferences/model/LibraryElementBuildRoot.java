@@ -53,7 +53,9 @@ public class LibraryElementBuildRoot implements ILibraryTreeElement {
   }
   
   public void addChild(LibraryElementBuild e) {
-    children.add(e);
+    if (e != null && !children.contains(e)) {
+      children.add(e);
+    }
   }
   
   public int indexOf(ILibraryTreeElement e) {

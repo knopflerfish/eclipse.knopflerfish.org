@@ -77,10 +77,21 @@ public interface IOsgiInstall {
   
   
   /** 
-   * Returns a list of system properties understood by this 
+   * Returns a list of system property groups understood by this 
    * framework.
    * 
    * @return properties
    */
-  SystemProperty [] getSystemProperties();
+  SystemPropertyGroup [] getSystemPropertyGroups();
+
+  /** 
+   * Add a property group to the list of group understood by this
+   * framework. 
+   * framework.
+   * 
+   * @param group property group to add
+   */
+  void addSystemPropertyGroup(SystemPropertyGroup group);
+
+  void clearSystemPropertyGroups();
 }

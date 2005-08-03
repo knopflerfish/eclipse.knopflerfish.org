@@ -89,4 +89,18 @@ public class LibraryElementBuild implements ILibraryTreeElement {
     return TYPE_BUILD;
   }
 
+  /****************************************************************************
+   * java.lang.Object methods
+   ***************************************************************************/
+  
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof LibraryElementBuild)) return false;
+    
+    return ((LibraryElementBuild) obj).getLibrary().getPath().equals(getLibrary().getPath()); 
+  }
+
 }

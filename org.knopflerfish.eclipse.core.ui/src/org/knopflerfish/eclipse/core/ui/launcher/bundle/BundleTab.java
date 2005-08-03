@@ -63,9 +63,6 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
@@ -111,7 +108,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
   public static String PROP_MODE       = "mode";
   public static String PROP_ERROR      = "error";
   
-  private static String IMAGE_BUNDLE = "icons/obj16/bundle_obj.gif";
+  private static String IMAGE_BUNDLE = "icons/obj16/jar_b_obj.gif";
   private static String IMAGE_FISH = "icons/obj16/knopflerfish_obj.gif";
   
   private int MARGIN = 5;
@@ -139,11 +136,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
   // Images, fonts
   private Image imageBundle = null;
   private Image imageFish = null;
-  private Font fontError = null;
-  private Font fontDefault = null;
-  private Color colorError    = null;
-  private Color colorDefault  = null;
-  
   
   public BundleTab() {
     ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
@@ -154,8 +146,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     if (id != null) {
       imageFish = id.createImage();
     }
-    colorError = new Color(null, 255,0,0);
-    colorDefault = new Color(null, 0,0,0);
   }
     
   /****************************************************************************
@@ -188,18 +178,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     if (imageFish != null) {
       imageFish.dispose();
       imageFish = null;
-    }
-    if (fontError != null) {
-      fontError.dispose();
-      fontError = null;
-    }
-    if (colorError != null) {
-      colorError.dispose();
-      colorError = null;
-    }
-    if (colorDefault != null) {
-      colorDefault.dispose();
-      colorDefault = null;
     }
   }
 
@@ -359,7 +337,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
         if (dialog.open() == Window.OK) {
           try {
             OsgiBundle bundle = new OsgiBundle(new File(dialog.getLibrary().getPath()));
-            bundle.setSourceDirectory(dialog.getLibrary().getSourceDirectory());
+            bundle.setSource(dialog.getLibrary().getSource());
             BundleLaunchInfo info = new BundleLaunchInfo();
             info.setStartLevel(DEFAULT_STARTLEVEL_BUNDLE);
             String activator = null;
@@ -443,13 +421,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     data.top = new FormAttachment(wBundleRemoveButton,5, SWT.BOTTOM);
     wAddExternalBundleButton.setLayoutData(data);
     
-    if (fontError == null) {
-      fontDefault = wSelectedBundleTable.getFont();
-      FontData fontData = fontDefault.getFontData()[0];
-      fontData.setStyle(SWT.BOLD);
-      fontError = new Font(wSelectedBundleTable.getDisplay(), fontData);
-    }
-  
   }
 
   /* (non-Javadoc)
@@ -705,7 +676,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
           }          
         }
         
-        items[i].setForeground(4, colorError);
         element.setError(error.length() > 0 ? error.toString() : null);
         wSelectedBundleTableViewer.update(element, null);
       }

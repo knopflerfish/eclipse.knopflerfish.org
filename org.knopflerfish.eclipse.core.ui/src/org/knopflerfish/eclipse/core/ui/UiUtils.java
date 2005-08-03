@@ -34,31 +34,34 @@
 
 package org.knopflerfish.eclipse.core.ui;
 
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.TreeColumn;
 
 /**
  * @author Anders Rimén
  */
 public class UiUtils {
-
+  /*
   private static final int MIN_COL_WIDTH    = 15;
   private static final int COL_MARGIN       = 15;
   private static final int CHECKBOX_WIDTH   = 15;
-
+  */
 
   public static void packTableColumns(Table table) {
     if(table == null) return;
     TableColumn [] columns = table.getColumns();
     if (columns == null) return;
     
+    for(int i=0;i<columns.length;i++) {
+      columns[i].pack();
+    }
+    /*
     GC gc = null;
     try {
       gc = new GC(table);
@@ -94,8 +97,20 @@ public class UiUtils {
     } finally {
       if (gc != null) gc.dispose();
     }
+    */
   }
  
+  public static void packTreeColumns(Tree tree) {
+    if(tree == null) return;
+    TreeColumn [] columns = tree.getColumns();
+    if (columns == null) return;
+
+    for(int i=0;i<columns.length;i++) {
+      columns[i].pack();
+    }
+    
+    tree.redraw();
+  }
   
   public static Point textExtent(Drawable d, String s) {
     GC gc = null;

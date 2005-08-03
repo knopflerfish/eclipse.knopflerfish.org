@@ -202,6 +202,7 @@ public class PropertyDialog extends Dialog {
       });
       
       GridData data = new GridData(GridData.FILL_HORIZONTAL);
+      data.widthHint = convertWidthInCharsToPixels(NUM_CHARS_WIDTH);
       wText.setLayoutData(data);
       textWidgets.put(p.getKey(), wText);
     }

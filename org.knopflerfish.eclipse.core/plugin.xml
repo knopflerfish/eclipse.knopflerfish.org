@@ -24,6 +24,7 @@
    </requires>
 
    <extension-point id="vendors" name="OSGi Vendors" schema="schema/vendors.exsd"/>
+   <extension-point id="frameworkDefinition" name="OSGi Framework Definition" schema="schema/frameworkDefinition.exsd"/>
 
    <extension point="org.eclipse.debug.core.sourcePathComputers">
 	<sourcePathComputer 

@@ -34,28 +34,15 @@
 
 package org.knopflerfish.eclipse.core.ui.preferences.model;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
-import org.knopflerfish.eclipse.core.OsgiBundle;
-import org.knopflerfish.eclipse.core.OsgiLibrary;
-import org.knopflerfish.eclipse.core.project.BundleManifest;
 
 /**
  * @author Anders Rimén
  */
 public class LibraryElementRoot implements ILibraryTreeElement {
-  
-  // Pathes relative knopflerfish osgi directory
-  private static String REL_PATH_FRAMEWORK          = "framework.jar";
-  private static String REL_PATH_FRAMEWORK_SRC_DIR  = "framework/src";
-  private static String REL_PATH_JAR_DIR            ="jars";
-  private static String REL_PATH_BUNDLE_DIR         ="bundles";
-
-  private OsgiLibrary mainLib;
   
   private final LibraryElementRuntimeRoot runtimeElement;
   private final LibraryElementBuildRoot buildElement;
@@ -65,67 +52,12 @@ public class LibraryElementRoot implements ILibraryTreeElement {
     runtimeElement = new LibraryElementRuntimeRoot(this);
     buildElement = new LibraryElementBuildRoot(this);
     bundleElement = new LibraryElementBundleRoot(this);
-    
   }
   
-  public void loadDefaultModel(File root) {
-    // Clear data
-    mainLib = null;
+  public void clear() {
     runtimeElement.clear();
     bundleElement.clear();
     buildElement.clear();
-    
-    // Check root is ok
-    if (root == null || !root.exists() || !root.isDirectory()) return;
-    
-    // Framework library
-    try {
-      File file = new File(root, REL_PATH_FRAMEWORK);
-      mainLib = new OsgiLibrary(file);
-      File srcDir = new File(root, REL_PATH_FRAMEWORK_SRC_DIR);
-      if (srcDir.exists() && srcDir.isDirectory()) {
-        mainLib.setSourceDirectory(srcDir.getAbsolutePath());
-      }
-      
-      runtimeElement.addChild(new LibraryElementRuntime(runtimeElement, mainLib));
-      buildElement.addChild(new LibraryElementBuild(buildElement, mainLib));
-    } catch (IOException e) {
-      // Failed to find framework library
-    }
-    
-    // Bundles
-    File jarDir = new File(root, REL_PATH_JAR_DIR);
-    ArrayList jars = getBundleJars(jarDir);
-    for (int i=0 ; i<jars.size(); i++) {
-      try {
-        OsgiBundle bundle = new OsgiBundle((File) jars.get(i));
-        // Find source
-        String builtFrom = null;
-        if (bundle.getBundleManifest() != null) {
-          builtFrom = bundle.getBundleManifest().getAttribute(BundleManifest.BUILT_FROM);
-        }
-        if (builtFrom != null) {
-          int idx = builtFrom.lastIndexOf(REL_PATH_BUNDLE_DIR);
-          if (idx != -1) {
-            File dir = new File(root, builtFrom.substring(idx));
-            File srcDir = new File(dir, "src");
-            if (srcDir.exists() && srcDir.isDirectory()) {
-              bundle.setSourceDirectory(srcDir.getAbsolutePath());
-            }
-          }
-        }
-        bundleElement.addChild(new LibraryElementBundle(bundleElement, bundle));
-        if (bundle.hasCategory("api") || bundle.hasCategory("API")) {
-          buildElement.addChild(new LibraryElementBuild(buildElement, bundle));
-        }
-      } catch(IOException e) {
-        // Failed to create bundle from file
-      }
-    }
-  }
-  
-  public IOsgiLibrary getMainLibrary() {
-    return mainLib;
   }
   
   public LibraryElementBuildRoot getBuildRoot() {
@@ -177,8 +109,8 @@ public class LibraryElementRoot implements ILibraryTreeElement {
   public ILibraryTreeElement[] getChildren() {
     return new ILibraryTreeElement[] {
         runtimeElement,
-        bundleElement,
-        buildElement};
+        buildElement,
+        bundleElement};
   }
 
   /* (non-Javadoc)
@@ -202,20 +134,4 @@ public class LibraryElementRoot implements ILibraryTreeElement {
     return TYPE_ROOT;
   }
   
-  /****************************************************************************
-   * Private helper methods
-   ***************************************************************************/
-  private ArrayList getBundleJars(File f) { 
-    ArrayList jars = new ArrayList();
-    if (f.isFile() && f.getName().toLowerCase().endsWith("jar")) {
-      jars.add(f); 
-    } else if (f.isDirectory()) {
-      File [] list = f.listFiles();
-      for(int i=0; list != null && i<list.length; i++) {
-        jars.addAll(getBundleJars(list[i]));
-      }
-    }
-    return jars;
-  }
-
 }

@@ -40,13 +40,21 @@ import java.util.List;
  * @author Anders Rimén
  */
 public class SystemProperty {
+  
+  private final SystemPropertyGroup group;
   private final String name;
   private String value;
   private String defaultValue;
   private String description;
-  private String group;
   private List allowedValues;
 
+  public SystemProperty(SystemPropertyGroup group, String name) {
+    this.group = group;
+    this.name = name;
+    
+    group.addSystemProperty(this);
+  }
+  
   public List getAllowedValues() {
     return allowedValues;
   }
@@ -66,11 +74,8 @@ public class SystemProperty {
   public void setDescription(String description) {
     this.description = description;
   }
-  public String getGroup() {
+  public SystemPropertyGroup getSystemPropertyGroup() {
     return group;
-  }
-  public void setGroup(String group) {
-    this.group = group;
   }
   public String getValue() {
     return value;
@@ -81,7 +86,25 @@ public class SystemProperty {
   public String getName() {
     return name;
   }
-  public SystemProperty(String name) {
-    this.name = name;
+  
+  public boolean isDefaultValue() {
+    if (defaultValue == null) {
+      return value == null || value.length() == 0;
+    } else {
+      return defaultValue.equals(value);
+    }
+  }
+  
+  /****************************************************************************
+   * java.lang.Object methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  public boolean equals(Object o) {
+    if (o == null || !(o instanceof SystemProperty)) return false;
+    
+    return ((SystemProperty) o).getName().equals(getName());
   }
 }

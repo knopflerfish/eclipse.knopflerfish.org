@@ -49,6 +49,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
@@ -112,15 +113,16 @@ public class LibraryDialog extends Dialog {
     if (library == null) {
       try {
         library = new OsgiLibrary(new File(wLibraryText.getText()));
+        library.setUserDefined(true);
       } catch (IOException e) {
         e.printStackTrace();
       }
     }
     String src = wSourceText.getText();
     if (src == null || src.trim().length() == 0) {
-      library.setSourceDirectory(null);
+      library.setSource(null);
     } else {
-      library.setSourceDirectory(src.trim());
+      library.setSource(src.trim());
     }
     
     // Set return code and close window
@@ -157,15 +159,47 @@ public class LibraryDialog extends Dialog {
       }
     });
     
+    // Source
+    Group wSourceGroup = new Group(composite, SWT.NULL);
+    layout = new GridLayout();
+    layout.numColumns = 3;
+    wSourceGroup.setLayout(layout);
+    data = new GridData(GridData.FILL_HORIZONTAL);
+    data.horizontalSpan = 3;
+    wSourceGroup.setLayoutData(data);
+    wSourceGroup.setText("Source");
+    
     // Source path
-    Label wSourceLabel = new Label(composite, SWT.LEFT);
-    wSourceLabel.setText("Source:");
-    wSourceText = new Text(composite, SWT.BORDER);
+    Label wSourceDescriptionLabel = new Label(wSourceGroup, SWT.LEFT);
+    wSourceDescriptionLabel.setText("Select the location (folder, jar or zip) containing the source.");
+    data = new GridData(GridData.FILL_HORIZONTAL);
+    data.horizontalSpan = 2;
+    wSourceDescriptionLabel.setLayoutData(data);
+    Button wSourceFileButton = new Button(wSourceGroup, SWT.NONE);
+    wSourceFileButton.setText("Archive...");
+    wSourceFileButton.addSelectionListener(new SelectionAdapter(){
+      public void widgetSelected(SelectionEvent e) {
+        FileDialog dialog = new FileDialog(((Button) e.widget).getShell());
+        dialog.setFilterPath(wSourceText.getText());
+        String path = dialog.open();
+        if (path != null) {
+          wSourceText.setText(path);
+        }
+      }
+    });
+    data = new GridData(GridData.FILL_HORIZONTAL);
+    data.horizontalAlignment = SWT.FILL;
+    wSourceFileButton.setLayoutData(data);
+    
+    
+    Label wSourceLabel = new Label(wSourceGroup, SWT.LEFT);
+    wSourceLabel.setText("Source Path:");
+    wSourceText = new Text(wSourceGroup, SWT.BORDER);
     data = new GridData(GridData.FILL_HORIZONTAL);
     data.widthHint = convertWidthInCharsToPixels(NUM_CHARS_WIDTH);
     wSourceText.setLayoutData(data);
-    Button wSourceButton = new Button(composite, SWT.NONE);
-    wSourceButton.setText("Browse...");
+    Button wSourceButton = new Button(wSourceGroup, SWT.NONE);
+    wSourceButton.setText("Folder...");
     wSourceButton.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
         DirectoryDialog dialog = new DirectoryDialog(((Button) e.widget).getShell());
@@ -176,6 +210,9 @@ public class LibraryDialog extends Dialog {
         }
       }
     });
+    data = new GridData(GridData.FILL_HORIZONTAL);
+    data.horizontalAlignment = SWT.FILL;
+    wSourceButton.setLayoutData(data);
 
     return composite;
   }
@@ -195,8 +232,8 @@ public class LibraryDialog extends Dialog {
       wLibraryText.setText(lib.getPath());
       wLibraryText.setEditable(false);
       wLibraryButton.setEnabled(false);
-      if(lib.getSourceDirectory() != null) {
-        wSourceText.setText(lib.getSourceDirectory());
+      if(lib.getSource() != null) {
+        wSourceText.setText(lib.getSource());
       } else {
         wSourceText.setText("");
       }
