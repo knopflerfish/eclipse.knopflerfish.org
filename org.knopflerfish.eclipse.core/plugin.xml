@@ -23,7 +23,6 @@
       <import plugin="org.eclipse.core.resources"/>
    </requires>
 
-   <extension-point id="vendors" name="OSGi Vendors" schema="schema/vendors.exsd"/>
    <extension-point id="frameworkDefinition" name="OSGi Framework Definition" schema="schema/frameworkDefinition.exsd"/>
 
    <extension point="org.eclipse.debug.core.sourcePathComputers">
@@ -49,7 +48,7 @@
 	   <launchConfigurationType
           delegate="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
           public="true"
-          name="Knopflerfish"
+          name="OSGi"
           id="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
           modes="run, debug">
 	   </launchConfigurationType>
@@ -78,13 +77,6 @@
 	  </runtime>
 	  <requires-nature id="org.eclipse.jdt.core.javanature"/>
 	  <builder id="org.knopflerfish.eclipse.core.bundlebuilder"/>
-   </extension>
-   <extension point="org.knopflerfish.eclipse.core.vendors">
- 	   <vendor
-          id="org.knopflerfish.eclipse.core.vendor"
-          name="Knopflerfish"
-          class="org.knopflerfish.eclipse.core.OsgiVendor">
-       </vendor>
    </extension>
    <extension
          point="org.eclipse.jdt.core.classpathContainerInitializer">

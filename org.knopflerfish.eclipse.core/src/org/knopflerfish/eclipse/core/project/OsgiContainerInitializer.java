@@ -41,13 +41,8 @@ import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
-import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.OsgiVendor;
 
-/**
- * @author Anders Rimén
- */
 public class OsgiContainerInitializer extends
     ClasspathContainerInitializer {
 
@@ -64,13 +59,12 @@ public class OsgiContainerInitializer extends
     
     // Get hinted Knopflerfish installation
     String hint = containerPath.lastSegment();
-    IOsgiVendor osgiVendor = Osgi.getVendor(OsgiVendor.VENDOR_NAME);
     IOsgiInstall osgiInstall = null;
     if (hint != null) {
-      osgiInstall = osgiVendor.getOsgiInstall(hint);
+      osgiInstall = Osgi.getOsgiInstall(hint);
     }
     if (osgiInstall == null) {
-      osgiInstall = osgiVendor.getDefaultOsgiInstall();
+      osgiInstall = Osgi.getDefaultOsgiInstall();
     }
     if (osgiInstall == null) return;
     

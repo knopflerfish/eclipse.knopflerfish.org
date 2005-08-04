@@ -42,9 +42,6 @@ import org.eclipse.ui.forms.editor.FormEditor;
 import org.knopflerfish.eclipse.core.ui.editors.jar.form.JarFormEditor;
 import org.knopflerfish.eclipse.core.ui.editors.jar.text.JarTextEditor;
 
-/**
- * @author Anders Rimén
- */
 public class JarEditor extends FormEditor {
 
   private static final String PAGE_OVERVIEW_ID      = "overviewId";

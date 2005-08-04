@@ -43,9 +43,6 @@ import org.eclipse.core.resources.IProjectNature;
 import org.eclipse.core.runtime.CoreException;
 import org.knopflerfish.eclipse.core.Osgi;
 
-/**
- * @author Anders Rimén
- */
 public class BundleNature implements IProjectNature {
 
   private IProject project;

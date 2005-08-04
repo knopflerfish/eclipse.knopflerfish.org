@@ -40,9 +40,6 @@ import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
 
-/**
- * @author Anders Rimén
- */
 public class SystemPropertyContentProvider implements ITreeContentProvider {
   
   /* (non-Javadoc)

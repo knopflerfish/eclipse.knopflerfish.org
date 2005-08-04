@@ -45,9 +45,6 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 
-/**
- * @author Anders Rimén
- */
 public class XMLRuleScanner extends RuleBasedScanner {
   private static Color TAG_COLOR =
     new Color (Display.getCurrent(), new RGB (200,0,0));

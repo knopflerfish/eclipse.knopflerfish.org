@@ -59,9 +59,9 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiConfiguration;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
-import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
+import org.knopflerfish.eclipse.core.OsgiConfiguration;
 import org.knopflerfish.eclipse.core.project.BundleJar;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
@@ -77,10 +77,10 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
       ILaunch launch, IProgressMonitor monitor) throws CoreException {
 
     // Verify OSGi vendor
-    IOsgiVendor osgiVendor = verifyOsgiVendor(configuration);
+    //IOsgiVendor osgiVendor = verifyOsgiVendor(configuration);
     
     // Verify OSGi installation
-    IOsgiInstall osgiInstall = verifyOsgiInstall(configuration, osgiVendor);
+    IOsgiInstall osgiInstall = verifyOsgiInstall(configuration);
     
     // Verify directory used for this OSGi configuration
     File instanceDir =  verifyInstanceDirectory(configuration);
@@ -103,7 +103,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     runConfig.setWorkingDirectory(instanceDir.getAbsolutePath());
     
     // Create framework configuration
-    IOsgiConfiguration osgiConf = osgiVendor.createConfiguration(instanceDir, configuration.getAttributes());
+    IOsgiConfiguration osgiConf = new OsgiConfiguration(instanceDir, configuration.getAttributes());
     if (bundleMap != null) {
       for (Iterator i=bundleMap.entrySet().iterator();i.hasNext();) {
         Map.Entry entry = (Map.Entry) i.next();
@@ -169,6 +169,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
    * @exception CoreException if unable to retrieve the attribute or the 
    * attribute is unspecified
    */
+  /*
   public IOsgiVendor verifyOsgiVendor(ILaunchConfiguration configuration) throws CoreException {
     String name = getOsgiVendorName(configuration);
     if (name == null) {
@@ -183,25 +184,26 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     }
     return vendor;
   }
+  */
 
   /**
    * Verifies a OSGi install is specified by the given launch configuration,
    * and returns the OSGi install.
    * 
    * @param configuration launch configuration
-   * @param vendor OSGi vendor
+   * 
    * @return the OSGi install specified by the given launch configuration and vendor
    * @exception CoreException if unable to retrieve the attribute or the 
    * attribute is unspecified
    */
-  public IOsgiInstall verifyOsgiInstall(ILaunchConfiguration configuration, IOsgiVendor vendor) throws CoreException {
+  public IOsgiInstall verifyOsgiInstall(ILaunchConfiguration configuration) throws CoreException {
     String name = getOsgiInstallName(configuration);
     if (name == null) {
       abort("OSGi installation name not specified.", null,
           IOsgiLaunchConfigurationConstants.ERR_UNSPECIFIED_INSTALL_NAME);
     }
     
-    IOsgiInstall osgiInstall = vendor.getOsgiInstall(name);
+    IOsgiInstall osgiInstall = Osgi.getOsgiInstall(name);
     if (osgiInstall == null) {
       abort("Could not find OSGi installation '"+name+"'", null,
           IOsgiLaunchConfigurationConstants.ERR_INSTALL_NOT_FOUND);
@@ -315,11 +317,13 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
    * or <code>null</code> if none
    * @exception CoreException if unable to retrieve the attribute
    */
+  /*
   public static String getOsgiVendorName(ILaunchConfiguration configuration) throws CoreException {
     String vendorName = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_VENDOR_NAME, (String) null);
     
     return vendorName;
   }
+  */
   
   /**
    * Returns the OSGi install name specified by the given launch configuration,

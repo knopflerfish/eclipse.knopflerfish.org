@@ -39,9 +39,6 @@ import java.io.IOException;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-/**
- * @author Anders Rimén
- */
 public class OsgiLibrary implements IOsgiLibrary {
 
   private final File file;

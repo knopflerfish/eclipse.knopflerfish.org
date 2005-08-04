@@ -34,9 +34,6 @@
 
 package org.knopflerfish.eclipse.core;
 
-/**
- * @author Anders Rimén
- */
 public interface IOsgiRuntime {
 
 }

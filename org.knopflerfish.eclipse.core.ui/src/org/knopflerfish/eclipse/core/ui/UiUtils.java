@@ -43,9 +43,6 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 
-/**
- * @author Anders Rimén
- */
 public class UiUtils {
   /*
   private static final int MIN_COL_WIDTH    = 15;

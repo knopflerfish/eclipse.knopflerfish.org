@@ -39,9 +39,6 @@ import java.util.ArrayList;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 
-/**
- * @author Anders Rimén
- */
 public class LibraryElementRoot implements ILibraryTreeElement {
   
   private final LibraryElementRuntimeRoot runtimeElement;

@@ -34,7 +34,7 @@
    <extension
          point="org.eclipse.debug.ui.launchConfigurationTypeImages">
     <launchConfigurationTypeImage
-          icon="icons/obj16/knopflerfish_obj.gif"
+          icon="icons/obj16/osgi_obj.gif"
           configTypeID="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
           id="org.knopflerfish.eclipse.core.ui.launchConfigImage">
     </launchConfigurationTypeImage>

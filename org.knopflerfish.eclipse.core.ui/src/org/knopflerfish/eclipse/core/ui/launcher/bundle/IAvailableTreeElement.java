@@ -34,9 +34,6 @@
 
 package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
-/**
- * @author Anders Rimén
- */
 public interface IAvailableTreeElement {
 
   public static int TYPE_ROOT         = 0;

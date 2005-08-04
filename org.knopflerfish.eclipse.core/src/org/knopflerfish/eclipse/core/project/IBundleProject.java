@@ -37,9 +37,6 @@ package org.knopflerfish.eclipse.core.project;
 import org.eclipse.jdt.core.IJavaProject;
 import org.knopflerfish.eclipse.core.PackageDescription;
 
-/**
- * @author Anders Rimén
- */
 public interface IBundleProject {
 
   public IJavaProject getJavaProject();

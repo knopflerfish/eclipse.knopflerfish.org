@@ -41,9 +41,6 @@ import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.text.contentassist.IContextInformationValidator;
 
-/**
- * @author Anders Rimén
- */
 public class XMLCompletionProcessor implements IContentAssistProcessor {
   
   protected final static String[] myProposals = { "myTag", "html","form" };
@@ -66,8 +63,6 @@ public class XMLCompletionProcessor implements IContentAssistProcessor {
    */
   public IContextInformation[] computeContextInformation(ITextViewer viewer,
       int offset) {
-    System.err.println("computeContextInformation");
-    // TODO Auto-generated method stub
     return null;
   }
   
@@ -82,8 +77,6 @@ public class XMLCompletionProcessor implements IContentAssistProcessor {
    * @see org.eclipse.jface.text.contentassist.IContentAssistProcessor#getContextInformationAutoActivationCharacters()
    */
   public char[] getContextInformationAutoActivationCharacters() {
-    System.err.println("getContextInformationAutoActivationCharacters");
-    // TODO Auto-generated method stub
     return null;
   }
   
@@ -91,8 +84,6 @@ public class XMLCompletionProcessor implements IContentAssistProcessor {
    * @see org.eclipse.jface.text.contentassist.IContentAssistProcessor#getErrorMessage()
    */
   public String getErrorMessage() {
-    System.err.println("getErrorMessage");
-    // TODO Auto-generated method stub
     return null;
   }
   
@@ -100,9 +91,6 @@ public class XMLCompletionProcessor implements IContentAssistProcessor {
    * @see org.eclipse.jface.text.contentassist.IContentAssistProcessor#getContextInformationValidator()
    */
   public IContextInformationValidator getContextInformationValidator() {
-    System.err.println("getContextInformationValidator");
-    // TODO Auto-generated method stub
     return null;
   }
-  
 }

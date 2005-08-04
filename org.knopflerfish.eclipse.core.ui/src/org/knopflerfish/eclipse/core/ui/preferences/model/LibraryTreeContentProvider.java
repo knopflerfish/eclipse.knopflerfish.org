@@ -37,9 +37,6 @@ package org.knopflerfish.eclipse.core.ui.preferences.model;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
-/**
- * @author Anders Rimén
- */
 public class LibraryTreeContentProvider implements ITreeContentProvider {
   
   /****************************************************************************

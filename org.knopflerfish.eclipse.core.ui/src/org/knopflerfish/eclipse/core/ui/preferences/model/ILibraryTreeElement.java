@@ -34,9 +34,6 @@
 
 package org.knopflerfish.eclipse.core.ui.preferences.model;
 
-/**
- * @author Anders Rimén
- */
 public interface ILibraryTreeElement {
 
   public static int TYPE_ROOT         = 0;

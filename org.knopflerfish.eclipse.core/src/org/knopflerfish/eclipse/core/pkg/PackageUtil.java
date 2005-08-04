@@ -45,16 +45,11 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
-import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.OsgiVendor;
 import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
-/**
- * @author Anders Rimén
- */
 public class PackageUtil {
 
   public static IOsgiBundle[] findExportingBundles(PackageDescription pkg) {
@@ -62,8 +57,7 @@ public class PackageUtil {
     ArrayList exportingBundles = new ArrayList(); 
 
     // Knopflerfish root
-    IOsgiVendor osgiVendor = Osgi.getVendor(OsgiVendor.VENDOR_NAME);
-    List installList = osgiVendor == null ? null: osgiVendor.getOsgiInstalls();
+    List installList = Osgi.getOsgiInstalls();
     
     for(int i=0; installList != null && i<installList.size(); i++) {
       IOsgiInstall osgiInstall = (IOsgiInstall) installList.get(i);

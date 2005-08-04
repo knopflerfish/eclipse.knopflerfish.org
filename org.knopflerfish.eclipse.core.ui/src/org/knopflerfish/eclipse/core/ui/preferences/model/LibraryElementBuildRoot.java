@@ -36,9 +36,6 @@ package org.knopflerfish.eclipse.core.ui.preferences.model;
 
 import java.util.ArrayList;
 
-/**
- * @author Anders Rimén
- */
 public class LibraryElementBuildRoot implements ILibraryTreeElement {
 
   private final ILibraryTreeElement parent;

@@ -169,13 +169,14 @@ public class OsgiInstall implements IOsgiInstall {
       // Properties
       String[] propertyNodeNames = propertyGroupNode.childrenNames();
       for (int j=0; j<propertyNodeNames.length; j++) {
-        SystemProperty property = new SystemProperty(propertyGroup, propertyNodeNames[j]);
+        SystemProperty property = new SystemProperty(propertyNodeNames[j]);
         Preferences propertyNode = propertyGroupNode.node(property.getName());
         
         // Default value
         String value = propertyNode.get(PREF_PROPERTY_DEFAULT, null);
         if (value != null && value.trim().length() > 0) {
           property.setDefaultValue(value);
+          property.setValue(value);
         }
         // Description
         value = propertyNode.get(PREF_PROPERTY_DESCRIPTION, null);
@@ -194,6 +195,8 @@ public class OsgiInstall implements IOsgiInstall {
           }
           property.setAllowedValues(values);
         }
+        
+        propertyGroup.addSystemProperty(property);
       }
       
       addSystemPropertyGroup(propertyGroup);
@@ -465,5 +468,14 @@ public class OsgiInstall implements IOsgiInstall {
 
   public void clearSystemPropertyGroups() {
     propertyGroups.clear();
+  }
+
+  public SystemProperty findSystemProperty(String name) {
+    for(int i=0; i<propertyGroups.size();i++) {
+      SystemPropertyGroup group = (SystemPropertyGroup) propertyGroups.get(i);
+      SystemProperty property = group.findSystemProperty(name);
+      if (property != null) return property;
+    }
+    return null;
   }
 }

@@ -36,23 +36,17 @@ package org.knopflerfish.eclipse.core;
 
 import java.util.List;
 
-/**
- * @author Anders Rimén
- */
 public class SystemProperty {
   
-  private final SystemPropertyGroup group;
-  private final String name;
+  private String name;
+  private SystemPropertyGroup group;
   private String value;
   private String defaultValue;
   private String description;
   private List allowedValues;
 
-  public SystemProperty(SystemPropertyGroup group, String name) {
-    this.group = group;
+  public SystemProperty(String name) {
     this.name = name;
-    
-    group.addSystemProperty(this);
   }
   
   public List getAllowedValues() {
@@ -74,6 +68,9 @@ public class SystemProperty {
   public void setDescription(String description) {
     this.description = description;
   }
+  public void setSystemPropertyGroup(SystemPropertyGroup group) {
+    this.group = group;
+  }
   public SystemPropertyGroup getSystemPropertyGroup() {
     return group;
   }
@@ -85,6 +82,9 @@ public class SystemProperty {
   }
   public String getName() {
     return name;
+  }
+  public void setName(String name) {
+    this.name = name;
   }
   
   public boolean isDefaultValue() {

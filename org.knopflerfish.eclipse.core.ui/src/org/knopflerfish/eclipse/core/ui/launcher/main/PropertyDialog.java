@@ -57,9 +57,6 @@ import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.SystemProperty;
 
-/**
- * @author Anders Rimén
- */
 public class PropertyDialog extends Dialog {
   private final static int STATE_OK       = 0;
   private final static int STATE_ERROR    = 1;

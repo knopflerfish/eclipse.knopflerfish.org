@@ -49,9 +49,6 @@ import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.text.ManifestTextEditor;
 
-/**
- * @author Anders Rimén
- */
 public class ManifestFormEditor extends FormPage {
 
   private static final String TITLE = "Overview";

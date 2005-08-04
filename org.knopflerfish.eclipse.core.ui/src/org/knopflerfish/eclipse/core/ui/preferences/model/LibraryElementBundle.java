@@ -36,9 +36,6 @@ package org.knopflerfish.eclipse.core.ui.preferences.model;
 
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 
-/**
- * @author Anders Rimén
- */
 public class LibraryElementBundle implements ILibraryTreeElement {
 
   private final ILibraryTreeElement parent;

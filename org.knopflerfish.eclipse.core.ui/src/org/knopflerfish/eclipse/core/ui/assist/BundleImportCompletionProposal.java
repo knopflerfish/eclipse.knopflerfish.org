@@ -46,9 +46,6 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.PackageDescription;
 
-/**
- * @author Anders Rimén
- */
 public class BundleImportCompletionProposal implements IJavaCompletionProposal {
 
   private final PackageDescription pkg;

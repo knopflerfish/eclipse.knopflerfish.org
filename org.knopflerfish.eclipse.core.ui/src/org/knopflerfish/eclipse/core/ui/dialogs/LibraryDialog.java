@@ -56,9 +56,6 @@ import org.eclipse.swt.widgets.Text;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.OsgiLibrary;
 
-/**
- * @author Anders Rimén
- */
 public class LibraryDialog extends Dialog {
 
   private static final int NUM_CHARS_WIDTH = 60;
@@ -73,8 +70,15 @@ public class LibraryDialog extends Dialog {
   
   public LibraryDialog(Shell parentShell, IOsgiLibrary library, String title) {
     super(parentShell);
-    
-    this.library = library;
+
+    if (library != null) {
+      try {
+        this.library = new OsgiLibrary(new File(library.getPath()));
+        this.library.setSource(library.getSource());
+        this.library.setUserDefined(library.isUserDefined());
+      } catch (IOException e) {
+      }
+    }
     this.title = title;
   }
 

@@ -82,10 +82,8 @@ import org.eclipse.swt.widgets.Tree;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
-import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
-import org.knopflerfish.eclipse.core.OsgiVendor;
 import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
@@ -95,13 +93,10 @@ import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
 
-/**
- * @author Anders Rimén
- */
 public class BundleTab extends AbstractLaunchConfigurationTab {
   private static String TITLE_ADD_LIBRARY = "Add external bundle";
   
-  // Properties
+  // Column Properties
   public static String PROP_NAME       = "name";
   public static String PROP_VERSION    = "version";
   public static String PROP_STARTLEVEL = "startlevel";
@@ -134,13 +129,13 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
   private IOsgiInstall osgiInstall;
 
   // Images, fonts
-  private Image imageBundle = null;
+  private Image imageTab = null;
   private Image imageFish = null;
   
   public BundleTab() {
     ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
     if (id != null) {
-      imageBundle = id.createImage();
+      imageTab = id.createImage();
     }
     id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_FISH);
     if (id != null) {
@@ -163,7 +158,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
    * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getImage()
    */
   public Image getImage() {
-    return imageBundle;
+    return imageTab;
   }
   
   /*
@@ -171,9 +166,9 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
    * @see org.eclipse.debug.ui.ILaunchConfigurationTab#dispose()
    */
   public void dispose() {
-    if (imageBundle != null) {
-      imageBundle.dispose();
-      imageBundle = null;
+    if (imageTab != null) {
+      imageTab.dispose();
+      imageTab = null;
     }
     if (imageFish != null) {
       imageFish.dispose();
@@ -340,6 +335,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
             bundle.setSource(dialog.getLibrary().getSource());
             BundleLaunchInfo info = new BundleLaunchInfo();
             info.setStartLevel(DEFAULT_STARTLEVEL_BUNDLE);
+            info.setSource(bundle.getSource());
             String activator = null;
             if (bundle.getBundleManifest() != null){
               activator = bundle.getBundleManifest().getActivator();
@@ -445,13 +441,12 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
    */
   public void initializeFrom(ILaunchConfiguration configuration) {
     // Set values to GUI widgets
-    IOsgiVendor osgiVendor = Osgi.getVendor(OsgiVendor.VENDOR_NAME);
     try {
       String name = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTALL_NAME, (String) null);
       if (name != null) {
-        osgiInstall = osgiVendor.getOsgiInstall(name);
+        osgiInstall = Osgi.getOsgiInstall(name);
       } else {
-        osgiInstall = osgiVendor.getDefaultOsgiInstall();
+        osgiInstall = Osgi.getDefaultOsgiInstall();
       }
     } catch (CoreException e) {
       e.printStackTrace();
@@ -554,6 +549,9 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
         info.setMode(activator != null ? 
             BundleLaunchInfo.MODE_START :
             BundleLaunchInfo.MODE_INSTALL); 
+        if (bundle.getSource() != null) {
+          info.setSource(bundle.getSource());
+        }
         selectedElement = new SelectedBundleElement(bundle, info);
       } else if(element.getType() == IAvailableTreeElement.TYPE_PROJECT) {
         IBundleProject project = (IBundleProject) element.getData();

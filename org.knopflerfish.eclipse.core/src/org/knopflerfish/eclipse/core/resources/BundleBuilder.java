@@ -48,12 +48,6 @@ import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
-/**
- * @author Anders Rimén
- *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
- */
 public class BundleBuilder extends IncrementalProjectBuilder {
 
   /* (non-Javadoc)

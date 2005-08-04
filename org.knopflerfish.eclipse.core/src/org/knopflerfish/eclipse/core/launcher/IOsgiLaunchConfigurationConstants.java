@@ -34,15 +34,11 @@
 
 package org.knopflerfish.eclipse.core.launcher;
 
-/**
- * @author Anders Rimén
- */
 public interface IOsgiLaunchConfigurationConstants {
 
   public String PACKAGE = "org.knopflerfish.eclipse.core.launcher.";
   
   // Main Tab
-  public String ATTR_OSGI_VENDOR_NAME   = PACKAGE+"vendor_name";
   public String ATTR_OSGI_INSTALL_NAME  = PACKAGE+"install_name";
   public String ATTR_OSGI_INSTANCE_DIR  = PACKAGE+"instance_dir";
   public String ATTR_OSGI_INSTANCE_INIT = PACKAGE+"instance_init";

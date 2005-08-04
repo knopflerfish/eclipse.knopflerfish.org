@@ -51,9 +51,6 @@ import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
 import org.knopflerfish.eclipse.core.ui.editors.jar.text.JarTextEditor;
 
-/**
- * @author Anders Rimén
- */
 public class JarFormEditor extends FormPage {
 
   private static final String TITLE = "Overview";

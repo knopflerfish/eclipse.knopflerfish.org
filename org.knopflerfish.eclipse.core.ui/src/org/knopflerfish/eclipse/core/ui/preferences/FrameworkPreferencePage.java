@@ -70,7 +70,6 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiInstall;
-import org.knopflerfish.eclipse.core.OsgiVendor;
 import org.knopflerfish.eclipse.core.project.OsgiClasspathContainer;
 import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
@@ -83,7 +82,6 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
   private static String TABLE_TITLE =
     "Installed OSGi frameworks:";
   
-  private OsgiVendor osgiVendor;
   private List osgiInstalls;
   private HashMap images = new HashMap();
   
@@ -110,8 +108,7 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
     }
     
     // Load preferences
-    osgiVendor = new OsgiVendor();
-    osgiInstalls = osgiVendor.getOsgiInstalls();
+    osgiInstalls = Osgi.getOsgiInstalls();
   }
   
   /****************************************************************************
@@ -320,7 +317,7 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
   public boolean performOk() {
     // Save Knopflerfish instances to preference store
     try {
-      osgiVendor.setOsgiInstalls(osgiInstalls);
+      Osgi.setOsgiInstalls(osgiInstalls);
       
       // Get java projects
       IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();

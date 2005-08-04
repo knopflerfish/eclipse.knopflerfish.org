@@ -48,9 +48,6 @@ import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.project.BundleManifest;
 
-/**
- * @author Anders Rimén
- */
 public class OverviewDocumentationSection extends ManifestSectionTextPart {
 
   // Section title and description
