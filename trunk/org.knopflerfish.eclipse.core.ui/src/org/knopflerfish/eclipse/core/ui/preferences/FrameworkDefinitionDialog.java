@@ -78,7 +78,6 @@ import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.OsgiInstall;
-import org.knopflerfish.eclipse.core.OsgiVendor;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
 import org.knopflerfish.eclipse.core.ui.dialogs.ImportLibrariesDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
@@ -93,9 +92,6 @@ import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementRuntimeR
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryTreeContentProvider;
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryTreeLabelProvider;
 
-/**
- * @author Anders Rimén
- */
 public class FrameworkDefinitionDialog extends Dialog {
   
   private static String TITLE_ADD = "Add framework definition";
@@ -546,8 +542,7 @@ public class FrameworkDefinitionDialog extends Dialog {
         
         if (dialog.open() == Window.OK) {
           String name = dialog.getFrameworkName();
-          OsgiVendor vendor = new OsgiVendor();
-          IOsgiInstall framework = vendor.getOsgiInstall(name);
+          IOsgiInstall framework = Osgi.getOsgiInstall(name);
           boolean onlyUserDefined = dialog.isOnlyUserDefined();
           
           // Import runtime libraries

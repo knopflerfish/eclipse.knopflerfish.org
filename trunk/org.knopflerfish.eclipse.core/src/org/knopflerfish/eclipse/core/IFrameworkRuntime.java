@@ -34,49 +34,6 @@
 
 package org.knopflerfish.eclipse.core;
 
-import java.io.File;
-import java.util.List;
-import java.util.Map;
+public interface IFrameworkRuntime {
 
-public interface IOsgiVendor {
-
-  /** 
-   * Returns the OSGi vendor name. Vendor names must be unique.
-   * 
-   * @return vendor name
-   */
-  public String getName();
-  
-  /** 
-   * Returns a list of all OSGi installations.
-   * 
-   * @return list of IOSGiInstall
-   */
-  public List getOsgiInstalls();
-  
-  /** 
-   * Returns the OSGi installation with the specified name.
-   * 
-   * @param name of OSGi installation to retreive.
-   * 
-   * @return IOSGiInstall
-   */
-  public IOsgiInstall getOsgiInstall(String name);
-
-  /** 
-   * Returns the default OSGi installation.
-   * 
-   * @return IOSGiInstall
-   */
-  public IOsgiInstall getDefaultOsgiInstall();
-
-  /** 
-   * Creates a new instance of an OSGi configuration.
-   * 
-   * @param dir directory where the configuration should be saved.
-   * @param attributes configuration attributes.
-   * 
-   * @return IOSGiConfiguration
-   */
-  public IOsgiConfiguration createConfiguration(File dir, Map attributes);
 }

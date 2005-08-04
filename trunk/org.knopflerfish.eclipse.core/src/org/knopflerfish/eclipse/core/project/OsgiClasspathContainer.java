@@ -44,9 +44,6 @@ import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 
-/**
- * @author Anders Rimén
- */
 public class OsgiClasspathContainer implements IClasspathContainer {
   private IOsgiInstall osgiInstall;
   

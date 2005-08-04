@@ -36,9 +36,6 @@ package org.knopflerfish.eclipse.core;
 
 import java.util.ArrayList;
 
-/**
- * @author Anders Rimén
- */
 public class SystemPropertyGroup {
 
   private final String name;
@@ -65,9 +62,33 @@ public class SystemPropertyGroup {
     return (SystemProperty[]) properties.toArray(new SystemProperty[properties.size()]);
   }
 
+  public boolean contains(SystemProperty property) {
+    return properties.contains(property);
+  }
+  
+  public void clear() {
+    properties.clear();
+  }
+  public SystemProperty findSystemProperty(String name) {
+    int idx = properties.indexOf(new SystemProperty(name));
+    if (idx != -1) {
+      return (SystemProperty) properties.get(idx);
+    } else {
+      return null;
+    }
+  }
+
   public void addSystemProperty(SystemProperty property) {
     if (property != null && !properties.contains(property)) {
       properties.add(property);
+      property.setSystemPropertyGroup(this);
+    }
+  }
+
+  public void removeSystemProperty(SystemProperty property) {
+    if (property != null && properties.contains(property)) {
+      properties.remove(property);
+      property.setSystemPropertyGroup(null);
     }
   }
   

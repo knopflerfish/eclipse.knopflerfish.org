@@ -34,29 +34,30 @@
 
 package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
+import java.util.HashMap;
+import java.util.Iterator;
+
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
+import org.knopflerfish.eclipse.core.IOsgiInstall;
+import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
-/**
- * @author Anders Rimén
- */
 public class AvailableBundlesLabelProvider extends LabelProvider {
   
   private static String IMAGE_BUNDLE      = "icons/obj16/jar_b_obj.gif";
   private static String IMAGE_BUNDLE_SRC  = "icons/obj16/jar_bsrc_obj.gif";
-  private static String IMAGE_FISH        = "icons/obj16/knopflerfish_obj.gif";
   private static String IMAGE_BUNDLE_OVR  = "icons/ovr16/bundle_ovr.gif";
   
   private Image imageBundle = null;
   private Image imageBundleSrc = null;
-  private Image imageKnopflerfish = null;
   private Image imageProject = null;
-  private Image sharedImageWorkspace  = PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT );
+  private Image imageWorkspace  = PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT );
+  private HashMap images = new HashMap();
   
   public AvailableBundlesLabelProvider() {
     ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
@@ -67,20 +68,31 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
     if (id != null) {
       imageBundleSrc = id.createImage();
     }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_FISH);
-    if (id != null) {
-      imageKnopflerfish = id.createImage();
-    }
     id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_OVR);
     if (id != null) {
       Image bundleOvrImage = id.createImage();
-      imageProject = new Image(null, sharedImageWorkspace.getBounds());
+      imageProject = new Image(null, imageWorkspace.getBounds());
       GC gc = new GC(imageProject);
-      gc.drawImage(sharedImageWorkspace, 0, 0);
+      gc.drawImage(imageWorkspace, 0, 0);
       gc.drawImage(bundleOvrImage, imageProject.getBounds().width-bundleOvrImage.getBounds().width, 0);
       gc.dispose();      
       bundleOvrImage.dispose();
     }
+    
+    String[] names = Osgi.getFrameworkDefinitionNames();
+    for (int i=0;i<names.length; i++) {
+      String imagePath = Osgi.getFrameworkDefinitionImage(names[i]);
+      String pluginId = Osgi.getFrameworkDefinitionId(names[i]);
+      
+      id = OsgiUiPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
+      if (id != null) {
+        Image image = id.createImage();
+        if (image != null) {
+          images.put(names[i], image);
+        }
+      }
+    }
+    
   }
 
   /*
@@ -96,14 +108,14 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
       imageBundleSrc.dispose();
       imageBundleSrc = null;
     }
-    if (imageKnopflerfish != null) {
-      imageKnopflerfish.dispose();
-      imageKnopflerfish = null;
-    }
     if (imageProject != null) {
       imageProject.dispose();
       imageProject = null;
     }
+    for (Iterator i=images.values().iterator(); i.hasNext();){
+      Image image = (Image) i.next();
+      image.dispose();
+     }
   }  
   
   /*
@@ -124,11 +136,12 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
           return imageBundle;
         }
       case IAvailableTreeElement.TYPE_OSGI_INSTALL:
-        return imageKnopflerfish;
+        IOsgiInstall osgiInstall = ((AvailableElementInstall) e).getOsgiInstall();
+        return (Image) images.get(osgiInstall.getType());
       case IAvailableTreeElement.TYPE_PROJECT:
         return imageProject;
       case IAvailableTreeElement.TYPE_WORKSPACE:
-        return sharedImageWorkspace;
+        return imageWorkspace;
       default :
         return null;
     }

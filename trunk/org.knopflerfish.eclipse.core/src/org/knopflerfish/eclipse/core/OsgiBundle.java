@@ -39,9 +39,6 @@ import java.io.IOException;
 
 import org.knopflerfish.eclipse.core.project.BundleManifest;
 
-/**
- * @author Anders Rimén
- */
 public class OsgiBundle extends OsgiLibrary implements IOsgiBundle {
 
   private BundleManifest bundleManifest;

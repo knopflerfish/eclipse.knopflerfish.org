@@ -68,9 +68,6 @@ import org.eclipse.ui.dialogs.ISelectionStatusValidator;
 import org.eclipse.ui.model.BaseWorkbenchContentProvider;
 import org.knopflerfish.eclipse.core.project.BundleJarResource;
 
-/**
- * @author Anders Rimén
- */
 public class BundleJarResourceDialog extends Dialog {
 
   private static final String ERROR     = "error";

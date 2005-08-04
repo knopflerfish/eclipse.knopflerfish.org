@@ -36,9 +36,6 @@ package org.knopflerfish.eclipse.core.ui.editors.manifest.text;
 
 import org.eclipse.ui.editors.text.TextEditor;
 
-/**
- * @author Anders Rimén
- */
 public class ManifestTextEditor extends TextEditor {
 
 

@@ -43,9 +43,6 @@ import java.util.jar.Manifest;
 
 import org.knopflerfish.eclipse.core.PackageDescription;
 
-/**
- * @author Anders Rimén
- */
 public class BundleManifest extends Manifest {
 
   public static final String BUNDLE_SYMBOLIC_NAME  = "Bundle-SymbolicName";

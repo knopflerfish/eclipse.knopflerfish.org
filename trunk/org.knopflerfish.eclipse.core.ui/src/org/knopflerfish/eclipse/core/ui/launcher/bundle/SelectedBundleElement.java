@@ -39,10 +39,6 @@ import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
-
-/**
- * @author Anders Rimén
- */
 public class SelectedBundleElement {
   static public int TYPE_BUNDLE_PROJECT    = 0;
   static public int TYPE_BUNDLE            = 1;

@@ -53,9 +53,6 @@ import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
-/**
- * @author Anders Rimén
- */
 public class ExportSection extends SectionPart {
 
   // Section title and description
@@ -133,13 +130,11 @@ public class ExportSection extends SectionPart {
         String path = dialog.open();
         if (path != null) {
           try {
-            // TODO: Should probably check if file is saved
             if (project.hasNature(Osgi.NATURE_ID)) {
               IBundleProject bundleProject = new BundleProject(project.getName());
               bundleProject.getBundleJarDescription().export(bundleProject, path);
             }
           } catch (Exception exc) {
-            // TODO Auto-generated catch block
             exc.printStackTrace();
           }
         }

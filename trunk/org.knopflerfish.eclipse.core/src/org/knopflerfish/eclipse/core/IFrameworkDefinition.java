@@ -36,9 +36,6 @@ package org.knopflerfish.eclipse.core;
 
 import java.io.File;
 
-/**
- * @author Anders Rimén
- */
 public interface IFrameworkDefinition {
 
   /** 

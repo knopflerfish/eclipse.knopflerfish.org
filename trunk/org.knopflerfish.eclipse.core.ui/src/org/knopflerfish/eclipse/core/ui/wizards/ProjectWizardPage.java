@@ -59,14 +59,9 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
-import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiInstall;
-import org.knopflerfish.eclipse.core.OsgiVendor;
 
-/**
- * @author Anders Rimén
- */
 public class ProjectWizardPage extends WizardPage {
   private static final String DEFAULT_SRC_FOLDER = "src";
   private static final String DEFAULT_OUT_FOLDER = "out";
@@ -246,11 +241,7 @@ public class ProjectWizardPage extends WizardPage {
     wProjectLibrariesEnvLabel.setText("OSGi Environment:");
     wProjectLibrariesEnvLabel.setEnabled(false);
     wProjectLibrariesEnvCombo = new Combo(wProjectLibrariesGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
-    IOsgiVendor v = Osgi.getVendor(OsgiVendor.VENDOR_NAME);
-    List l = null;
-    if (v != null) {
-      l = v.getOsgiInstalls();
-    }
+    List l = Osgi.getOsgiInstalls();
     IOsgiInstall defaultInstall = null;
     if (l != null && l.size() > 0) {
       for(int i=0; i<l.size();i++) {

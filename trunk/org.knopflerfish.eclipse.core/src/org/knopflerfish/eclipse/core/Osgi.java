@@ -44,71 +44,22 @@ import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jdt.core.IJavaProject;
+import org.osgi.service.prefs.BackingStoreException;
+import org.osgi.service.prefs.Preferences;
 
-/**
- * @author Anders Rimén
- */
 public class Osgi {
   public static String NATURE_ID = "org.knopflerfish.eclipse.core.bundlenature";
   public static String BUILDER_ID = "org.knopflerfish.eclipse.core.bundlebuilder";
   
-  private static String EXTENSION_POINT_VENDORS = "org.knopflerfish.eclipse.core.vendors";
   private static String EXTENSION_POINT_FRAMEWORKDEFINITION = "org.knopflerfish.eclipse.core.frameworkDefinition";
   
   // Preference nodes
   public static String PREFERENCE_ROOT_NODE = "org.knopflerfish.eclipse.core.osgi";
   public static String PREFERENCE_FRAMEWORKS_NODE = "frameworks";
   public static String PREFERENCE_BUNDLESETS_NODE = "bundlesets";
-                                                   
-  public static List getVendorNames()  {
-    ArrayList vendors = new ArrayList();
-    IExtensionRegistry registry = Platform.getExtensionRegistry();
-    IExtensionPoint point = registry.getExtensionPoint(EXTENSION_POINT_VENDORS);
-    if (point != null) {
-      IExtension[] extensions = point.getExtensions();
-      for (int i = 0; i < extensions.length; i++) {
-        IConfigurationElement [] configs = extensions[i].getConfigurationElements();
-        if (configs == null) continue;
-        
-        for (int j=0; j<configs.length; j++) {
-          if ("vendor".equals(configs[j].getName())) {
-            vendors.add( configs[j].getAttribute("name") );
-          }
-        }
-      }
-    }
-    
-    return vendors;
-  }
-  
-  public static IOsgiVendor getVendor(String name) {
-    if (name == null) return null;
-    
-    IExtensionRegistry registry = Platform.getExtensionRegistry();
-    IExtensionPoint point = registry.getExtensionPoint(EXTENSION_POINT_VENDORS);
-    if (point != null) {
-      IExtension[] extensions = point.getExtensions();
-      for (int i = 0; i < extensions.length; i++) {
-        IConfigurationElement [] configs = extensions[i].getConfigurationElements();
-        if (configs == null) continue;
-        
-        for (int j=0; j<configs.length; j++) {
-          if ("vendor".equals(configs[j].getName()) && 
-              name.equals(configs[j].getAttribute("name"))) { 
-            try {
-              return (IOsgiVendor) configs[j].createExecutableExtension("class");
-            } catch (CoreException e) {
-              System.err.println("Failed to create executable extension / "+e);
-            }
-          }
-        }
-      }
-    }
-    
-    return null;
-  }
-
+                        
   /****************************************************************************
    * Framework Definition Methods
    ***************************************************************************/
@@ -232,6 +183,75 @@ public class Osgi {
     }
     
     return (IFrameworkDefinition[]) definitions.toArray(new IFrameworkDefinition[definitions.size()]);
+  }
+  
+  /****************************************************************************
+   * Framework Methods
+   ***************************************************************************/
+  public static List getOsgiInstalls() {
+    // Load all osgi install definitions from preferences
+    Preferences node = new InstanceScope().getNode(Osgi.PREFERENCE_ROOT_NODE).node(Osgi.PREFERENCE_FRAMEWORKS_NODE);
+    ArrayList osgiInstalls = new ArrayList();
+    
+    try {
+      String [] children = node.childrenNames();
+      for (int i=0; i<children.length; i++) {
+        osgiInstalls.add(new OsgiInstall(node.node(children[i])));
+      }
+    } catch (BackingStoreException e) {
+      e.printStackTrace();
+    }
+    
+    return osgiInstalls;
+  }
+
+  public static IOsgiInstall getOsgiInstall(String name) {
+    if (name == null || name.length() == 0) return null;
+    
+    Preferences node = new InstanceScope().getNode(Osgi.PREFERENCE_ROOT_NODE).node(Osgi.PREFERENCE_FRAMEWORKS_NODE);
+    IOsgiInstall osgiInstall = null;
+    try  {
+      if (node.nodeExists(name)) {
+        osgiInstall = new OsgiInstall(node.node(name));
+      }
+    } catch (BackingStoreException e) {
+      e.printStackTrace();
+    }
+    
+    return osgiInstall;
+  }
+
+  public static IOsgiInstall getDefaultOsgiInstall() {
+    List l = getOsgiInstalls();
+    IOsgiInstall defaultInstall = null;
+    for (int i=0; i<l.size(); i++) {
+      OsgiInstall osgiInstall = (OsgiInstall) l.get(i);
+      if (osgiInstall.isDefaultDefinition()) {
+        defaultInstall = osgiInstall;
+      }
+    }
+    
+    return defaultInstall;
+  }
+
+  public static void setOsgiInstalls(List osgiInstalls) throws BackingStoreException {
+    // Remove previous definitions
+    Preferences node = new InstanceScope().getNode(Osgi.PREFERENCE_ROOT_NODE).node(Osgi.PREFERENCE_FRAMEWORKS_NODE);
+    String [] names = node.childrenNames();
+    if (names != null) {
+      for(int i=0; i<names.length; i++) {
+        node.node(names[i]).removeNode();
+      }
+    }
+    
+    // Save framework definitions
+    if (osgiInstalls == null) return;
+    for(int i=0; i<osgiInstalls.size();i++) {
+      OsgiInstall osgiInstall = (OsgiInstall) osgiInstalls.get(i);
+      osgiInstall.save(node);
+    }
+
+    node.flush();
   }
   
   /****************************************************************************

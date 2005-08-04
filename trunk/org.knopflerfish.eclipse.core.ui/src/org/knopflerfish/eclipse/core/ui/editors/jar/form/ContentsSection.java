@@ -80,10 +80,6 @@ import org.knopflerfish.eclipse.core.project.BundleJarResource;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.BundleJarResourceDialog;
 
-
-/**
- * @author Anders Rimén
- */
 public class ContentsSection extends SectionPart {
 
   private static final int NUM_TABLE_ROWS    = 5;

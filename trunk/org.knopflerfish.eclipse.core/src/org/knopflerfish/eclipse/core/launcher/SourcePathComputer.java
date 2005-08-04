@@ -55,12 +55,8 @@ import org.eclipse.jdt.launching.sourcelookup.containers.JavaProjectSourceContai
 import org.eclipse.jdt.launching.sourcelookup.containers.JavaSourcePathComputer;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
-import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
 
-/**
- * @author Anders Rimén
- */
 public class SourcePathComputer extends JavaSourcePathComputer implements ISourcePathComputer {
   public static String ID="org.knopflerfish.eclipse.core.launcher.SourcePathComputer";
 
@@ -91,23 +87,38 @@ public class SourcePathComputer extends JavaSourcePathComputer implements ISourc
     }
     
     // Add project source code
-    Map map = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_BUNDLE_PROJECTS, (Map) null);
-    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-    for (Iterator i = map.keySet().iterator();i.hasNext();) {
-      String name = (String) i.next();
-      IProject project = root.getProject(name);
-      IJavaProject javaProject = JavaCore.create(project);
-      containerList.add(new JavaProjectSourceContainer(javaProject));
+    Map projectMap = OsgiLaunchDelegate.getProjects(configuration);
+    if (projectMap != null) {
+      IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+      for (Iterator i = projectMap.keySet().iterator();i.hasNext();) {
+        String name = (String) i.next();
+        IProject project = root.getProject(name);
+        IJavaProject javaProject = JavaCore.create(project);
+        containerList.add(new JavaProjectSourceContainer(javaProject));
+      }
     }
     
     // Add bundle source code
-    // TODO: Get bundle source 
+    Map bundleMap = OsgiLaunchDelegate.getBundles(configuration);
+    if (bundleMap != null) {
+      for (Iterator i = bundleMap.entrySet().iterator();i.hasNext();) {
+        Map.Entry entry = (Map.Entry) i.next();
+        BundleLaunchInfo info = new BundleLaunchInfo((String) entry.getValue());
+        String src = info.getSource();
+        if (src != null) {
+          File file = new File(src);
+          if (file.isDirectory()) {
+            containerList.add(new DirectorySourceContainer(file, true));
+          } else {
+            containerList.add(new ExternalArchiveSourceContainer(file.getAbsolutePath(), true));
+          }
+        }
+      }
+    }
     
     // Add framework libraries source code
-    String vendorName = OsgiLaunchDelegate.getOsgiVendorName(configuration);
-    IOsgiVendor vendor = Osgi.getVendor(vendorName);
     String installName = OsgiLaunchDelegate.getOsgiInstallName(configuration);
-    IOsgiInstall osgiInstall = vendor.getOsgiInstall(installName);
+    IOsgiInstall osgiInstall = Osgi.getOsgiInstall(installName);
     IOsgiLibrary [] libraries = osgiInstall.getRuntimeLibraries();
     if (libraries != null) {
       for (int i=0; i<libraries.length;i++) {

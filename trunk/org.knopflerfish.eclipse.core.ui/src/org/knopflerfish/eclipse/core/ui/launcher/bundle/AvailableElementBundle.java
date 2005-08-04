@@ -38,9 +38,6 @@ import java.util.ArrayList;
 
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 
-/**
- * @author Anders Rimén
- */
 public class AvailableElementBundle implements IAvailableTreeElement {
 
   private final IAvailableTreeElement parent;

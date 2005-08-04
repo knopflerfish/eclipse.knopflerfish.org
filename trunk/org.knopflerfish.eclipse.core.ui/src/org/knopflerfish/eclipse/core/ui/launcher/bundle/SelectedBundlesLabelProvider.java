@@ -42,13 +42,9 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.PlatformUI;
-import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
-/**
- * @author Anders Rimén
- */
 public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColorProvider {
 
   private static String IMAGE_BUNDLE      = "icons/obj16/jar_b_obj.gif";
@@ -140,8 +136,7 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColor
     
     if (columnIndex == 0) {
       if (e.getType() == SelectedBundleElement.TYPE_BUNDLE) {
-        IOsgiBundle bundle = e.getBundle();
-        if (bundle != null && bundle.getSource() != null) {
+        if (e.getLaunchInfo().getSource() != null) {
           return imageBundleSrc;
         } else {
           return imageBundle;

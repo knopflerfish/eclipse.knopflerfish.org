@@ -48,9 +48,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
-/**
- * @author Anders Rimén
- */
 public class LibraryTreeLabelProvider extends LabelProvider implements IFontProvider, IColorProvider {
   private static String IMAGE_RUNTIME     = "icons/obj16/runtime_jar_obj.gif";
   private static String IMAGE_BUNDLE      = "icons/obj16/jar_b_obj.gif";

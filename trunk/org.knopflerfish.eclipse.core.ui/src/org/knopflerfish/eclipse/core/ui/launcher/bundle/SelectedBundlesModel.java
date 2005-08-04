@@ -45,9 +45,6 @@ import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
-/**
- * @author Anders Rimén
- */
 public class SelectedBundlesModel {
   
   private Map bundles = new HashMap();

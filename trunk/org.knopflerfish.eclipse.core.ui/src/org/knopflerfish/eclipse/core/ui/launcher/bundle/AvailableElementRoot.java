@@ -40,13 +40,8 @@ import java.util.List;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
-import org.knopflerfish.eclipse.core.IOsgiVendor;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.OsgiVendor;
 
-/**
- * @author Anders Rimén
- */
 public class AvailableElementRoot implements IAvailableTreeElement {
 
   private ArrayList children = new ArrayList();
@@ -57,8 +52,7 @@ public class AvailableElementRoot implements IAvailableTreeElement {
     children.add(new AvailableElementWorkspace(this, root));
 
     // Add knopflerfish roots
-    IOsgiVendor osgiVendor = Osgi.getVendor(OsgiVendor.VENDOR_NAME);
-    List installList = osgiVendor == null ? null: osgiVendor.getOsgiInstalls();
+    List installList = Osgi.getOsgiInstalls();
     if (installList != null) {
       for(int i=0; i<installList.size(); i++) {
         children.add(new AvailableElementInstall(this, (IOsgiInstall) installList.get(i)));

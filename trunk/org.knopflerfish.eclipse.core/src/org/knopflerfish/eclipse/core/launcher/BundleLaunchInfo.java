@@ -36,9 +36,6 @@ package org.knopflerfish.eclipse.core.launcher;
 
 import java.util.StringTokenizer;
 
-/**
- * @author Anders Rimén
- */
 public class BundleLaunchInfo {
   public static String [] MODES = new String[] {"Install", "Start"};
   public static int MODE_INSTALL  = 0; 
@@ -46,6 +43,7 @@ public class BundleLaunchInfo {
 
   private int startLevel;
   private int mode;
+  private String src;
   
   public BundleLaunchInfo() {
   }
@@ -57,6 +55,9 @@ public class BundleLaunchInfo {
     }
     if (st.hasMoreTokens()) {
       mode = Integer.parseInt(st.nextToken());
+    }
+    if (st.hasMoreTokens()) {
+      src = st.nextToken();
     }
   }
   
@@ -75,12 +76,25 @@ public class BundleLaunchInfo {
   public void setStartLevel(int startLevel) {
     this.startLevel = startLevel;
   }
+
+  public String getSource() {
+    return src;
+  }
+
+  public void setSource(String src) {
+    this.src = src;
+  }
+
   
   public String toString() {
     StringBuffer buf = new StringBuffer();
     buf.append(startLevel);
     buf.append(",");
     buf.append(mode);
+    if (src != null) {
+      buf.append(",");
+      buf.append(src);
+    }
     
     return buf.toString();
   }

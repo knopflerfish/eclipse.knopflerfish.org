@@ -34,9 +34,6 @@
 
 package org.knopflerfish.eclipse.core;
 
-/**
- * @author Anders Rimén
- */
 public interface IOsgiInstall {
 
   /** 
@@ -46,6 +43,8 @@ public interface IOsgiInstall {
    * @return install name
    */
   String getName();
+  
+  String getType();
 
   /** 
    * Returns the class name of the main class used to launch the framework.
@@ -94,4 +93,6 @@ public interface IOsgiInstall {
   void addSystemPropertyGroup(SystemPropertyGroup group);
 
   void clearSystemPropertyGroups();
+  
+  SystemProperty findSystemProperty(String name);
 }

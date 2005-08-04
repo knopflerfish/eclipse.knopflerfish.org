@@ -44,9 +44,6 @@ import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
-/**
- * @author Anders Rimén
- */
 public class AvailableElementWorkspace implements IAvailableTreeElement {
 
   private final IAvailableTreeElement parent;
