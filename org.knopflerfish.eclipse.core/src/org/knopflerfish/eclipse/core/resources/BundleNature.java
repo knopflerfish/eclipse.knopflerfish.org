@@ -43,6 +43,10 @@ import org.eclipse.core.resources.IProjectNature;
 import org.eclipse.core.runtime.CoreException;
 import org.knopflerfish.eclipse.core.Osgi;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class BundleNature implements IProjectNature {
 
   private IProject project;

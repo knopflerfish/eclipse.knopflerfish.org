@@ -43,6 +43,10 @@ import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.Osgi;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class OsgiContainerInitializer extends
     ClasspathContainerInitializer {
 

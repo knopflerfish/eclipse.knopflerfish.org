@@ -39,6 +39,10 @@ import java.io.IOException;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class OsgiLibrary implements IOsgiLibrary {
 
   private final File file;

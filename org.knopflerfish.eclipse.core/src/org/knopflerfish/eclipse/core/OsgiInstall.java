@@ -44,7 +44,10 @@ import org.osgi.service.prefs.Preferences;
 
 /**
  * Knopflerfish implementation of the IOsgiInstall interface. Use preferences
- * to save settings. 
+ * to save settings.
+ * 
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
  */
 public class OsgiInstall implements IOsgiInstall {
 

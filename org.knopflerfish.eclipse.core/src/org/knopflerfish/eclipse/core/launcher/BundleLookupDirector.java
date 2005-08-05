@@ -44,6 +44,10 @@ import org.eclipse.debug.core.sourcelookup.containers.ProjectSourceContainer;
 import org.eclipse.debug.core.sourcelookup.containers.WorkspaceSourceContainer;
 import org.eclipse.jdt.launching.sourcelookup.containers.JavaSourceLookupParticipant;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class BundleLookupDirector extends AbstractSourceLookupDirector {
 
   private static Set fFilteredTypes;

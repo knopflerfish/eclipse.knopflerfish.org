@@ -43,6 +43,9 @@ import java.util.*;
 
 /**
  * The main plugin class to be used in the desktop.
+ * 
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
  */
 public class OsgiPlugin extends Plugin {
 	//The shared instance.

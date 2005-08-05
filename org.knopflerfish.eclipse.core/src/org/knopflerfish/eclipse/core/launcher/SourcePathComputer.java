@@ -57,18 +57,20 @@ import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class SourcePathComputer extends JavaSourcePathComputer implements ISourcePathComputer {
   public static String ID="org.knopflerfish.eclipse.core.launcher.SourcePathComputer";
 
   public SourcePathComputer() {
-    System.err.println("SourcePathComputer");
   }
   
   /* (non-Javadoc)
    * @see org.eclipse.debug.core.sourcelookup.ISourcePathComputer#getId()
    */
   public String getId() {
-    System.err.println("SourcePathComputer:getId()");
     return ID;
   }
 
@@ -76,7 +78,6 @@ public class SourcePathComputer extends JavaSourcePathComputer implements ISourc
    * @see org.eclipse.debug.core.sourcelookup.ISourcePathComputerDelegate#computeSourceContainers(org.eclipse.debug.core.ILaunchConfiguration, org.eclipse.core.runtime.IProgressMonitor)
    */
   public ISourceContainer[] computeSourceContainers(ILaunchConfiguration configuration, IProgressMonitor monitor) throws CoreException {
-    System.err.println("SourcePathComputer:computeSourceContainers()");
     ISourceContainer[] containers = super.computeSourceContainers(configuration, monitor);
 
     ArrayList containerList = new ArrayList();

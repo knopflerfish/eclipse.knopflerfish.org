@@ -38,6 +38,9 @@ import java.util.jar.Manifest;
 
 /**
  * A framework definition library.
+ * 
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
  */
 public interface IOsgiLibrary {
 

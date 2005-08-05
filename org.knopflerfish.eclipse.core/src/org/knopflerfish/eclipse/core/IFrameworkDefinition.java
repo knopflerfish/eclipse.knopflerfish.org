@@ -36,6 +36,10 @@ package org.knopflerfish.eclipse.core;
 
 import java.io.File;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public interface IFrameworkDefinition {
 
   /** 
@@ -55,4 +59,14 @@ public interface IFrameworkDefinition {
   public IOsgiBundle[] getBundles(File dir);
   
   public SystemPropertyGroup[] getSystemPropertyGroups();
+  
+  /** 
+   * Create a runtime framework configuration.
+   * 
+   * @param path working directory for this configuration
+   * 
+   * @return framework configuration
+   */
+  public IFrameworkConfiguration createConfiguration(String path);
+  
 }

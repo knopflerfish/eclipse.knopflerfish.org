@@ -36,6 +36,10 @@ package org.knopflerfish.eclipse.core;
 
 import java.util.ArrayList;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class SystemPropertyGroup {
 
   private final String name;

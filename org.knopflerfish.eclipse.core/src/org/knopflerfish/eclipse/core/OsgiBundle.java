@@ -39,6 +39,10 @@ import java.io.IOException;
 
 import org.knopflerfish.eclipse.core.project.BundleManifest;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class OsgiBundle extends OsgiLibrary implements IOsgiBundle {
 
   private BundleManifest bundleManifest;

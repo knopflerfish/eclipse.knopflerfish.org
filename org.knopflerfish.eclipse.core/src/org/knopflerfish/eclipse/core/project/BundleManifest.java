@@ -43,6 +43,10 @@ import java.util.jar.Manifest;
 
 import org.knopflerfish.eclipse.core.PackageDescription;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class BundleManifest extends Manifest {
 
   public static final String BUNDLE_SYMBOLIC_NAME  = "Bundle-SymbolicName";

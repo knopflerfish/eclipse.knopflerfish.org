@@ -36,6 +36,10 @@ package org.knopflerfish.eclipse.core.launcher;
 
 import java.util.StringTokenizer;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class BundleLaunchInfo {
   public static String [] MODES = new String[] {"Install", "Start"};
   public static int MODE_INSTALL  = 0; 

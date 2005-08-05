@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.framework.knopflerfish;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -42,52 +42,53 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.knopflerfish.eclipse.core.Arguments;
+import org.knopflerfish.eclipse.core.IFrameworkConfiguration;
+import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
-import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 
 /**
- * Knopflerfish implementation of IOsgiConfiguration
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
  */
-public class OsgiConfiguration implements IOsgiConfiguration {
+public class FrameworkConfiguration implements IFrameworkConfiguration {
 
   private static final int DEFAULT_STARTLEVEL = 7;
   
   private static String PROPERTY_FRAMEWORK_DIR = "org.osgi.framework.dir";
   
-  private final File instanceDir;
-  private final Map attributes;
-  private final TreeMap bundles = new TreeMap(); // Startlevel (Integer), List of IOsgiBundle
-
+  private File workDir;
+  private TreeMap bundles = new TreeMap(); // Startlevel (Integer), List of BundleElement
+  private Map systemProperties;
+  private boolean clean;
   
-  public OsgiConfiguration(File dir, Map attributes) {
-    this.instanceDir = dir;
-    this.attributes = attributes;
+  public FrameworkConfiguration(File dir) {
+    this.workDir = dir;
   }
-
-  /* (non-Javadoc)
-   * @see org.gstproject.eclipse.osgi.IOsgiConfiguration#create()
-   */
-  public String[] create() throws IOException {
-    ArrayList args = new ArrayList();
+  
+  /****************************************************************************
+   * org.knopflerfish.eclipse.core.IFrameworkDefinition methods
+   ***************************************************************************/
+  public Arguments create() throws IOException {
+    Arguments args = new Arguments();
+    ArrayList programArgs = new ArrayList();
     
     // Create xargs file
-    File initFile = new File(instanceDir, "init.xargs");
-    File restartFile = new File(instanceDir, "restart.xargs");
+    File initFile = new File(workDir, "init.xargs");
+    File restartFile = new File(workDir, "restart.xargs");
     
     // Start empty framework
-    if (attributes.containsKey(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_INIT) && 
-        ((Boolean) attributes.get(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_INIT)).booleanValue()) {
-      args.add("-init");
+    if (clean) {
+      programArgs.add("-init");
     }
     
     // Set framework dir
-    writeProperty(initFile, PROPERTY_FRAMEWORK_DIR, instanceDir.getAbsolutePath()+"/fwdir", false);
-    writeProperty(restartFile, PROPERTY_FRAMEWORK_DIR, instanceDir.getAbsolutePath()+"/fwdir", false);
+    writeProperty(initFile, PROPERTY_FRAMEWORK_DIR, workDir.getAbsolutePath()+"/fwdir", false);
+    writeProperty(restartFile, PROPERTY_FRAMEWORK_DIR, workDir.getAbsolutePath()+"/fwdir", false);
     
     // System properties
-    Map properties = (Map) attributes.get(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES);
-    if (properties != null) {
-      for(Iterator i=properties.entrySet().iterator();i.hasNext();) {
+    if (systemProperties != null) {
+      for(Iterator i=systemProperties.entrySet().iterator();i.hasNext();) {
         Map.Entry entry = (Map.Entry) i.next();
         writeProperty(initFile, (String) entry.getKey(), (String) entry.getValue(), true);
         writeProperty(restartFile, (String) entry.getKey(), (String) entry.getValue(), true);
@@ -134,11 +135,13 @@ public class OsgiConfiguration implements IOsgiConfiguration {
       }
     }
     
-    return (String[]) args.toArray(new String[args.size()]);
+    args.setProgramArguments((String[]) programArgs.toArray(new String[programArgs.size()]));
+    return args;
   }
 
-  /* (non-Javadoc)
-   * @see org.gstproject.eclipse.osgi.IOsgiConfiguration#addBundle(org.gstproject.eclipse.osgi.IOsgiBundle, java.lang.Integer)
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#addBundle(org.knopflerfish.eclipse.core.IOsgiBundle, org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo)
    */
   public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info) {
     Integer startLevel = new Integer(info.getStartLevel());
@@ -150,6 +153,25 @@ public class OsgiConfiguration implements IOsgiConfiguration {
     bundles.put(startLevel, l);
   }
 
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#setSystemProperties(java.util.Map)
+   */
+  public void setSystemProperties(Map properties) {
+    systemProperties = properties;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#setStartClean(boolean)
+   */
+  public void setStartClean(boolean clean) {
+    this.clean = clean;
+  }
+
+  /****************************************************************************
+   * Private utility methods
+   ***************************************************************************/
   private void writeCommand(File f, String cmd, String value, boolean append) throws IOException {
     FileWriter writer = null;
     try {
@@ -188,11 +210,10 @@ public class OsgiConfiguration implements IOsgiConfiguration {
       }
     }
   }
-
+  
   /****************************************************************************
    * Inner classes
    ***************************************************************************/
-  
   class BundleElement {
     private final IOsgiBundle bundle;
     private final BundleLaunchInfo launchInfo;
@@ -210,4 +231,5 @@ public class OsgiConfiguration implements IOsgiConfiguration {
       return launchInfo;
     }
   }
+
 }
