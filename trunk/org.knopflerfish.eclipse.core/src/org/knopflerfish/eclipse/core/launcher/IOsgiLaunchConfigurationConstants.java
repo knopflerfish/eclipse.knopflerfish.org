@@ -34,6 +34,10 @@
 
 package org.knopflerfish.eclipse.core.launcher;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public interface IOsgiLaunchConfigurationConstants {
 
   public String PACKAGE = "org.knopflerfish.eclipse.core.launcher.";

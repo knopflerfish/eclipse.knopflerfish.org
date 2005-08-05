@@ -34,6 +34,10 @@
 
 package org.knopflerfish.eclipse.core;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public interface IOsgiInstall {
 
   /** 

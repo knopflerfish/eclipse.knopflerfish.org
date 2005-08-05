@@ -42,6 +42,7 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 
 import org.eclipse.core.runtime.Path;
+import org.knopflerfish.eclipse.core.IFrameworkConfiguration;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
@@ -51,6 +52,10 @@ import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
 import org.knopflerfish.eclipse.core.project.BundleManifest;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class FrameworkDefinition implements IFrameworkDefinition {
   
   private static String PATH_PROPERTY_FILE = "resources/framework.props";
@@ -267,6 +272,19 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     }
 
     return (SystemPropertyGroup[]) groups.toArray(new SystemPropertyGroup[groups.size()]);
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#createConfiguration()
+   */
+  public IFrameworkConfiguration createConfiguration(String path) {
+    if (path == null) return null;
+    
+    File dir = new File(path);
+    if (!dir.exists() || !dir.isDirectory()) return null;
+    
+    return new FrameworkConfiguration(dir);
   }
 
   /****************************************************************************

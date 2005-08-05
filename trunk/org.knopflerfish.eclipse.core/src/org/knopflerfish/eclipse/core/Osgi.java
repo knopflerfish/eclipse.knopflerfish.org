@@ -49,6 +49,10 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class Osgi {
   public static String NATURE_ID = "org.knopflerfish.eclipse.core.bundlenature";
   public static String BUILDER_ID = "org.knopflerfish.eclipse.core.bundlebuilder";

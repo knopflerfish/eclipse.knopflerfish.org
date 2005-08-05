@@ -55,18 +55,22 @@ import org.eclipse.jdt.launching.AbstractJavaLaunchConfigurationDelegate;
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.IVMRunner;
 import org.eclipse.jdt.launching.VMRunnerConfiguration;
+import org.knopflerfish.eclipse.core.Arguments;
+import org.knopflerfish.eclipse.core.IFrameworkConfiguration;
+import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.IOsgiConfiguration;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
-import org.knopflerfish.eclipse.core.OsgiConfiguration;
 import org.knopflerfish.eclipse.core.project.BundleJar;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
  * Implementation of OSGi launch configuration delegate.
+ * 
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
  */
 public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
 
@@ -76,9 +80,6 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
   public void launch(ILaunchConfiguration configuration, String mode,
       ILaunch launch, IProgressMonitor monitor) throws CoreException {
 
-    // Verify OSGi vendor
-    //IOsgiVendor osgiVendor = verifyOsgiVendor(configuration);
-    
     // Verify OSGi installation
     IOsgiInstall osgiInstall = verifyOsgiInstall(configuration);
     
@@ -103,13 +104,24 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     runConfig.setWorkingDirectory(instanceDir.getAbsolutePath());
     
     // Create framework configuration
-    IOsgiConfiguration osgiConf = new OsgiConfiguration(instanceDir, configuration.getAttributes());
+    IFrameworkDefinition framework = Osgi.getFrameworkDefinition(osgiInstall.getType());
+    IFrameworkConfiguration conf = framework.createConfiguration(instanceDir.getAbsolutePath());
+    
+    // Set system properties
+    conf.setSystemProperties(getSystemProperties(configuration));
+    
+    // Start clean framework
+    conf.setStartClean(getStartClean(configuration));
+    
+    // Add bundles to be launched
     if (bundleMap != null) {
       for (Iterator i=bundleMap.entrySet().iterator();i.hasNext();) {
         Map.Entry entry = (Map.Entry) i.next();
-        osgiConf.addBundle((IOsgiBundle) entry.getKey(), (BundleLaunchInfo) entry.getValue());
+        conf.addBundle((IOsgiBundle) entry.getKey(), (BundleLaunchInfo) entry.getValue());
       }
     }
+    
+    // Add projects to be launched
     if (projectMap != null) {
       File jarDirectory = new File(instanceDir, "jars");
       if (!jarDirectory.exists()) {
@@ -127,7 +139,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
           File path = new File(jarDirectory, name);
           File jarFile = bundleJar.export(bundleProject, path.getAbsolutePath());
           IOsgiBundle bundle = new OsgiBundle(jarFile);
-          osgiConf.addBundle(bundle, (BundleLaunchInfo) entry.getValue());
+          conf.addBundle(bundle, (BundleLaunchInfo) entry.getValue());
         } catch (IOException e) {
           // Failed to create jar file
           e.printStackTrace();
@@ -135,14 +147,19 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
       }
     }
     
-    String [] args = null;
+    Arguments args = null;
     try {
-      args = osgiConf.create();
+      args = conf.create();
     } catch (IOException e) {
       abort("Failed to create framework configuration.", e,
         IOsgiLaunchConfigurationConstants.ERR_CREATE_CONFIGURATION);
     }
-    runConfig.setProgramArguments(args);
+    if (args.getProgramArguments() != null) {
+      runConfig.setProgramArguments(args.getProgramArguments());
+    }
+    if (args.getVMArguments() != null) {
+      runConfig.setVMArguments(args.getVMArguments());
+    }
     
     // Verify JRE installation
     IVMInstall vm = verifyVMInstall(configuration);
@@ -377,5 +394,20 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     Map projects = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_BUNDLE_PROJECTS, (Map) null);
     
     return projects;
+  }
+
+  public static Map getSystemProperties(ILaunchConfiguration configuration) throws CoreException {
+    Map properties = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, (Map) null);
+    
+    return properties;
+  }
+
+  public static boolean getStartClean(ILaunchConfiguration configuration) throws CoreException {
+    if (configuration.getAttributes().containsKey(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_INIT) && 
+        ((Boolean) configuration.getAttributes().get(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_INIT)).booleanValue()) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }

@@ -34,23 +34,25 @@
 
 package org.knopflerfish.eclipse.core;
 
-import java.io.IOException;
-
-import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
-
 /**
- * Represents a configuration when launching an OSGi framework.
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
  */
-public interface IOsgiConfiguration {
-
-  /** 
-   * Saves this configuration and returns the program arguments
-   * that shall be used when launching the framework.
-   * 
-   * @return program arguments
-   * @throws IOException if failure creating configuration
-   */
-  public String [] create() throws IOException;
+public class Arguments {
+  private String[] programArguments;
+  private String[] vmArguments;
   
-  public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info);
+  public String[] getProgramArguments() {
+    return programArguments;
+  }
+  public void setProgramArguments(String[] args) {
+    programArguments = args;
+  }
+
+  public String[] getVMArguments() {
+    return vmArguments;
+  }
+  public void setVMArguments(String[] args) {
+    vmArguments = args;
+  }
 }

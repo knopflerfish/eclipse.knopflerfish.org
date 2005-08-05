@@ -38,6 +38,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class PackageDescription {
   public static String SPECIFICATION_VERSION = "specification-version";
 

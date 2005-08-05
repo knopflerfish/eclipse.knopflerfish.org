@@ -53,6 +53,10 @@ import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class BundleProject implements IBundleProject {
   private static final String MANIFEST_FILE  = "bundle.manifest";
   private static final String BUNDLEJAR_FILE = "bundle.jar";

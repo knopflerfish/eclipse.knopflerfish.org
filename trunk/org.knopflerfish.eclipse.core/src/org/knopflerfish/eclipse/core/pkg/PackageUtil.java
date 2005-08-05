@@ -50,6 +50,10 @@ import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class PackageUtil {
 
   public static IOsgiBundle[] findExportingBundles(PackageDescription pkg) {

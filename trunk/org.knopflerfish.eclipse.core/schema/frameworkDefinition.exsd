@@ -45,7 +45,7 @@
    <element name="frameworkDefinition">
       <annotation>
          <appInfo>
-            <meta.element icon="jjj"/>
+            <meta.element icon=""/>
          </appInfo>
       </annotation>
       <complexType>

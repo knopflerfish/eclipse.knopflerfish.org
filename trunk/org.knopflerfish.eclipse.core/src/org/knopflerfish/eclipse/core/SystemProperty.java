@@ -36,6 +36,10 @@ package org.knopflerfish.eclipse.core;
 
 import java.util.List;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class SystemProperty {
   
   private String name;
