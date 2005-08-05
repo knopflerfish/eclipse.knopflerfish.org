@@ -36,6 +36,10 @@ package org.knopflerfish.eclipse.core.ui.editors.jar.text;
 
 import org.eclipse.ui.editors.text.TextEditor;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class JarTextEditor extends TextEditor {
 
 

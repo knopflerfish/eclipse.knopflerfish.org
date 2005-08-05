@@ -1,4 +1,4 @@
-framework.property.num = 32
+framework.property.num = 30
 framework.property.0.name = org.osgi.framework.dir
 framework.property.0.description = Where we store persistent data.
 framework.property.0.group = OSGi Framework
@@ -93,86 +93,76 @@ framework.property.16.group = Knopflerfish Framework
 framework.property.16.default = true
 framework.property.16.allowed = true,false
 
-framework.property.17.name = org.knopflerfish.startlevel.level
-framework.property.17.description = Level of start level service if used.
+framework.property.17.name = org.knopflerfish.framework.version.fuzzy
+framework.property.17.description = If set to true, consider package version numbers "x.y.0" = "x.y" otherwise consider "x.y.0" > "x.y".
 framework.property.17.group = Knopflerfish Framework
-framework.property.17.default = 1
+framework.property.17.default = true
+framework.property.17.allowed = true,false
 
-framework.property.18.name = org.knopflerfish.startlevel.initlevel
-framework.property.18.description = Initial start level of bundles if start level service if used.
+framework.property.18.name = org.knopflerfish.osgi.r3.testcompliant
+framework.property.18.description = If set to "true", make sure that all test in the OSGi R3 test suite pass, even if the tests are buggy and break the spec itself. This affects some very special (due to bugs in the test) handling of filters and conflict between the spec concerning CM and the actual tests. Bundles knowning abouth these conflicts should check the testcompliant flag and act appropiately.
 framework.property.18.group = Knopflerfish Framework
-framework.property.18.default = 1
+framework.property.18.default = false
+framework.property.18.allowed = true,false
 
-framework.property.19.name = org.knopflerfish.framework.version.fuzzy
-framework.property.19.description = If set to true, consider package version numbers "x.y.0" = "x.y" otherwise consider "x.y.0" > "x.y".
+framework.property.19.name = org.knopflerfish.framework.restart.allow
+framework.property.19.description = If set to "true", allow restart of framework by calling getBundle(0).update(). If "false", exit framework with exit code = 2. This can be useful when a wrapper script is better at restarting cleanly than the JVM itself.
 framework.property.19.group = Knopflerfish Framework
 framework.property.19.default = true
 framework.property.19.allowed = true,false
-
-framework.property.20.name = org.knopflerfish.osgi.r3.testcompliant
-framework.property.20.description = If set to "true", make sure that all test in the OSGi R3 test suite pass, even if the tests are buggy and break the spec itself. This affects some very special (due to bugs in the test) handling of filters and conflict between the spec concerning CM and the actual tests. Bundles knowning abouth these conflicts should check the testcompliant flag and act appropiately.
+  
+framework.property.20.name = org.knopflerfish.osgi.setcontextclassloader
+framework.property.20.description = If set to "true", set the bundle startup thread's context class loader to the bundle's class loader. This is useful for checking if an external lib will work better with a wrapped startup.
 framework.property.20.group = Knopflerfish Framework
 framework.property.20.default = false
 framework.property.20.allowed = true,false
 
-framework.property.21.name = org.knopflerfish.framework.restart.allow
-framework.property.21.description = If set to "true", allow restart of framework by calling getBundle(0).update(). If "false", exit framework with exit code = 2. This can be useful when a wrapper script is better at restarting cleanly than the JVM itself.
-framework.property.21.group = Knopflerfish Framework
-framework.property.21.default = true
-framework.property.21.allowed = true,false
-  
-framework.property.22.name = org.knopflerfish.osgi.setcontextclassloader
-framework.property.22.description = If set to "true", set the bundle startup thread's context class loader to the bundle's class loader. This is useful for checking if an external lib will work better with a wrapped startup.
-framework.property.22.group = Knopflerfish Framework
-framework.property.22.default = false
-framework.property.22.allowed = true,false
+framework.property.21.name = org.osgi.service.http.port
+framework.property.21.description = This property specifies the port used for servlets and resources accessible via HTTP.
+framework.property.21.group = OSGi Web Server
+framework.property.21.default = 80
 
-framework.property.23.name = org.osgi.service.http.port
-framework.property.23.description = This property specifies the port used for servlets and resources accessible via HTTP.
-framework.property.23.group = OSGi Web Server
-framework.property.23.default = 80
+framework.property.22.name = org.osgi.service.http.port.secure
+framework.property.22.description = This property specifies the port used for servlets and resources accessible via HTTPS.
+framework.property.22.group = OSGi Web Server
+framework.property.22.default = 443
 
-framework.property.24.name = org.osgi.service.http.port.secure
-framework.property.24.description = This property specifies the port used for servlets and resources accessible via HTTPS.
-framework.property.24.group = OSGi Web Server
-framework.property.24.default = 443
+framework.property.23.name = org.knopflerfish.http.dnslookup
+framework.property.23.description = Use DNS to lookup names.
+framework.property.23.group = Knopflerfish Web Server
+framework.property.23.default = false
+framework.property.23.allowed = true,false
 
-framework.property.25.name = org.knopflerfish.http.dnslookup
-framework.property.25.description = Use DNS to lookup names.
-framework.property.25.group = Knopflerfish Web Server
-framework.property.25.default = false
-framework.property.25.allowed = true,false
+framework.property.24.name = org.knopflerfish.log.out
+framework.property.24.description = Print log on std out.
+framework.property.24.group = Knopflerfish Log Service
+framework.property.24.default = false
+framework.property.24.allowed = true,false
 
-framework.property.26.name = org.knopflerfish.log.out
-framework.property.26.description = Print log on std out.
+framework.property.25.name = org.knopflerfish.log.level
+framework.property.25.description = Log level.
+framework.property.25.group = Knopflerfish Log Service
+framework.property.25.default = info
+framework.property.25.allowed = debug,info,warn,error
+
+framework.property.26.name = org.knopflerfish.log.grabio
+framework.property.26.description = System out is added to log.
 framework.property.26.group = Knopflerfish Log Service
-framework.property.26.default = false
+framework.property.26.default = true
 framework.property.26.allowed = true,false
 
-framework.property.27.name = org.knopflerfish.log.level
-framework.property.27.description = Log level.
+framework.property.27.name = org.knopflerfish.log.file
+framework.property.27.description = Save log to file.
 framework.property.27.group = Knopflerfish Log Service
-framework.property.27.default = info
-framework.property.27.allowed = debug,info,warn,error
+framework.property.27.default = true
+framework.property.27.allowed = true,false
 
-framework.property.28.name = org.knopflerfish.log.grabio
-framework.property.28.description = System out is added to log.
-framework.property.28.group = Knopflerfish Log Service
-framework.property.28.default = true
-framework.property.28.allowed = true,false
+framework.property.28.name = java.security.manager
+framework.property.28.description = Class name of security manager. If set to empty string, uses "java.lang.SecurityManager". If unset, do not use any security manager.
+framework.property.28.group = Java
 
-framework.property.29.name = org.knopflerfish.log.file
-framework.property.29.description = Save log to file.
-framework.property.29.group = Knopflerfish Log Service
-framework.property.29.default = true
-framework.property.29.allowed = true,false
-
-framework.property.30.name = java.security.manager
-framework.property.30.description = Class name of security manager. If set to empty string, uses "java.lang.SecurityManager". If unset, do not use any security manager.
-framework.property.30.group = Java
-
-framework.property.31.name = java.security.policy
-framework.property.31.description = Security policy file. Used by the security manager.
-framework.property.31.group = Java
+framework.property.29.name = java.security.policy
+framework.property.29.description = Security policy file. Used by the security manager.
+framework.property.29.group = Java
 
 

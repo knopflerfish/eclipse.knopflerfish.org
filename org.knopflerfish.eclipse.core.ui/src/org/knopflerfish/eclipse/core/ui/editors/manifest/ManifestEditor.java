@@ -42,6 +42,10 @@ import org.eclipse.ui.forms.editor.FormEditor;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.form.ManifestFormEditor;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.text.ManifestTextEditor;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class ManifestEditor extends FormEditor {
 
   private static final String PAGE_OVERVIEW_ID      = "overviewId";

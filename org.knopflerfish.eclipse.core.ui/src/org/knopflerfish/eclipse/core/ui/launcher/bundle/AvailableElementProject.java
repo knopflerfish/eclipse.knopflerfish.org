@@ -38,6 +38,10 @@ import java.util.ArrayList;
 
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class AvailableElementProject implements IAvailableTreeElement {
 
   private final IAvailableTreeElement parent;

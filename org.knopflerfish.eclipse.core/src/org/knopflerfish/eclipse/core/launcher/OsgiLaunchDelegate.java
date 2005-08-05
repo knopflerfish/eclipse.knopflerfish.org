@@ -110,8 +110,11 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     // Set system properties
     conf.setSystemProperties(getSystemProperties(configuration));
     
-    // Start clean framework
-    conf.setStartClean(getStartClean(configuration));
+    // Check if bundle cache shall be cleared
+    conf.clearBundleCache(getStartClean(configuration));
+
+    // Set initial start level
+    conf.setStartLevel(getStartLevel(configuration));
     
     // Add bundles to be launched
     if (bundleMap != null) {
@@ -352,7 +355,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
    * @exception CoreException if unable to retrieve the attribute
    */
   public static String getOsgiInstallName(ILaunchConfiguration configuration) throws CoreException {
-    String installName = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTALL_NAME, (String) null);
+    String installName = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
     
     return installName;
   }
@@ -365,7 +368,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
    * @exception CoreException if unable to retrieve the attribute
    */
   public static String getInstanceDirectory(ILaunchConfiguration configuration) throws CoreException {
-    String location = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_DIR, (String) null);
+    String location = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, (String) null);
     
     return location;
   }
@@ -403,11 +406,19 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
   }
 
   public static boolean getStartClean(ILaunchConfiguration configuration) throws CoreException {
-    if (configuration.getAttributes().containsKey(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_INIT) && 
-        ((Boolean) configuration.getAttributes().get(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_INIT)).booleanValue()) {
+    if (configuration.getAttributes().containsKey(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE) && 
+        ((Boolean) configuration.getAttributes().get(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE)).booleanValue()) {
       return true;
     } else {
       return false;
+    }
+  }
+
+  public static int getStartLevel(ILaunchConfiguration configuration) throws CoreException {
+    if (configuration.getAttributes().containsKey(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL) ) {
+      return  ((Integer) configuration.getAttributes().get(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL)).intValue();
+    } else {
+      return 1;
     }
   }
 }

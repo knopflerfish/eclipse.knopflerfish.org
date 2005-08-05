@@ -56,6 +56,10 @@ import org.eclipse.swt.widgets.Text;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.OsgiLibrary;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class LibraryDialog extends Dialog {
 
   private static final int NUM_CHARS_WIDTH = 60;

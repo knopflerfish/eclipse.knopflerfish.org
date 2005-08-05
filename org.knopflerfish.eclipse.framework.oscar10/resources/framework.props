@@ -1,42 +1,37 @@
-framework.property.num = 8
+framework.property.num = 7
 framework.property.0.name = oscar.cache.class
 framework.property.0.description = The class name to be used when creating an instance for the bundle cache; this class must implement the BundleCache interface and have a default constructor.
 framework.property.0.group = Oscar Framework
 framework.property.0.default = org.ungoverned.oscar.util.DefaultBundleCache
 
-framework.property.1.name = oscar.startlevel.framework
-framework.property.1.description = The initial start level of the Oscar framework once it starts execution; the default value is 1.
+framework.property.1.name = oscar.startlevel.bundle
+framework.property.1.description = The default start level for newly installed bundles; the default value is 1.
 framework.property.1.group = Oscar Framework
 framework.property.1.default = 1
 
-framework.property.2.name = oscar.startlevel.bundle
-framework.property.2.description = The default start level for newly installed bundles; the default value is 1.
+framework.property.2.name = oscar.embedded.execution
+framework.property.2.description = Flag to indicate whether Oscar is embedded into a host application; the default value is "false". If this flag is "true" then Oscar will not called System.exit() upon termination.
 framework.property.2.group = Oscar Framework
-framework.property.2.default = 1
+framework.property.2.default = false
+framework.property.2.allowed = true,false
 
-framework.property.3.name = oscar.embedded.execution
-framework.property.3.description = Flag to indicate whether Oscar is embedded into a host application; the default value is "false". If this flag is "true" then Oscar will not called System.exit() upon termination.
+framework.property.3.name = oscar.strict.osgi
+framework.property.3.description = Flag to indicate whether Oscar is running in strict OSGi mode; the default value is "true". If this flag is "false" it enables two non-OSGi-compliant features: persisting BundleActivators that implement Serializable and matching of sub-packages when resolving imported packages to eliminate exhaustive listing of package exports (e.g., the import javax.servlet.http will match the export javax.servlet). These features are not recommended since they are non-compliant.
 framework.property.3.group = Oscar Framework
-framework.property.3.default = false
+framework.property.3.default = true
 framework.property.3.allowed = true,false
 
-framework.property.4.name = oscar.strict.osgi
-framework.property.4.description = Flag to indicate whether Oscar is running in strict OSGi mode; the default value is "true". If this flag is "false" it enables two non-OSGi-compliant features: persisting BundleActivators that implement Serializable and matching of sub-packages when resolving imported packages to eliminate exhaustive listing of package exports (e.g., the import javax.servlet.http will match the export javax.servlet). These features are not recommended since they are non-compliant.
-framework.property.4.group = Oscar Framework
-framework.property.4.default = true
-framework.property.4.allowed = true,false
+framework.property.4.name = oscar.cache.bufsize
+framework.property.4.description = Sets the buffer size to be used by the cache; the default value is 4096. The integer value of this string provides control over the size of the internal buffer of the disk cache for performance reasons.
+framework.property.4.group = Oscar Default Bundle Cache
+framework.property.4.default = 4096
 
-framework.property.5.name = oscar.cache.bufsize
-framework.property.5.description = Sets the buffer size to be used by the cache; the default value is 4096. The integer value of this string provides control over the size of the internal buffer of the disk cache for performance reasons.
-framework.property.5.group = Oscar Default Bundle Cache
-framework.property.5.default = 4096
+framework.property.5.name = org.osgi.service.http.port
+framework.property.5.description = This property specifies the port used for servlets and resources accessible via HTTP.
+framework.property.5.group = OSGi Web Server
+framework.property.5.default = 80
 
-framework.property.6.name = org.osgi.service.http.port
-framework.property.6.description = This property specifies the port used for servlets and resources accessible via HTTP.
+framework.property.6.name = org.osgi.service.http.port.secure
+framework.property.6.description = This property specifies the port used for servlets and resources accessible via HTTPS.
 framework.property.6.group = OSGi Web Server
-framework.property.6.default = 80
-
-framework.property.7.name = org.osgi.service.http.port.secure
-framework.property.7.description = This property specifies the port used for servlets and resources accessible via HTTPS.
-framework.property.7.group = OSGi Web Server
-framework.property.7.default = 443
+framework.property.6.default = 443

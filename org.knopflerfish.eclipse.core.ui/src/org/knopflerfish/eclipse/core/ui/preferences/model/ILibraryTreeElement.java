@@ -34,6 +34,10 @@
 
 package org.knopflerfish.eclipse.core.ui.preferences.model;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public interface ILibraryTreeElement {
 
   public static int TYPE_ROOT         = 0;

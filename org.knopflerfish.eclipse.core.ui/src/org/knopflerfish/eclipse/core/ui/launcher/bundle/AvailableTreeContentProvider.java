@@ -37,6 +37,10 @@ package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class AvailableTreeContentProvider implements ITreeContentProvider {
 
   /* (non-Javadoc)

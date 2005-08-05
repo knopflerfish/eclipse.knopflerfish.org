@@ -34,6 +34,10 @@
 
 package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public interface IAvailableTreeElement {
 
   public static int TYPE_ROOT         = 0;

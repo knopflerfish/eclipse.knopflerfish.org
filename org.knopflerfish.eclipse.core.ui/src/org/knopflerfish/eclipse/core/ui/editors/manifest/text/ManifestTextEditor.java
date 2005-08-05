@@ -36,6 +36,10 @@ package org.knopflerfish.eclipse.core.ui.editors.manifest.text;
 
 import org.eclipse.ui.editors.text.TextEditor;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class ManifestTextEditor extends TextEditor {
 
 

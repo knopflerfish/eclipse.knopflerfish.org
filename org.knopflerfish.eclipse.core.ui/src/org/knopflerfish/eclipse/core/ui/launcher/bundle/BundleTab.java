@@ -79,6 +79,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
+import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
@@ -93,6 +94,10 @@ import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class BundleTab extends AbstractLaunchConfigurationTab {
   private static String TITLE_ADD_LIBRARY = "Add external bundle";
   
@@ -442,7 +447,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
   public void initializeFrom(ILaunchConfiguration configuration) {
     // Set values to GUI widgets
     try {
-      String name = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTALL_NAME, (String) null);
+      String name = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
       if (name != null) {
         osgiInstall = Osgi.getOsgiInstall(name);
       } else {
@@ -609,29 +614,17 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
 
     // Get exported packages by runtime
     // TODO: Fix this better, should check the property exported packages as well
+    IFrameworkDefinition framework = Osgi.getFrameworkDefinition(osgiInstall.getType());
     IOsgiLibrary [] libraries = osgiInstall.getRuntimeLibraries();
-    if (libraries != null) {
-      for (int i=0; i<libraries.length; i++) {
-        try {
-          OsgiBundle bundle = new OsgiBundle(new File(libraries[i].getPath()));
-          
-          PackageDescription [] packages = null;
-          if (bundle.getBundleManifest() != null) {
-            packages = bundle.getBundleManifest().getExportedPackages();
-          }
-          if (packages != null) {
-            for (int j=0; j<packages.length; j++) {
-              ArrayList descriptions = (ArrayList) exportedPackages.get(packages[j].getPackageName());
-              if (descriptions == null) {
-                descriptions = new ArrayList();
-              }
-              descriptions.add(packages[j]);
-              exportedPackages.put(packages[j].getPackageName(), descriptions);
-            }
-          }
-        } catch (Exception e) {
-          e.printStackTrace();
+    PackageDescription [] frameworkPackages = framework.getExportedPackages(libraries);
+    if (frameworkPackages != null) {
+      for (int j=0; j<frameworkPackages.length; j++) {
+        ArrayList descriptions = (ArrayList) exportedPackages.get(frameworkPackages[j].getPackageName());
+        if (descriptions == null) {
+          descriptions = new ArrayList();
         }
+        descriptions.add(frameworkPackages[j]);
+        exportedPackages.put(frameworkPackages[j].getPackageName(), descriptions);
       }
     }
     

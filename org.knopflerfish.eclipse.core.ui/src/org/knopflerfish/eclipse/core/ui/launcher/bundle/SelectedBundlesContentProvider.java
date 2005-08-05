@@ -37,6 +37,10 @@ package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class SelectedBundlesContentProvider implements IStructuredContentProvider {
 
   /* (non-Javadoc)

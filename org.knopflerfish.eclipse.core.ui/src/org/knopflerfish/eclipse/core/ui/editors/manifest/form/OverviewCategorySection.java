@@ -69,6 +69,10 @@ import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.PropertyDialog;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class OverviewCategorySection extends SectionPart {
 
   private static int NUM_TABLE_ROWS = 5;

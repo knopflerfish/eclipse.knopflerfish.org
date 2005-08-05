@@ -47,6 +47,10 @@ import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class AvailableBundlesLabelProvider extends LabelProvider {
   
   private static String IMAGE_BUNDLE      = "icons/obj16/jar_b_obj.gif";

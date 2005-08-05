@@ -41,6 +41,9 @@ import java.util.*;
 
 /**
  * The main plugin class to be used in the desktop.
+ * 
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
  */
 public class OsgiUiPlugin extends AbstractUIPlugin {
   private static String IMAGE_BUNDLE_WIZ = "icons/wizban/bundle_wiz.gif";

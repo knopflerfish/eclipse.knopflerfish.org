@@ -48,6 +48,10 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class XMLSourceViewerConfig extends SourceViewerConfiguration {
   
   private static Color DEFAULT_TAG_COLOR = new Color (Display.getCurrent(), new RGB (0,0,0));

@@ -60,6 +60,9 @@ public interface IFrameworkDefinition {
   
   public SystemPropertyGroup[] getSystemPropertyGroups();
   
+  
+  public PackageDescription[] getExportedPackages(IOsgiLibrary[] libraries);
+  
   /** 
    * Create a runtime framework configuration.
    * 

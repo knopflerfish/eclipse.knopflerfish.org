@@ -64,7 +64,9 @@ public interface IFrameworkConfiguration {
    */
   public void setSystemProperties(Map properties);
   
-  public void setStartClean(boolean clean);
+  public void clearBundleCache(boolean clear);
+  
+  public void setStartLevel(int startLevel);
   
   /** 
    * Add a bundle to this configuration. The launch info
