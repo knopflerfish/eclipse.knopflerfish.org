@@ -43,6 +43,10 @@ import java.util.jar.Manifest;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class ManifestUtil {
 
   /**

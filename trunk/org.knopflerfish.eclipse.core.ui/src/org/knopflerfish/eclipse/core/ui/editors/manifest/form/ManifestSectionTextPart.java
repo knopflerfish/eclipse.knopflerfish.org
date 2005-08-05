@@ -46,6 +46,10 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 abstract public class ManifestSectionTextPart extends SectionPart {
 
   // Widget properties

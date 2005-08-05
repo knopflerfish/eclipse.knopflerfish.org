@@ -44,6 +44,10 @@ import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class AvailableElementWorkspace implements IAvailableTreeElement {
 
   private final IAvailableTreeElement parent;

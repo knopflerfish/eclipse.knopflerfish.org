@@ -42,6 +42,10 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.Osgi;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class AvailableElementRoot implements IAvailableTreeElement {
 
   private ArrayList children = new ArrayList();

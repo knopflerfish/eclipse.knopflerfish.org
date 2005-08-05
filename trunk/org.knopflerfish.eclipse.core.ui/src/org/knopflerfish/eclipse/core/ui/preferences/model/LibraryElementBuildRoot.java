@@ -36,6 +36,10 @@ package org.knopflerfish.eclipse.core.ui.preferences.model;
 
 import java.util.ArrayList;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class LibraryElementBuildRoot implements ILibraryTreeElement {
 
   private final ILibraryTreeElement parent;

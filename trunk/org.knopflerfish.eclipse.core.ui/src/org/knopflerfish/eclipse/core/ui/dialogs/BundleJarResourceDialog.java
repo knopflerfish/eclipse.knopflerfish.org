@@ -68,6 +68,10 @@ import org.eclipse.ui.dialogs.ISelectionStatusValidator;
 import org.eclipse.ui.model.BaseWorkbenchContentProvider;
 import org.knopflerfish.eclipse.core.project.BundleJarResource;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class BundleJarResourceDialog extends Dialog {
 
   private static final String ERROR     = "error";

@@ -52,6 +52,10 @@ import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.pkg.PackageUtil;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class ImportQuickFix implements IQuickFixProcessor {
 
   /* (non-Javadoc)

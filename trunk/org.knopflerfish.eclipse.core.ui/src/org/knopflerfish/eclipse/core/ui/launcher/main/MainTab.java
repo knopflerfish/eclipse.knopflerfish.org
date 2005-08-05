@@ -70,9 +70,11 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ScrollBar;
+import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
@@ -85,15 +87,16 @@ import org.knopflerfish.eclipse.core.launcher.SourcePathComputer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class MainTab extends AbstractLaunchConfigurationTab {
   private static String IMAGE = "icons/obj16/osgi_obj.gif";
-  private static final String DEFAULT_KF_RUNTIME_PATH = "runtime-knopflerfish";
   
-  // Tool tips
-  private static final String TOOLTIP_LOCATION = 
-    "The location where fwdir and xargs files for this configuration will be stored.";
-  private static final String TOOLTIP_INIT = 
-    "If checked the framework will be started with '-init' flag.";
+  // Default values
+  private static final String DEFAULT_RUNTIME_PATH = "runtime-osgi";
+  private static final int DEFAULT_START_LEVEL     = 7;
   
   // Column Properties
   public static String PROP_NAME  = "name";
@@ -109,6 +112,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   private Composite wPageComposite;
   private Combo     wOsgiInstallCombo;
   private Text      wInstanceDirText;
+  private Spinner   wStartLevelSpinner;
   private Button    wInitButton;
   private Button    wAddPropertyButton;
   private Button    wRemovePropertyButton;
@@ -188,7 +192,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wLocationGroup.setText("Instance Data");
     Label wLocationLabel = new Label(wLocationGroup, SWT.LEFT | SWT.WRAP);
     wLocationLabel.setText("Location:");
-    wLocationLabel.setToolTipText(TOOLTIP_LOCATION);
+    //wLocationLabel.setToolTipText(TOOLTIP_LOCATION);
     wInstanceDirText = new Text(wLocationGroup, SWT.SINGLE | SWT.BORDER);
     wInstanceDirText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
@@ -199,14 +203,24 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wInstanceDirText.setLayoutData(gd);
     Button wBrowseLocationButton = new Button(wLocationGroup, SWT.CENTER);
     wBrowseLocationButton.setText("Browse...");
-
+    wBrowseLocationButton.addSelectionListener(new SelectionAdapter(){
+      public void widgetSelected(SelectionEvent e) {
+        DirectoryDialog dialog = new DirectoryDialog(((Button) e.widget).getShell());
+        dialog.setFilterPath(wInstanceDirText.getText());
+        String path = dialog.open();
+        if (path != null) {
+          wInstanceDirText.setText(path);
+          updateLaunchConfigurationDialog();
+        }
+      }
+    });
     
     // Framework Group
     Group wFrameworkGroup = new Group(wPageComposite, SWT.SHADOW_IN);
     layout = new GridLayout();
     layout.marginHeight = MARGIN;
     layout.marginWidth = MARGIN;
-    layout.numColumns = 3;
+    layout.numColumns = 2;
     wFrameworkGroup.setLayout(layout);
     gd = new GridData(GridData.FILL_HORIZONTAL);
     wFrameworkGroup.setLayoutData(gd);
@@ -214,7 +228,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
     // OSGi framework
     Label wFrameworkLabel = new Label(wFrameworkGroup, SWT.LEFT | SWT.WRAP);
-    wFrameworkLabel.setText("OSGi Install:");
+    wFrameworkLabel.setText("Framework:");
     wOsgiInstallCombo = new Combo(wFrameworkGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
     wOsgiInstallCombo.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
@@ -225,21 +239,26 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
     wOsgiInstallCombo.setLayoutData(gd);
-    Button wInstallFrameworkButton = new Button(wFrameworkGroup, SWT.CENTER);
-    wInstallFrameworkButton.setText("Install...");
-    gd = new GridData();
-    wInstallFrameworkButton.setLayoutData(gd);
+    Label wStartLevelLabel = new Label(wFrameworkGroup, SWT.LEFT | SWT.WRAP);
+    wStartLevelLabel.setText("Initial Start Level:");
+    wStartLevelSpinner = new Spinner(wFrameworkGroup, SWT.READ_ONLY);
+    wStartLevelSpinner.addSelectionListener(new SelectionAdapter(){
+      public void widgetSelected(SelectionEvent e) {
+        updateLaunchConfigurationDialog();
+      }
+    });
+    wStartLevelSpinner.setMinimum(0);
+    wStartLevelSpinner.setMaximum(99);
 
     wInitButton = new Button(wFrameworkGroup, SWT.CHECK);
-    wInitButton.setText("Start empty platform (-init)");
-    wInitButton.setToolTipText(TOOLTIP_INIT);
+    wInitButton.setText("Clear bundle cache when starting framework");
     wInitButton.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
         updateLaunchConfigurationDialog();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
-    gd.horizontalSpan=3;
+    gd.horizontalSpan=2;
     wInitButton.setLayoutData(gd);
     
     // Properties Group
@@ -411,20 +430,23 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   public void setDefaults(ILaunchConfigurationWorkingCopy configuration) {
     // New configuration created, set default values
 
-    // Set default OSGi install
+    // Set default framework
     IOsgiInstall osgiInstall = Osgi.getDefaultOsgiInstall();
     if (osgiInstall != null) {
-      configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTALL_NAME, osgiInstall.getName());
+      configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, osgiInstall.getName());
     }
     
     // Set default instance directory 
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
     IPath path = root.getLocation();
-    path = path.append(DEFAULT_KF_RUNTIME_PATH);
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_DIR, path.toString());
+    path = path.append(DEFAULT_RUNTIME_PATH);
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, path.toString());
     
     // Set default instance settings
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_INIT, true);
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, true);
+    
+    // Set default start level
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, DEFAULT_START_LEVEL);
     
     // Set default properties 
     HashMap properties = new HashMap();
@@ -443,7 +465,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     updateOsgiInstalls();
     String installName = null;
     try {
-      installName = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTALL_NAME, (String) null);
+      installName = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
     } catch (CoreException e) {
       e.printStackTrace();
     }
@@ -457,20 +479,30 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     // Instance directory 
     String instanceDir = null;
     try {
-      instanceDir = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_DIR, "");
+      instanceDir = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, "");
     } catch (CoreException e) {
       e.printStackTrace();
     }
     wInstanceDirText.setText(instanceDir);
     
+    // Clear bundle cache
     boolean instanceInit = false;
     try {
       // Instance settings
-      instanceInit = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_INIT, false);
+      instanceInit = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, false);
     } catch (CoreException e) {
       e.printStackTrace();
     }
     wInitButton.setSelection(instanceInit);
+    
+    // Start level
+    int startLevel = DEFAULT_START_LEVEL;
+    try {
+      startLevel = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, DEFAULT_START_LEVEL);
+    } catch (CoreException e) {
+      e.printStackTrace();
+    }
+    wStartLevelSpinner.setSelection(startLevel);
     
     // Initialize default system properties list
     try {
@@ -487,12 +519,14 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   public void performApply(ILaunchConfigurationWorkingCopy configuration) {
 
     // Read values from GUI widgets
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTALL_NAME, 
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, 
         wOsgiInstallCombo.getText());
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_DIR, 
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, 
         wInstanceDirText.getText());
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_INSTANCE_INIT, 
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, 
         wInitButton.getSelection());
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, 
+        wStartLevelSpinner.getSelection());
     configuration.setAttribute(ISourcePathComputer.ATTR_SOURCE_PATH_COMPUTER_ID, SourcePathComputer.ID);
     
     // System Properties

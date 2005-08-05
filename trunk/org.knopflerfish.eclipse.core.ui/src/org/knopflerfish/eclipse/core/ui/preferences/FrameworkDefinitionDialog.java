@@ -92,6 +92,10 @@ import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementRuntimeR
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryTreeContentProvider;
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryTreeLabelProvider;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class FrameworkDefinitionDialog extends Dialog {
   
   private static String TITLE_ADD = "Add framework definition";

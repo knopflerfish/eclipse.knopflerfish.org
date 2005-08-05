@@ -54,7 +54,10 @@ import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
  */
 public class FrameworkConfiguration implements IFrameworkConfiguration {
 
+  private static final int DEFAULT_STARTLEVEL = 7;
+
   private static String PROPERTY_CACHE_DIR    = "oscar.cache.profiledir";
+  private static String PROPERTY_STARTLEVEL   = "oscar.startlevel.framework";
   private static String PROPERTY_AUTO_INSTALL = "oscar.auto.install.";
   private static String PROPERTY_AUTO_START   = "oscar.auto.start.";
   
@@ -62,6 +65,7 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
   private TreeMap bundles = new TreeMap(); // Startlevel (Integer), List of BundleElement
   private Map systemProperties;
   private boolean clean;
+  private int startLevel = DEFAULT_STARTLEVEL;
   
   public FrameworkConfiguration(File dir) {
     this.workDir = dir;
@@ -75,17 +79,26 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
     ArrayList vmArgs = new ArrayList();
     
     // Start empty framework
-    // TODO : How to reset Oscar bundle cache
     if (clean) {
+      // Remove bundle directories
+      File[] children = workDir.listFiles();
+      for (int i=0; i<children.length; i++) {
+        if (children[i].isDirectory() && children[i].getName().startsWith("bundle")) {
+          deleteDir(children[i]);
+        }
+      }
     }
     
     // Create system properties file
     File systemPropertiesFile = new File(workDir, "system.properties");
     Path path = new Path(systemPropertiesFile.getAbsolutePath());
     vmArgs.add("-Doscar.system.properties="+path.toString());
-
+    
     // Set bundle cache dir
     writeProperty(systemPropertiesFile, PROPERTY_CACHE_DIR, new Path(workDir.getAbsolutePath()).toString(), false);
+    
+    // Set start level
+    writeProperty(systemPropertiesFile, PROPERTY_STARTLEVEL, Integer.toString(startLevel), true);
     
     // System properties
     if (systemProperties != null) {
@@ -160,8 +173,16 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#setStartClean(boolean)
    */
-  public void setStartClean(boolean clean) {
+  public void clearBundleCache(boolean clean) {
     this.clean = clean;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#setStartLevel(int)
+   */
+  public void setStartLevel(int startLevel) {
+    this.startLevel = startLevel;
   }
 
   /****************************************************************************
@@ -172,7 +193,6 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
     try {
       writer = new FileWriter(f, append);
       StringBuffer buf = new StringBuffer();
-      //buf.append("-D");
       buf.append(name);
       buf.append("=");
       buf.append(value);
@@ -185,6 +205,19 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
         writer.close();
       }
     }
+  }
+  
+  public static boolean deleteDir(File dir) {
+    if (dir.isDirectory()) {
+      String[] children = dir.list();
+      for (int i=0; i<children.length; i++) {
+        boolean success = deleteDir(new File(dir, children[i]));
+        if (!success) {
+          return false;
+        }
+      }
+    }
+    return dir.delete();
   }
   
   /****************************************************************************

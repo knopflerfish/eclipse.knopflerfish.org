@@ -48,6 +48,7 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.OsgiLibrary;
+import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
 
@@ -78,6 +79,14 @@ public class FrameworkDefinition implements IFrameworkDefinition {
   };
 
   private static String PATH_BUNDLE_DIR = "bundle";
+  
+  private static String[] EXPORTED_PACKAGES = new String[] {
+    "org.osgi.framework;specification-version=1.2",
+    "org.osgi.service.packageadmin;specification-version=1.1",
+    //"org.osgi.service.permissionadmin;specification-version=1.1",
+    //"org.osgi.util.tracker;specification-version=1.2",
+    "org.osgi.service.startlevel;specification-version=1.0"
+  };
   
   /****************************************************************************
    * org.knopflerfish.eclipse.core.IFrameworkDefinition methods
@@ -270,6 +279,20 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     if (!dir.exists() || !dir.isDirectory()) return null;
     
     return new FrameworkConfiguration(dir);
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getExportedPackages(org.knopflerfish.eclipse.core.IOsgiLibrary[])
+   */
+  public PackageDescription[] getExportedPackages(IOsgiLibrary[] libraries) {
+    ArrayList descriptions = new ArrayList();
+    
+    for (int i=0; i<EXPORTED_PACKAGES.length; i++) {
+      descriptions.add( new PackageDescription(EXPORTED_PACKAGES[i]));
+    }
+    
+    return (PackageDescription[]) descriptions.toArray(new PackageDescription[descriptions.size()]);
   }
 
   /****************************************************************************

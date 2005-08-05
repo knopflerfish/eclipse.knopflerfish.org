@@ -49,6 +49,10 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class ImportLibrariesDialog extends Dialog {
 
   private static final int NUM_CHARS_WIDTH = 60;

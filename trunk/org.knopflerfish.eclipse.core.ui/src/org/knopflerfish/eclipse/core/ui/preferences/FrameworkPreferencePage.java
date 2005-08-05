@@ -75,6 +75,10 @@ import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class FrameworkPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
   private static String DESCRIPTION = 
     "Add, remove or edit OSGi frameworks.\n"+

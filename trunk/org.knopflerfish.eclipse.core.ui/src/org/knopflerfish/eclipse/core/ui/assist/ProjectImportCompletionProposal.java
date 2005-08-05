@@ -45,6 +45,10 @@ import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class ProjectImportCompletionProposal implements IJavaCompletionProposal {
 
   private final PackageDescription pkg;

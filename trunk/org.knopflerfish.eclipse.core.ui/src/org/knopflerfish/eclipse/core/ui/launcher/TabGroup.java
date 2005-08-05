@@ -44,6 +44,9 @@ import org.knopflerfish.eclipse.core.ui.launcher.main.MainTab;
 
 /**
  * Implementation of OSGi launch tab group.
+ * 
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
  */
 public class TabGroup extends AbstractLaunchConfigurationTabGroup {
 

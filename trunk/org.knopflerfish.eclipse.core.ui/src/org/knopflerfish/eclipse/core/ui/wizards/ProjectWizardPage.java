@@ -62,6 +62,10 @@ import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiInstall;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class ProjectWizardPage extends WizardPage {
   private static final String DEFAULT_SRC_FOLDER = "src";
   private static final String DEFAULT_OUT_FOLDER = "out";

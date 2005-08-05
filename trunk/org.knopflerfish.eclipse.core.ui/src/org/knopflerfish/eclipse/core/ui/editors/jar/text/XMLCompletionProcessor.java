@@ -41,6 +41,10 @@ import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.text.contentassist.IContextInformationValidator;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class XMLCompletionProcessor implements IContentAssistProcessor {
   
   protected final static String[] myProposals = { "myTag", "html","form" };

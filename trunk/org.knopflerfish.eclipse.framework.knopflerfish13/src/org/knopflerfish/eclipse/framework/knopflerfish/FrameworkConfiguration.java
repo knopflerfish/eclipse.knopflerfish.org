@@ -52,7 +52,7 @@ import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
  * @see http://www.gatespacetelematics.com/
  */
 public class FrameworkConfiguration implements IFrameworkConfiguration {
-
+  
   private static final int DEFAULT_STARTLEVEL = 7;
   
   private static String PROPERTY_FRAMEWORK_DIR = "org.osgi.framework.dir";
@@ -61,6 +61,7 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
   private TreeMap bundles = new TreeMap(); // Startlevel (Integer), List of BundleElement
   private Map systemProperties;
   private boolean clean;
+  private int startLevel = DEFAULT_STARTLEVEL;
   
   public FrameworkConfiguration(File dir) {
     this.workDir = dir;
@@ -80,6 +81,11 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
     // Start empty framework
     if (clean) {
       programArgs.add("-init");
+      // Remove fwdir
+      File fwDir = new File(workDir, "fwdir");
+      if (fwDir.exists() && fwDir.isDirectory()) {
+        deleteDir(fwDir);
+      }
     }
     
     // Set framework dir
@@ -94,7 +100,7 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
         writeProperty(restartFile, (String) entry.getKey(), (String) entry.getValue(), true);
       }
     }
-
+    
     writeCommand(initFile, "-init", "", true);
     
     // Add install entries
@@ -117,7 +123,7 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
       }
     }
     // Set start level and launch
-    writeCommand(initFile, "-startlevel", Integer.toString(DEFAULT_STARTLEVEL), true);
+    writeCommand(initFile, "-startlevel", Integer.toString(startLevel), true);
     writeCommand(initFile, "-launch", "", true);
     
     
@@ -138,7 +144,7 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
     args.setProgramArguments((String[]) programArgs.toArray(new String[programArgs.size()]));
     return args;
   }
-
+  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#addBundle(org.knopflerfish.eclipse.core.IOsgiBundle, org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo)
@@ -152,7 +158,7 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
     l.add(new BundleElement(bundle, info));
     bundles.put(startLevel, l);
   }
-
+  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#setSystemProperties(java.util.Map)
@@ -160,15 +166,23 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
   public void setSystemProperties(Map properties) {
     systemProperties = properties;
   }
-
+  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#setStartClean(boolean)
    */
-  public void setStartClean(boolean clean) {
+  public void clearBundleCache(boolean clean) {
     this.clean = clean;
   }
-
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#setStartLevel(int)
+   */
+  public void setStartLevel(int startLevel) {
+    this.startLevel = startLevel;
+  }
+  
   /****************************************************************************
    * Private utility methods
    ***************************************************************************/
@@ -211,6 +225,19 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
     }
   }
   
+  public static boolean deleteDir(File dir) {
+    if (dir.isDirectory()) {
+      String[] children = dir.list();
+      for (int i=0; i<children.length; i++) {
+        boolean success = deleteDir(new File(dir, children[i]));
+        if (!success) {
+          return false;
+        }
+      }
+    }
+    return dir.delete();
+  }
+  
   /****************************************************************************
    * Inner classes
    ***************************************************************************/
@@ -226,10 +253,9 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
     public IOsgiBundle getBundle() {
       return bundle;
     }
-
+    
     public BundleLaunchInfo getLaunchInfo() {
       return launchInfo;
     }
   }
-
 }

@@ -39,6 +39,10 @@ import java.util.ArrayList;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class LibraryElementRoot implements ILibraryTreeElement {
   
   private final LibraryElementRuntimeRoot runtimeElement;

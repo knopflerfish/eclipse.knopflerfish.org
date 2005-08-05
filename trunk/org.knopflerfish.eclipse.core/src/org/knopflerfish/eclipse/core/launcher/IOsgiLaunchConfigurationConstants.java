@@ -43,10 +43,11 @@ public interface IOsgiLaunchConfigurationConstants {
   public String PACKAGE = "org.knopflerfish.eclipse.core.launcher.";
   
   // Main Tab
-  public String ATTR_OSGI_INSTALL_NAME  = PACKAGE+"install_name";
-  public String ATTR_OSGI_INSTANCE_DIR  = PACKAGE+"instance_dir";
-  public String ATTR_OSGI_INSTANCE_INIT = PACKAGE+"instance_init";
-  public String ATTR_PROPERTIES         = PACKAGE+"instance_properties";
+  public String ATTR_FRAMEWORK    = PACKAGE+"install_name";
+  public String ATTR_INSTANCE_DIR = PACKAGE+"instance_dir";
+  public String ATTR_CLEAR_CACHE  = PACKAGE+"instance_init";
+  public String ATTR_START_LEVEL  = PACKAGE+"startlevel";
+  public String ATTR_PROPERTIES   = PACKAGE+"instance_properties";
 
   // Bundle Tab
   public String ATTR_BUNDLES            = PACKAGE+"bundles";
@@ -64,9 +65,4 @@ public interface IOsgiLaunchConfigurationConstants {
   public int ERR_PROJECT_LIST                 = 8;
   public int ERR_PROJECT_NOT_EXIST            = 9;
   public int ERR_PROJECT_WRONG_NATURE         = 10;
-
-
-
-
-
 }

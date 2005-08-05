@@ -36,6 +36,10 @@ package org.knopflerfish.eclipse.core.ui.preferences.model;
 
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class LibraryElementBundle implements ILibraryTreeElement {
 
   private final ILibraryTreeElement parent;

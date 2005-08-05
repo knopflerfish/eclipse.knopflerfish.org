@@ -45,6 +45,10 @@ import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColorProvider {
 
   private static String IMAGE_BUNDLE      = "icons/obj16/jar_b_obj.gif";

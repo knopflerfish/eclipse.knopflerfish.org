@@ -80,6 +80,10 @@ import org.knopflerfish.eclipse.core.project.BundleJarResource;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.BundleJarResourceDialog;
 
+/**
+ * @author Anders Rimén, Gatespace Telematics
+ * @see http://www.gatespacetelematics.com/
+ */
 public class ContentsSection extends SectionPart {
 
   private static final int NUM_TABLE_ROWS    = 5;
