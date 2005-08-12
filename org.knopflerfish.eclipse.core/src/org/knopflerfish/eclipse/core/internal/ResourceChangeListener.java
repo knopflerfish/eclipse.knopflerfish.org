@@ -32,41 +32,32 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.project;
+package org.knopflerfish.eclipse.core.internal;
 
-import org.eclipse.core.resources.IFile;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IType;
-import org.knopflerfish.eclipse.core.PackageDescription;
+import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IResourceChangeListener;
+import org.eclipse.core.runtime.CoreException;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public interface IBundleProject {
+public class ResourceChangeListener implements IResourceChangeListener {
 
-  public IJavaProject getJavaProject();
+  /****************************************************************************
+   * org.eclipse.core.resources.IResourceChangeListener methods
+   ***************************************************************************/
   
-  public BundleManifest getBundleManifest();
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.core.resources.IResourceChangeListener#resourceChanged(org.eclipse.core.resources.IResourceChangeEvent)
+   */
+  public void resourceChanged(IResourceChangeEvent event) {
+    try {
+      event.getDelta().accept(new ResourceDeltaVisitor());
+    } catch (CoreException e) {
+      e.printStackTrace();
+    }
+  }
 
-  public BundlePackDescription getBundlePackDescription();
-  
-  public boolean hasExportedPackage(PackageDescription pkg);
-  
-  /**
-   * Returns all implementations of BundleActivator in this
-   * project.
-   * 
-   * @return array of BundleActivator implementations
-   */
-  public IType[] getBundleActivators();
-  
-  /**
-   * Returns all JAR files which can be found in the
-   * project.
-   * 
-   * @return array of JAR files
-   */
-  public IFile[] getJars();
- 
 }

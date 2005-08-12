@@ -3,7 +3,7 @@
 <plugin
    id="org.knopflerfish.eclipse.core"
    name="Osgi Plug-in"
-   version="0.7.2"
+   version="0.8.0"
    class="org.knopflerfish.eclipse.core.internal.OsgiPlugin">
 
    <runtime>
@@ -58,13 +58,8 @@
          name="Bundle Builder"
          point="org.eclipse.core.resources.builders">
       <builder hasNature="true">
-         <run 
-            class="org.knopflerfish.eclipse.core.resources.BundleBuilder">
-            <parameter name="optimize" value="true" />
-            <parameter name="comment" value="Builder comment" />
-         </run>
+         <run class="org.knopflerfish.eclipse.core.resources.BundleBuilder"/>
       </builder>
-         
    </extension>
    <extension
          id="bundlenature"
@@ -84,5 +79,4 @@
 		  id="org.knopflerfish.eclipse.core.KF_CONTAINER"
 		  class="org.knopflerfish.eclipse.core.project.OsgiContainerInitializer"/>
    </extension>
-
 </plugin>

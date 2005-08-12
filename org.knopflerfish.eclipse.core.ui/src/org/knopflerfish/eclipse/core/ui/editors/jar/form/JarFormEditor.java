@@ -34,7 +34,13 @@
 
 package org.knopflerfish.eclipse.core.ui.editors.jar.form;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IResourceChangeListener;
+import org.eclipse.core.resources.IResourceDelta;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
@@ -49,6 +55,7 @@ import org.eclipse.ui.forms.widgets.ColumnLayout;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
+import org.eclipse.ui.part.FileEditorInput;
 import org.knopflerfish.eclipse.core.ui.editors.jar.text.JarTextEditor;
 
 /**
@@ -75,10 +82,28 @@ public class JarFormEditor extends FormPage {
    * @see org.eclipse.ui.forms.editor.FormPage#createFormContent(org.eclipse.ui.forms.IManagedForm)
    */
   public void createFormContent(IManagedForm managedForm) {
-    
     // Attach document to managed form and add document change listener
+    IWorkspace workspace = ResourcesPlugin.getWorkspace();
+    IResourceChangeListener listener = new IResourceChangeListener() {
+       public void resourceChanged(IResourceChangeEvent event) {
+         IResourceDelta delta = event.getDelta();
+         IFile file = ((FileEditorInput) getEditorInput()).getFile();
+         IResourceDelta resource = delta.findMember(file.getFullPath());
+         if (resource != null) {
+           IFormPart[] parts = getManagedForm().getParts();
+           
+           if (parts != null) {
+             for(int i=0; i<parts.length;i++) {
+               ((SectionPart) parts[i]).markStale();
+             }
+           }
+         }
+       }
+    };
+    workspace.addResourceChangeListener(listener);
+    // TODO : Remove listener
+
     IDocument doc = jarTextEditor.getDocumentProvider().getDocument(getEditorInput());
-    
     managedForm.setInput(doc);
     doc.addDocumentListener(new IDocumentListener() {
       public void documentAboutToBeChanged(DocumentEvent event) {

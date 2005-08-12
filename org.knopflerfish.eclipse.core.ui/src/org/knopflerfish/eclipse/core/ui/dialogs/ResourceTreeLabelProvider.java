@@ -32,41 +32,47 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.project;
+package org.knopflerfish.eclipse.core.ui.dialogs;
 
-import org.eclipse.core.resources.IFile;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IType;
-import org.knopflerfish.eclipse.core.PackageDescription;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.PlatformUI;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public interface IBundleProject {
-
-  public IJavaProject getJavaProject();
+public class ResourceTreeLabelProvider extends LabelProvider {
   
-  public BundleManifest getBundleManifest();
-
-  public BundlePackDescription getBundlePackDescription();
-  
-  public boolean hasExportedPackage(PackageDescription pkg);
-  
-  /**
-   * Returns all implementations of BundleActivator in this
-   * project.
-   * 
-   * @return array of BundleActivator implementations
+  /****************************************************************************
+   * org.eclipse.jface.viewers.ILabelProvider methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ILabelProvider#getImage(java.lang.Object)
    */
-  public IType[] getBundleActivators();
-  
-  /**
-   * Returns all JAR files which can be found in the
-   * project.
-   * 
-   * @return array of JAR files
+  public Image getImage(Object element) {
+    IResource resource = (IResource) element;
+    if (resource.getType() == IResource.FILE) {
+      return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
+    } else if (resource.getType() == IResource.FOLDER) {
+      return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FOLDER);
+    } else if (resource.getType() == IResource.PROJECT) {
+      return PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT);
+    } else {
+      return null;
+    }
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
    */
-  public IFile[] getJars();
- 
+  public String getText(Object element) {
+    IResource resource = (IResource) element;
+    return resource.getName();
+  }
+
 }

@@ -45,12 +45,9 @@ public class ManifestTextEditor extends TextEditor {
 
   public ManifestTextEditor() {
     super();
-    //colorManager = new ColorManager();
-    //setSourceViewerConfiguration(new XMLConfiguration(colorManager));
-    //setDocumentProvider(new ManifestDocumentProvider());
   }
-  public void dispose() {
-    //colorManager.dispose();
+
+ public void dispose() {
     super.dispose();
   }
   

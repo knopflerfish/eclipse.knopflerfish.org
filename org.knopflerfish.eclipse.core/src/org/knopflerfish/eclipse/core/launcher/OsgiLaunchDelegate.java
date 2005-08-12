@@ -63,7 +63,7 @@ import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
-import org.knopflerfish.eclipse.core.project.BundleJar;
+import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
@@ -137,10 +137,10 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
         try {
           // TODO: This shall be changed, takes to long time if many projects exist
           BundleProject bundleProject = new BundleProject(project);
-          BundleJar bundleJar = bundleProject.getBundleJarDescription();
+          BundlePackDescription bundlePack = bundleProject.getBundlePackDescription();
           String name = project.getProject().getName()+ ".jar";
           File path = new File(jarDirectory, name);
-          File jarFile = bundleJar.export(bundleProject, path.getAbsolutePath());
+          File jarFile = bundlePack.export(bundleProject, path.getAbsolutePath());
           IOsgiBundle bundle = new OsgiBundle(jarFile);
           conf.addBundle(bundle, (BundleLaunchInfo) entry.getValue());
         } catch (IOException e) {
@@ -307,9 +307,12 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
         String name = (String) entry.getKey();
         
         IProject project = root.getProject(name);
-        if (project == null) {
+        if (!project.exists()) {
+          continue;
+          /*
           abort("Bundle project '"+name+"' does not exist.", null,
               IOsgiLaunchConfigurationConstants.ERR_PROJECT_NOT_EXIST);
+              */
         }
         
         if (!project.hasNature(Osgi.NATURE_ID)) {

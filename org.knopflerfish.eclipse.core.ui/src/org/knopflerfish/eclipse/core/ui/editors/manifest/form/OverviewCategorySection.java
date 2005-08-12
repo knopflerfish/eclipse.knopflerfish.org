@@ -75,8 +75,6 @@ import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
  */
 public class OverviewCategorySection extends SectionPart {
 
-  private static int NUM_TABLE_ROWS = 5;
-
   private static String TITLE_ADD_CATEGORY = "Add Category";
 
   // Widget properties
@@ -207,7 +205,7 @@ public class OverviewCategorySection extends SectionPart {
     wd.grabHorizontal = true;
     wd.grabVertical = true;
     wd.align = TableWrapData.FILL;
-    wd.heightHint = UiUtils.convertHeightInCharsToPixels(wCategoryTable, NUM_TABLE_ROWS);
+    wd.valign = TableWrapData.FILL;
     wCategoryTable.setLayoutData(wd);
 
     wCategoryRemoveButton = toolkit.createButton(container, "Remove", SWT.PUSH);

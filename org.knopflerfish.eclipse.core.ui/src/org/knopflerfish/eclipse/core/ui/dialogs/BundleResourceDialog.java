@@ -36,15 +36,13 @@ package org.knopflerfish.eclipse.core.ui.dialogs;
 
 import java.util.regex.Pattern;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -63,24 +61,24 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.dialogs.ElementTreeSelectionDialog;
-import org.eclipse.ui.dialogs.ISelectionStatusValidator;
-import org.eclipse.ui.model.BaseWorkbenchContentProvider;
-import org.knopflerfish.eclipse.core.project.BundleJarResource;
+import org.knopflerfish.eclipse.core.project.BundleResource;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class BundleJarResourceDialog extends Dialog {
+public class BundleResourceDialog extends Dialog {
 
+  private static String TITLE_ADD  = "Add resource";
+  private static String TITLE_EDIT = "Edit resource";
+  
   private static final String ERROR     = "error";
   private static final String WARNING   = "warning";
 
   private static final int NUM_CHARS_WIDTH = 60;
 
-  private BundleJarResource resource;
-  private final String title;
+  private BundleResource resource;
+  private IProject project;
 
   // Widgets
   private Text      wResourceText;
@@ -90,11 +88,11 @@ public class BundleJarResourceDialog extends Dialog {
   private Label     wErrorMsgLabel;
   private Label     wErrorImgLabel;
 
-  public BundleJarResourceDialog(Shell parentShell, BundleJarResource resource, String title) {
+  public BundleResourceDialog(Shell parentShell, BundleResource resource, IProject project) {
     super(parentShell);
     
     this.resource = resource;
-    this.title = title;
+    this.project = project;
   }
 
   /****************************************************************************
@@ -106,7 +104,11 @@ public class BundleJarResourceDialog extends Dialog {
    */
   protected void configureShell(Shell newShell) {
     super.configureShell(newShell);
-    newShell.setText(title);
+    if (resource != null) {
+      newShell.setText(TITLE_EDIT);
+    } else {
+      newShell.setText(TITLE_ADD);
+    }
   }
   
   /*
@@ -136,7 +138,7 @@ public class BundleJarResourceDialog extends Dialog {
   protected void okPressed() {
     if (resource == null) {
       // Create new resource object
-      resource = new BundleJarResource();
+      resource = new BundleResource();
     }
     
     resource.setSource(new Path(wResourceText.getText()));
@@ -181,53 +183,14 @@ public class BundleJarResourceDialog extends Dialog {
     wResourceButton.setText("Browse...");
     wResourceButton.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
-        ElementTreeSelectionDialog dialog =
-          new ElementTreeSelectionDialog(
-              Display.getCurrent().getActiveShell(),
-              new LabelProvider() {
-                public Image getImage(Object element) {
-                  IResource resource = (IResource) element;
-                  if (resource.getType() == IResource.FILE) {
-                    return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
-                  } else if (resource.getType() == IResource.FOLDER) {
-                    return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FOLDER);
-                  } else if (resource.getType() == IResource.PROJECT) {
-                    return PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT);
-                  } else {
-                    return null;
-                  }
-                }
-
-                public String getText(Object element) {
-                  IResource resource = (IResource) element;
-                  return resource.getName();
-                }
-              }, 
-              new BaseWorkbenchContentProvider() );
-        dialog.setInput(ResourcesPlugin.getWorkspace().getRoot());
-        dialog.setValidator(new ISelectionStatusValidator() {
-
-          public IStatus validate(Object[] selection) {
-            if (selection == null || selection.length != 1) {
-              Status status = new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core.ui", 
-                  IStatus.OK, "Select file or folder", null);
-              return status;
-            }
-            
-            IResource resource = (IResource) selection[0];
-            if (resource.getType() != IResource.FOLDER && resource.getType() != IResource.FILE) {
-              Status status = new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core.ui", 
-                  IStatus.OK, "Select file or folder", null);
-              return status;
-            } else {
-              Status status = new Status(IStatus.INFO, "org.knopflerfish.eclipse.core.ui", 
-                  IStatus.OK, "", null);
-              return status;
-            }
-          }
-          
-        });
-        dialog.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_ELEMENT));
+        ResourceTreeSelectionDialog dialog = 
+          new ResourceTreeSelectionDialog(Display.getCurrent().getActiveShell(),
+          new int[] {IResource.FILE, IResource.FOLDER});
+        if (project != null) {
+          dialog.setInput(project);
+        } else {
+          dialog.setInput(ResourcesPlugin.getWorkspace().getRoot());
+        }
         dialog.setTitle("Select resource");
         dialog.setMessage("Select file or folder.");
         if (dialog.open() == Window.OK && dialog.getResult() != null) {
@@ -406,7 +369,7 @@ public class BundleJarResourceDialog extends Dialog {
   }
  
   
-  private void setValues(BundleJarResource res) {
+  private void setValues(BundleResource res) {
     
     if (res != null) {
       wResourceText.setText(res.getSource().toString());
@@ -423,7 +386,7 @@ public class BundleJarResourceDialog extends Dialog {
     }
   }
   
-  public BundleJarResource getResource() {
+  public BundleResource getResource() {
     return resource;
   }
 }
