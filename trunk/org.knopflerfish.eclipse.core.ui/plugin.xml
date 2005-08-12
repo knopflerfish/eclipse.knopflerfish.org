@@ -3,7 +3,7 @@
 <plugin
    id="org.knopflerfish.eclipse.core.ui"
    name="Osgi Ui Plug-in"
-   version="0.7.2"
+   version="0.8.0"
    provider-name=""
    class="org.knopflerfish.eclipse.core.ui.OsgiUiPlugin">
 
@@ -53,12 +53,13 @@
           name="OSGi"
           id="org.knopflerfish.eclipse.core.ui"/>
     <wizard
-          class="org.knopflerfish.eclipse.core.ui.wizards.BundleProjectWizard"
-          icon="icons/obj16/bundle_obj.gif"
           category="org.knopflerfish.eclipse.core.ui"
-          project="true"
+          class="org.knopflerfish.eclipse.core.ui.wizards.BundleProjectWizard"
+          finalPerspective="org.eclipse.jdt.ui.JavaPerspective"
+          icon="icons/obj16/bundle_obj.gif"
+          id="org.knopflerfish.eclipse.core.ui.wizards.BundleProjectWizard"
           name="Bundle Project"
-          id="org.knopflerfish.eclipse.core.ui.wizards.BundleProjectWizard">
+          project="true">
         <description>Create a Bundle Project</description>
     </wizard>
  </extension>
@@ -79,7 +80,7 @@
           id="org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestEditor"
           />
     <editor
-          filenames="bundle.jardesc, bundle.jar, resources"
+          filenames="bundle-pack.desc"
           icon="icons/obj16/jar_b_desc_obj.gif"
           class="org.knopflerfish.eclipse.core.ui.editors.jar.JarEditor"
           name="Bundle Jar Editor"

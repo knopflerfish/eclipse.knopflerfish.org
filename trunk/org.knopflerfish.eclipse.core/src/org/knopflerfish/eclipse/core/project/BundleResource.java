@@ -49,10 +49,15 @@ import org.w3c.dom.Node;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class BundleJarResource {
+public class BundleResource {
+  public static int TYPE_USER       = 0;
+  public static int TYPE_CLASSPATH  = 1;
+  public static int TYPE_CLASSES    = 2;
+  
   
   // Attributes
   private static String TAG_RESOURCE = "resource";
+  private static String ATTR_TYPE    = "type";
   private static String ATTR_SRC     = "src";
   private static String ATTR_DST     = "dst";
   private static String ATTR_PATTERN = "pattern";
@@ -60,17 +65,19 @@ public class BundleJarResource {
   private IPath src;
   private String dst;
   private Pattern pattern;
+  private int type = TYPE_USER;
   
-  public BundleJarResource() {
+  public BundleResource() {
   }
   
-  public BundleJarResource(IPath src, String dst, Pattern pattern) {
+  public BundleResource(int type, IPath src, String dst, Pattern pattern) {
+    this.type = type;
     this.src = src;
     this.dst = dst;
     this.pattern = pattern;
   }
 
-  public BundleJarResource(IProject project, Node node) throws IOException {
+  public BundleResource(IProject project, Node node) throws IOException {
     //this.project = project;
     
     NamedNodeMap attributes = node.getAttributes();
@@ -81,6 +88,14 @@ public class BundleJarResource {
     String value = n.getNodeValue();
     src = new Path(value);
    
+    // Type attribute
+    n = attributes.getNamedItem(ATTR_TYPE);
+    if (n != null) {
+      try {
+        type = Integer.parseInt(n.getNodeValue());
+      } catch (Throwable t) {}
+    }
+    
     // Destination attribute
     n = attributes.getNamedItem(ATTR_DST);
     if (n != null) {
@@ -101,6 +116,8 @@ public class BundleJarResource {
       elem.setAttribute(ATTR_SRC, getSource().toString());
     }
     
+    elem.setAttribute(ATTR_TYPE, Integer.toString(type));
+    
     if (getDestination() != null) {
       elem.setAttribute(ATTR_DST, getDestination());
     }
@@ -110,6 +127,14 @@ public class BundleJarResource {
     }
     
     return elem;
+  }
+  
+  public int getType() {
+    return type;
+  }
+
+  public void setType(int type) {
+    this.type = type;
   }
   
   public Pattern getPattern() {

@@ -40,8 +40,15 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.IWorkspaceRunnable;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
@@ -49,11 +56,14 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.JavaRuntime;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
+import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 import org.knopflerfish.eclipse.core.project.BundleManifest;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
@@ -106,11 +116,21 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
    * @see org.eclipse.jface.wizard.IWizard#performFinish()
    */
   public boolean performFinish() {
+    IWorkspaceRunnable action = new IWorkspaceRunnable() {
+      public void run(IProgressMonitor monitor) throws CoreException {
+        try {
+          doFinish(monitor);
+        } finally {
+          monitor.done();
+        }
+      }
+    };
+    
     try {
-      doFinish();
+      ResourcesPlugin.getWorkspace().run(action, null);
       return true;
     } catch (Exception e) {
-      e.printStackTrace();
+      MessageDialog.openError(getShell(), "Error", e.getMessage());
       return false;
     }
   }
@@ -119,16 +139,85 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
    * Private worker methods
    ***************************************************************************/
   
-  private void doFinish() throws CoreException {
+  private void doFinish(IProgressMonitor monitor) throws CoreException {
     // Create project
-    BundleProject project = BundleProject.create(
-        projectPage.getProjectName(),
-        projectPage.getProjectLocation(),
-        projectPage.getSourceFolder(),
-        projectPage.getOutputFolder());
+    String name = projectPage.getProjectName();
+    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+    IProject project = root.getProject(name);
+    if (project.exists()) {
+      OsgiPlugin.throwCoreException("Project \"" + name + "\" already exists.", null);
+    }
+    
+    // Create project description
+    IProjectDescription projectDescription = ResourcesPlugin.getWorkspace().newProjectDescription(name);
+    
+    // Set project location
+    projectDescription.setLocation(projectPage.getProjectLocation());
+    
+    // Create project
+    project.create(projectDescription, null);
+    
+    // Open project
+    project.open(null);
+    
+    // Check if source folder exists otherwise create it
+    IFolder srcFolder = project.getFolder(projectPage.getSourceFolder());
+    if (!srcFolder.exists()) {
+      // Create source folder
+      srcFolder.create(IResource.NONE, true, null);
+    }
+    
+    // Set Java project natures
+    projectDescription = project.getDescription();
+    projectDescription.setNatureIds(new String[] {Osgi.NATURE_ID, JavaCore.NATURE_ID});
+    project.setDescription(projectDescription, null);
+    
+    // Create java project and set classpath and output location
+    IJavaProject javaProject = JavaCore.create(project);
+    
+    // Create classpath
+    ArrayList classPath = new ArrayList();
+    
+    // Source folder
+    Path projectFolder = new Path("/"+project.getName());
+    IPath sourcePath = projectFolder.append(projectPage.getSourceFolder());
+    IPath[] inclusionPatterns = new IPath [] {
+        new Path("**/*.java")
+    };
+    // Exclude subversion and CVS directories
+    IPath[] exclusionPatterns = new IPath [] {
+        new Path("**/.svn/**"),
+        new Path("**/CVS/**")
+    };
+    
+    IClasspathEntry sourceEntry = JavaCore.newSourceEntry(
+        sourcePath,
+        inclusionPatterns,
+        exclusionPatterns,
+        null);
+    classPath.add(sourceEntry);
+    
+    // JRE container
+    classPath.add(JavaRuntime.getDefaultJREContainerEntry());
+    
+    // Knopflerfish container
+    IPath containerPath = new Path(OsgiContainerInitializer.KF_CONTAINER);
+    if (!projectPage.isDefaultProjectLibrary()) {
+      containerPath = containerPath.append(projectPage.getEnvironmentName());
+    }
+    classPath.add(JavaCore.newContainerEntry(containerPath));
+    
+    // Set classpath and output location
+    javaProject.setRawClasspath(
+        (IClasspathEntry []) classPath.toArray(new IClasspathEntry[classPath.size()]),
+        projectFolder.append(projectPage.getOutputFolder()),
+        null);
+    
+    // Create bundle project and add manifest and activator
+    BundleProject bundleProject = new BundleProject(javaProject);
     
     // Set manifest attributes
-    BundleManifest manifest = project.getBundleManifest();
+    BundleManifest manifest = bundleProject.getBundleManifest();
     manifest.setSymbolicName(bundlePage.getBundleSymbolicName());
     manifest.setName(bundlePage.getBundleName());
     manifest.setVersion(bundlePage.getBundleVersion());
@@ -142,35 +231,15 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
       }
       manifest.setActivator(activator);
     }
-    project.saveManifest();
-    
-    // Create classpath
-    ArrayList classPath = new ArrayList();
-    
-    // Source folder
-    Path projectFolder = new Path("/"+project.getJavaProject().getProject().getName());
-    classPath.add(JavaCore.newSourceEntry(projectFolder.append(projectPage.getSourceFolder())));
-    
-    // JRE container
-    classPath.add(JavaRuntime.getDefaultJREContainerEntry());
-    
-    // Knopflerfish container
-    IPath containerPath = new Path(OsgiContainerInitializer.KF_CONTAINER);
-    if (!projectPage.isDefaultProjectLibrary()) {
-      containerPath = containerPath.append(projectPage.getEnvironmentName());
-    }
-    classPath.add(JavaCore.newContainerEntry(containerPath));
-    
-    // Set classpath
-    project.getJavaProject().setRawClasspath((IClasspathEntry []) classPath.toArray(new IClasspathEntry[classPath.size()]), null);
+    bundleProject.saveManifest(manifest);
     
     // Check if bundle activator shall be created
     if (bundlePage.isCreateBundleActivator()) {
       String className = bundlePage.getActivatorClassName();
       String packageName = bundlePage.getActivatorPackageName();
       createActivator(
-          project.getJavaProject(), 
-          project.getJavaProject().getProject().getFolder(projectPage.getSourceFolder()),
+          bundleProject.getJavaProject(), 
+          bundleProject.getJavaProject().getProject().getFolder(projectPage.getSourceFolder()),
           packageName, 
           className);
     }

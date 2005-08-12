@@ -41,6 +41,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
@@ -55,11 +58,15 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -70,7 +77,7 @@ import org.xml.sax.SAXException;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class BundleJar {
+public class BundlePackDescription {
   
   private static final String SEPARATOR = "/";
   
@@ -80,26 +87,35 @@ public class BundleJar {
   
   private ArrayList resources = new ArrayList();
   
-  public BundleJar() {
+  public BundlePackDescription() {
   }
   
-  public BundleJar(IProject project, InputStream is) throws IOException, ParserConfigurationException, SAXException {
+  public BundlePackDescription(IProject project, InputStream is) throws IOException, ParserConfigurationException, SAXException {
     load(project, is);
   }
   
-  public BundleJarResource[] getResources() {
-    return (BundleJarResource[]) resources.toArray(new BundleJarResource[resources.size()]);
+  public BundleResource[] getResources() {
+    return (BundleResource[]) resources.toArray(new BundleResource[resources.size()]);
   }
   
-  public boolean addResource(BundleJarResource resource) {
+  public boolean addResource(BundleResource resource) {
     return resources.add(resource);
   }
   
-  public boolean removeResource(BundleJarResource resource) {
+  public boolean removeResource(BundleResource resource) {
     return resources.remove(resource);
   }
   
-  public void updateResource(BundleJarResource resource) {
+  public void removeResource(int type) {
+    for(Iterator i=resources.iterator();i.hasNext();) {
+      BundleResource resource = (BundleResource) i.next();
+      if (resource.getType() == type) {
+        i.remove();
+      }
+    }
+  }
+  
+  public void updateResource(BundleResource resource) {
     if (resources.contains(resource)) { 
       resources.remove(resource);
     }
@@ -127,7 +143,7 @@ public class BundleJar {
       
       if (TAG_RESOURCE.equals(resourceNode.getNodeName())) {
         try {
-          BundleJarResource resource = new BundleJarResource(project, resourceNode);
+          BundleResource resource = new BundleResource(project, resourceNode);
           resources.add(resource);
         } catch (Exception e) {
           e.printStackTrace();
@@ -142,7 +158,7 @@ public class BundleJar {
     doc.appendChild(elem);
     
     // Create resource tags
-    BundleJarResource[] resources = getResources();
+    BundleResource[] resources = getResources();
     for (int i=0; i<resources.length; i++) {
       elem.appendChild(resources[i].createElement(doc));
     }   
@@ -175,6 +191,37 @@ public class BundleJar {
     transformer.transform(source, result);
   }
  
+  public IPath getLocation(String path) {
+    Map map = getContentsMap(false);
+    if (map.containsKey(path)) {
+      return new Path((String) map.get(path));
+    } else {
+      return null;
+    }
+  }
+  
+  public Map getContentsMap(boolean invert) {
+    // Add contents
+    BundleResource[] resources = getResources();
+    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+    HashMap map = new HashMap();
+    for(int i=0; i<resources.length; i++) {
+      IPath src = resources[i].getSource();
+      IResource resource = root.findMember(src);
+      if (resource == null) continue;
+      if (resource.getType() == IResource.FILE) {
+        try {
+          addFileToMap(map, (IFile) resource, resources[i].getDestination(), resources[i].getPattern(), invert);
+        } catch (Throwable t) {} 
+      } else if(resource.getType() == IResource.FOLDER) {
+        try {
+          addDirToMap(map, (IFolder) resource, resources[i].getDestination(), resources[i].getPattern(), invert);
+        } catch (Throwable t) {} 
+      }
+    }
+    return map;
+  }
+  
   public File export(IBundleProject project, String path) throws IOException {
     JarOutputStream jos = null;
     InputStream is = null;
@@ -191,7 +238,7 @@ public class BundleJar {
       jos = new JarOutputStream(new FileOutputStream(jarFile), project.getBundleManifest());
       
       // Add contents
-      BundleJarResource[] resources = getResources();
+      BundleResource[] resources = getResources();
       IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot(); 
       for(int i=0; i<resources.length; i++) {
         IPath src = resources[i].getSource();
@@ -276,6 +323,49 @@ public class BundleJar {
         fis.close();
       }
       //jos.closeEntry();
+    }
+  }
+
+  private void addDirToMap(Map map, IFolder folder, String path, Pattern pattern, boolean invert) throws CoreException {
+    if (folder == null) return;
+    IResource[] resources = folder.members();
+    
+    if (resources  == null) return;
+    if (path == null) path = "";
+    if (path.length() > 0 && !path.endsWith(SEPARATOR)) {
+      path += SEPARATOR;
+    }
+    
+    for (int i=0; i<resources.length; i++) {
+      if (resources[i] instanceof IFolder) {
+        String newPath = path+resources[i].getName()+SEPARATOR;
+        addDirToMap(map, (IFolder) resources[i], newPath, pattern, invert);
+      } else if (resources[i] instanceof IFile) {
+        addFileToMap(map, (IFile) resources[i], path+resources[i].getName(), pattern, invert);
+      }
+    }
+  }
+
+  private void addFileToMap(Map map, IFile file, String path, Pattern pattern, boolean invert) { 
+    if (file == null) return;
+    
+    // Check pattern
+    if (pattern != null) {
+      String name = file.getName();
+      if (!pattern.matcher(name).matches()) return;
+    }
+
+    if (path == null || path.trim().length() == 0) {
+      path = file.getName();
+    }
+    
+    if (path.startsWith(SEPARATOR)){
+      path = path.substring(1);
+    }
+    if (invert) {
+      map.put(file.getFullPath(), path);
+    } else {
+      map.put(path, file.getFullPath());
     }
   }
 }

@@ -136,7 +136,7 @@ public class ExportSection extends SectionPart {
           try {
             if (project.hasNature(Osgi.NATURE_ID)) {
               IBundleProject bundleProject = new BundleProject(project.getName());
-              bundleProject.getBundleJarDescription().export(bundleProject, path);
+              bundleProject.getBundlePackDescription().export(bundleProject, path);
             }
           } catch (Exception exc) {
             exc.printStackTrace();

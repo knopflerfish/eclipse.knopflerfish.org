@@ -35,89 +35,69 @@
 package org.knopflerfish.eclipse.core.resources;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Map;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
 
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
+import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
+import org.knopflerfish.eclipse.core.project.BundlePackDescription;
+import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleBuilder extends IncrementalProjectBuilder {
-
+  
   /* (non-Javadoc)
    * @see org.eclipse.core.internal.events.InternalBuilder#build(int, java.util.Map, org.eclipse.core.runtime.IProgressMonitor)
    */
   protected IProject[] build(int kind, Map args, IProgressMonitor monitor)
-      throws CoreException {
-    return null;
-    /*
-    System.err.println("BundleBuilder - build");
-    IProject project = getProject();
-    //description.
-    IWorkspace workspace = project.getWorkspace();
-    //workspace.
-    //IWorkspaceDescription description = workspace.getDescription();
-    //description.
-    IJavaProject javaProject = JavaCore.create(project);
-    IPath out = javaProject.getOutputLocation();
-    //IPath out2 = javaProject.readOutputLocation();
-    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-    IFolder folder = root.getFolder(out);
-    System.err.println("Folder :"+folder);
-    
-    try {
-      Manifest manifest = new Manifest();
-      Attributes attributes = manifest.getMainAttributes();
-      attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
-      createJar("bundle.jar", manifest, folder);
-    } catch(IOException e) {
-      e.printStackTrace();
-    }
-    return null;
-    */
-  }
-  
-  void createJar(String jarName, Manifest manifest, IFolder out) throws IOException {
-    
-    JarOutputStream jos = null;
-    try {
-      File jarFile = new File(out.getFile(jarName).getRawLocation().toString());
-      jos = new JarOutputStream(new FileOutputStream(jarFile), manifest);
+  throws CoreException {
+    System.err.println("BundleBuilder - build project "+getProject().getName());
 
-      // Put class-files
-      File outFolder = new File(out.getRawLocation().toString());
-      File [] classFiles = outFolder.listFiles(new FilenameFilter() {
-        public boolean accept(File dir, String name) {
-          return name.endsWith(".class");
-        }
-        
-      });
-      if (classFiles != null) {
-        for (int i=0; i<classFiles.length; i++) {
-          
+    // Get output directory
+    IProject project = getProject();
+    IJavaProject javaProject = JavaCore.create(project);
+    BundleProject bundleProject = new BundleProject(javaProject);
+    BundlePackDescription bundlePackDescription = bundleProject.getBundlePackDescription();
+    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+    IFolder folder = root.getFolder(javaProject.getOutputLocation());
+    File outDir = new File(folder.getLocation().toString());
+
+    switch(kind) {
+    case AUTO_BUILD:
+    case FULL_BUILD:
+    case INCREMENTAL_BUILD:
+      // Build bundle JAR
+      String name = getProject().getName()+ ".jar";
+      File jarFile = new File(outDir, name);
+      try {
+        bundlePackDescription.export(bundleProject, jarFile.getAbsolutePath());
+      } catch (IOException e) {
+        OsgiPlugin.throwCoreException("Failed to build JAR file for project "+getProject().getName(), e);
+      }
+      break;
+    case CLEAN_BUILD:
+      // Remove JAR files in output directory
+      File[] children = outDir.listFiles();
+      if (children != null) {
+        for (int i=0; i<children.length; i++) {
+          if (children[i].isFile() && children[i].getName().toLowerCase().endsWith(".jar")) {
+            children[i].delete();
+          }
         }
       }
-      
-      System.err.println("done");
-      
-    } finally {
-      if (jos != null) {
-        jos.flush();
-        jos.finish();
-        jos.close();
-      }
+      break;
     }
-    
-    
+    return null;
   }
 }

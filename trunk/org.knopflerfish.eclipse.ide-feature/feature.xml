@@ -2,7 +2,7 @@
 <feature
       id="org.knopflerfish.eclipse.ide-feature"
       label="Knopflerfish OSGi IDE"
-      version="0.7.2"
+      version="0.8.0"
       provider-name="Knopflerfish">
 
    <description url="http://www.knopflerfish.org/eclipse_plugin.html">
@@ -52,6 +52,23 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
       <update label="Knopflerfish" url="http://www.knopflerfish.org/eclipse-update/"/>
    </url>
 
+   <requires>
+      <import plugin="org.eclipse.core.runtime"/>
+      <import plugin="org.eclipse.debug.core"/>
+      <import plugin="org.eclipse.jdt.core"/>
+      <import plugin="org.eclipse.jdt.launching"/>
+      <import plugin="org.eclipse.core.resources"/>
+      <import plugin="org.eclipse.ui"/>
+      <import plugin="org.eclipse.debug.ui"/>
+      <import plugin="org.eclipse.jdt.debug.ui"/>
+      <import plugin="org.eclipse.ui.ide"/>
+      <import plugin="org.eclipse.jface.text"/>
+      <import plugin="org.eclipse.ui.editors"/>
+      <import plugin="org.eclipse.ui.forms"/>
+      <import plugin="org.eclipse.jdt.ui"/>
+      <import plugin="org.eclipse.ui.workbench.texteditor"/>
+   </requires>
+
    <plugin
          id="org.knopflerfish.eclipse.core"
          download-size="0"
@@ -63,5 +80,19 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
          download-size="0"
          install-size="0"
          version="0.0.0"/>
+
+   <plugin
+         id="org.knopflerfish.eclipse.framework.knopflerfish13"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.knopflerfish.eclipse.framework.oscar10"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
 
 </feature>

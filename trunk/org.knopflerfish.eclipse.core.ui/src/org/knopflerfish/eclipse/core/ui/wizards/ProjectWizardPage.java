@@ -36,9 +36,13 @@ package org.knopflerfish.eclipse.core.ui.wizards;
 
 import java.util.List;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.dialogs.DialogPage;
 import org.eclipse.jface.viewers.ISelection;
@@ -99,7 +103,6 @@ public class ProjectWizardPage extends WizardPage {
   /****************************************************************************
    * org.eclipse.jface.dialogs.IDialogPage methods
    ***************************************************************************/
-  
   /* (non-Javadoc)
    * @see org.eclipse.jface.dialogs.IDialogPage#createControl(org.eclipse.swt.widgets.Composite)
    */
@@ -165,7 +168,8 @@ public class ProjectWizardPage extends WizardPage {
     wProjectContentsDirectoryText = new Text(wProjectContentsGroup, SWT.SINGLE | SWT.BORDER);
     wProjectContentsDirectoryText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
-        verifyProjectLocation();
+        wProjectContentsDirectoryText.setData(ERROR, verifyProjectLocation());
+        updateStatus();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -181,7 +185,7 @@ public class ProjectWizardPage extends WizardPage {
         String path = dialog.open();
         if (path != null) {
           wProjectContentsDirectoryText.setText(path);
-          verifyProjectLocation();
+          wProjectContentsDirectoryText.setData(ERROR, verifyProjectLocation());
         }
       }
     });
@@ -291,6 +295,7 @@ public class ProjectWizardPage extends WizardPage {
   
   private void updateStatus() {
     Control c = getControl();
+    if (c == null) return;
     Composite composite = (Composite) c;
     composite.getChildren();
     
@@ -341,28 +346,38 @@ public class ProjectWizardPage extends WizardPage {
    ***************************************************************************/
   private String verifyProjectName() {
     String name = getProjectName();
-    String error = null;
 
-    // TODO:Check that project name is not empty
+    // Check that project name is not empty
     if (name == null || name.trim().length() == 0) {
-      error = "Enter project name";
+      return "Enter project name";
+    }
+
+    // Check that project name is valid
+    IWorkspace workspace = ResourcesPlugin.getWorkspace();
+    IStatus status = workspace.validateName(name, IResource.PROJECT);
+    if (!status.isOK()) {
+      return status.getMessage();
     }
     
-    // TODO:Check that project name is valid
+    // Check that project name not already exists
+    IProject[] projects = workspace.getRoot().getProjects();
+    for (int i=0; projects != null && i<projects.length; i++) {
+      if (name.equals(projects[i].getName())) {
+        return "Project name is already used";
+      }
+    }
     
-    // TODO:Check that project name not already exists
-    
-    return error;
+    return null;
   }
   
-  private boolean verifyProjectLocation() {
+  private String verifyProjectLocation() {
     //String location = wProjectContentsDirectoryText.getText();
     
     // TODO:Check that project location is valid folder name
     
     // TODO:Check that project location not already exists
     
-    return true;
+    return null;
   }
 
   /****************************************************************************

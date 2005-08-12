@@ -38,7 +38,9 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
@@ -57,14 +59,15 @@ abstract public class ManifestSectionTextPart extends SectionPart {
   public static final String PROP_NAME  = "name";
   
   // Widgets
-  public Text [] wAttributesText = null;
+  public Control[] wAttributeControls;
 
   private Manifest manifest = null;
 
 
   public ManifestSectionTextPart(Composite parent, FormToolkit toolkit, int style, int numAttributes) {
     super(parent, toolkit, style);
-    wAttributesText = new Text[numAttributes];
+    
+    wAttributeControls = new Control[numAttributes];
     
     Section section = getSection();
     createClient(section, toolkit);
@@ -85,20 +88,24 @@ abstract public class ManifestSectionTextPart extends SectionPart {
     IManagedForm managedForm = getManagedForm();
     IDocument doc = (IDocument) managedForm.getInput();
 
-    for(int i=0; wAttributesText != null && i<wAttributesText.length; i++) {
-      if (wAttributesText[i] == null) continue;
+    for(int i=0; wAttributeControls != null && i<wAttributeControls.length; i++) {
+      if (wAttributeControls[i] == null) continue;
       
-      Boolean dirty = (Boolean) wAttributesText[i].getData(PROP_DIRTY);
+      Boolean dirty = (Boolean) wAttributeControls[i].getData(PROP_DIRTY);
       if (dirty != null && dirty.booleanValue()) {
         try {
-          String attribute = (String) wAttributesText[i].getData(PROP_NAME);
+          String attribute = (String) wAttributeControls[i].getData(PROP_NAME);
           if (attribute != null) {
-            ManifestUtil.setManifestAttribute(doc, attribute, wAttributesText[i].getText());
+            if (wAttributeControls[i] instanceof Text) {
+              ManifestUtil.setManifestAttribute(doc, attribute, ((Text) wAttributeControls[i]).getText());
+            } else if (wAttributeControls[i] instanceof Combo) {
+              ManifestUtil.setManifestAttribute(doc, attribute, ((Combo) wAttributeControls[i]).getText());
+            }
           }
         } catch (Exception e) {
           e.printStackTrace();
         }
-        wAttributesText[i].setData(PROP_DIRTY, new Boolean(false));
+        wAttributeControls[i].setData(PROP_DIRTY, new Boolean(false));
       }
     }
     
@@ -118,10 +125,13 @@ abstract public class ManifestSectionTextPart extends SectionPart {
     updateValues();
   }
   
+  public void setControls(Control[] controls) {
+    wAttributeControls = controls;
+  }
+  
   /****************************************************************************
    * Abstract methods that shall be overridden.
    ***************************************************************************/
-  
   abstract public void createClient(Section section, FormToolkit toolkit); 
 
   /****************************************************************************
@@ -154,16 +164,17 @@ abstract public class ManifestSectionTextPart extends SectionPart {
     
     Attributes attributes = manifest.getMainAttributes();
     
-    for (int i = 0; wAttributesText != null && i<wAttributesText.length ; i++) {
-      if (wAttributesText[i] == null) continue;
+    for (int i = 0; wAttributeControls != null && i<wAttributeControls.length ; i++) {
+      if (wAttributeControls[i] == null) continue;
       
-      String attribute = (String) wAttributesText[i].getData(PROP_NAME);
+      String attribute = (String) wAttributeControls[i].getData(PROP_NAME);
       if (attribute != null) {
         String value = attributes.getValue(attribute);
-        if (value != null) {
-          wAttributesText[i].setText(value);
-        } else {
-          wAttributesText[i].setText("");
+        if (value == null) value ="";
+        if (wAttributeControls[i] instanceof Text) {
+          ((Text) wAttributeControls[i]).setText(value);
+        } else if (wAttributeControls[i] instanceof Combo) {
+          ((Combo) wAttributeControls[i]).setText(value);
         }
       }
     }
@@ -172,10 +183,10 @@ abstract public class ManifestSectionTextPart extends SectionPart {
   public void updateDirtyState() {
     // Loop through components and check dirty state
     boolean dirty = false;
-    for(int i=0; wAttributesText != null && i<wAttributesText.length; i++) {
-      if (wAttributesText[i] == null) continue;
+    for(int i=0; wAttributeControls != null && i<wAttributeControls.length; i++) {
+      if (wAttributeControls[i] == null) continue;
       
-      Boolean attribute = (Boolean) wAttributesText[i].getData(PROP_DIRTY);
+      Boolean attribute = (Boolean) wAttributeControls[i].getData(PROP_DIRTY);
       if (attribute != null) {
         dirty = dirty || attribute.booleanValue();
       }

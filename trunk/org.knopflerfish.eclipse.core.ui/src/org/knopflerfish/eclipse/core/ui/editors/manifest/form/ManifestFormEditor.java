@@ -47,51 +47,72 @@ import org.eclipse.ui.forms.widgets.ColumnLayout;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
-import org.knopflerfish.eclipse.core.ui.editors.manifest.text.ManifestTextEditor;
+import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class ManifestFormEditor extends FormPage {
+public class ManifestFormEditor extends FormPage implements IDocumentListener {
 
   private static final String TITLE = "Overview";
   
-  private final ManifestTextEditor manifestTextEditor;
+  private final BundleProject project;
+  private IDocument doc;
   
-  public ManifestFormEditor(FormEditor editor, String id, String title, ManifestTextEditor manifestTextEditor) {
+  // Sections
+  private OverviewGeneralSection generalSection;
+  private OverviewClasspathSection classPathSection;
+  private OverviewCategorySection categorySection;
+  private OverviewVendorSection vendorSection;
+  private OverviewDocumentationSection docSection;
+ 
+  public ManifestFormEditor(FormEditor editor, String id, String title, BundleProject project) {
     super(editor, id, title);
-    this.manifestTextEditor = manifestTextEditor;
+    this.project = project;
   }
 
+  public IDocument getDocument() {
+    return doc;
+  }
+  
+  public void refresh() {
+    generalSection.refresh();
+    classPathSection.refresh();
+    categorySection.refresh();
+    vendorSection.refresh();
+    docSection.refresh();
+  }
+  
   /****************************************************************************
    * org.eclipse.ui.forms.editor.FormPage methods
    ***************************************************************************/
+  public void attachDocument(IDocument doc) {
+    // Remove listener from old doc
+    if (this.doc != null) {
+      this.doc.removeDocumentListener(this);
+    }
+    // Add listener on new doc
+    this.doc = doc;
+    if (this.doc != null) {
+      this.doc.addDocumentListener(this);
+    }
 
+    IManagedForm form = getManagedForm();
+    if (form == null) return;
+    form.setInput(doc);
+
+    firePropertyChange(PROP_INPUT);
+  }
+  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.ui.forms.editor.FormPage#createFormContent(org.eclipse.ui.forms.IManagedForm)
    */
   public void createFormContent(IManagedForm managedForm) {
-    
-    // Attach document to managed form and add document change listener
-    IDocument doc = manifestTextEditor.getDocumentProvider().getDocument(getEditorInput());
-    managedForm.setInput(doc);
-    doc.addDocumentListener(new IDocumentListener() {
-      public void documentAboutToBeChanged(DocumentEvent event) {
-      }
-      public void documentChanged(DocumentEvent event) {
-        if (isActive()) return;
-        
-        IFormPart[] parts = getManagedForm().getParts();
-        
-        if (parts != null) {
-          for(int i=0; i<parts.length;i++) {
-            ((SectionPart) parts[i]).markStale();
-          }
-        }
-      }
-    });
+    if (doc != null) {
+      managedForm.setInput(doc);
+    }
 
     // Create form
     FormToolkit toolkit = managedForm.getToolkit();   
@@ -106,30 +127,59 @@ public class ManifestFormEditor extends FormPage {
     body.setLayout(layout);
     
     // Create sections
-    /*
-    OverviewGeneralSection generalSection = new OverviewGeneralSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TWISTIE | Section.EXPANDED | Section.TITLE_BAR);
-    */
-    OverviewGeneralSection generalSection = new OverviewGeneralSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR);
+    generalSection = new OverviewGeneralSection(body, toolkit, 
+        Section.DESCRIPTION | Section.TITLE_BAR, project);
     generalSection.initialize(managedForm);
 
-    OverviewCategorySection categorySection = new OverviewCategorySection(body, toolkit, 
+    classPathSection = new OverviewClasspathSection(body, toolkit, 
+        Section.DESCRIPTION | Section.TITLE_BAR, project);
+    classPathSection.initialize(managedForm);
+
+    categorySection = new OverviewCategorySection(body, toolkit, 
         Section.DESCRIPTION | Section.TITLE_BAR);
     categorySection.initialize(managedForm);
     
-    OverviewVendorSection vendorSection = new OverviewVendorSection(body, toolkit, 
+    vendorSection = new OverviewVendorSection(body, toolkit, 
         Section.DESCRIPTION | Section.TITLE_BAR);
     vendorSection.initialize(managedForm);
     
-    OverviewDocumentationSection docSection = new OverviewDocumentationSection(body, toolkit, 
+    docSection = new OverviewDocumentationSection(body, toolkit, 
         Section.DESCRIPTION | Section.TITLE_BAR);
     docSection.initialize(managedForm);
     
     // Add sections to form
     managedForm.addPart(generalSection);
+    managedForm.addPart(classPathSection);
     managedForm.addPart(categorySection);
     managedForm.addPart(vendorSection);
     managedForm.addPart(docSection);
+  }
+
+  /****************************************************************************
+   * org.eclipse.jface.text.IDocumentListener methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.text.IDocumentListener#documentAboutToBeChanged(org.eclipse.jface.text.DocumentEvent)
+   */
+  public void documentAboutToBeChanged(DocumentEvent event) {
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.text.IDocumentListener#documentChanged(org.eclipse.jface.text.DocumentEvent)
+   */
+  public void documentChanged(DocumentEvent event) {
+    if (isActive()) return;
+    
+    IManagedForm form = getManagedForm();
+    if (form == null) return;
+
+    IFormPart[] parts = form.getParts();
+    if (parts != null) {
+      for(int i=0; i<parts.length;i++) {
+        ((SectionPart) parts[i]).markStale();
+      }
+    }
   }
 }

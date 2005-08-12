@@ -109,16 +109,16 @@ public class OverviewVendorSection extends ManifestSectionTextPart {
       
       Label wLabel = toolkit.createLabel(container, label);
       wLabel.setToolTipText(tooltip);
-      wAttributesText[i] = toolkit.createText(container, "");
-      wAttributesText[i].setData(PROP_DIRTY, new Boolean(false));
-      wAttributesText[i].setData(PROP_NAME, attr);
-      wAttributesText[i].addModifyListener(new ModifyListener() {
+      wAttributeControls[i] = toolkit.createText(container, "");
+      wAttributeControls[i].setData(PROP_DIRTY, new Boolean(false));
+      wAttributeControls[i].setData(PROP_NAME, attr);
+      ((Text) wAttributeControls[i]).addModifyListener(new ModifyListener() {
         public void modifyText(ModifyEvent e) {
           textChanged((Text) e.widget);
         }
       });
       TableWrapData td = new TableWrapData(TableWrapData.FILL_GRAB);
-      wAttributesText[i].setLayoutData(td);
+      wAttributeControls[i].setLayoutData(td);
     }
     
     toolkit.paintBordersFor(container);

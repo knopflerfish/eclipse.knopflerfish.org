@@ -37,19 +37,26 @@ package org.knopflerfish.eclipse.core.project;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
-import org.knopflerfish.eclipse.core.Osgi;
+import org.eclipse.jdt.core.JavaModelException;
 import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 
@@ -58,12 +65,13 @@ import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleProject implements IBundleProject {
-  private static final String MANIFEST_FILE  = "bundle.manifest";
-  private static final String BUNDLEJAR_FILE = "bundle.jar";
+  public static final String CLASSPATH_FILE = ".classpath";
+  public static final String MANIFEST_FILE  = "bundle.manifest";
+  public static final String BUNDLE_PACK_FILE = ".bundle-pack";
   
   private final IJavaProject project;
   private BundleManifest manifest;
-  private BundleJar bundleJar;
+  private BundlePackDescription bundlePackDescription;
 
   public BundleProject(String name) throws CoreException {
     IWorkspaceRoot workspace = ResourcesPlugin.getWorkspace().getRoot();
@@ -71,53 +79,15 @@ public class BundleProject implements IBundleProject {
     IJavaProject javaProject = JavaCore.create(project);
     this.project = javaProject;
     loadManifest();
-    bundleJar = createBundleJarDescription();
+    bundlePackDescription = createBundlePackDescription();
   }
   
   public BundleProject(IJavaProject project) throws CoreException {
     this.project = project;
     loadManifest();
-    bundleJar = createBundleJarDescription();
+    bundlePackDescription = createBundlePackDescription();
   }
-  
-  public static BundleProject create(String name, IPath projectLocation, IPath srcFolder, IPath outFolder) throws CoreException {
-    // Create project
-    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-    IProject project = root.getProject(name);
-    if (project.exists()) {
-      OsgiPlugin.throwCoreException("Project \"" + name + "\" already exists.", null);
-    }
-    
-    // Create project description
-    IProjectDescription projectDescription = ResourcesPlugin.getWorkspace().newProjectDescription(name);
-    
-    // Set project location
-    projectDescription.setLocation(projectLocation);
 
-    // Create project
-    project.create(projectDescription, null);
-   
-    // Open project
-    project.open(null);
-
-    // Set project natures
-    projectDescription = project.getDescription();
-    projectDescription.setNatureIds(new String[] {Osgi.NATURE_ID, JavaCore.NATURE_ID});
-    project.setDescription(projectDescription, null);
-    
-    // Create source folder
-    project.getFolder(srcFolder).create(true, true, null);
-
-    // Set default classpath
-    IJavaProject javaProject = JavaCore.create(project);
-
-    // Set output location 
-    Path projectFolder = new Path("/"+name);
-    javaProject.setOutputLocation(projectFolder.append(outFolder), null);
-    
-    return new BundleProject(javaProject);
-  }
-  
   /****************************************************************************
    * org.knopflerfish.eclipse.core.IBundleProject methods
    ***************************************************************************/
@@ -131,10 +101,13 @@ public class BundleProject implements IBundleProject {
 
   /*
    *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getBundleJarDescription()
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getBundlePackDescription()
    */
-  public BundleJar getBundleJarDescription() {
-    return bundleJar;
+  public BundlePackDescription getBundlePackDescription() {
+    return bundlePackDescription;
+  }
+  public IFile getBundlePackDescriptionFile() {
+    return project.getProject().getFile(BUNDLE_PACK_FILE);
   }
 
   /* (non-Javadoc)
@@ -142,6 +115,9 @@ public class BundleProject implements IBundleProject {
    */
   public BundleManifest getBundleManifest() {
     return manifest;
+  }
+  public IFile getBundleManifestFile() {
+    return project.getProject().getFile(MANIFEST_FILE);
   }
   
   public void setBundleManifest(BundleManifest manifest) {
@@ -159,36 +135,143 @@ public class BundleProject implements IBundleProject {
     return false;
   }
 
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getBundleActivators()
+   */
+  public IType[] getBundleActivators() {
+    ArrayList activators = new ArrayList();
+
+    try{
+      IType activatorType = project.findType("org.osgi.framework.BundleActivator");
+      ITypeHierarchy hierarchy = activatorType.newTypeHierarchy(project, null);
+      IType[] implClasses = hierarchy.getImplementingClasses(activatorType);
+      if (implClasses != null) {
+        for(int i=0;i<implClasses.length;i++) {
+          IPackageFragmentRoot root = (IPackageFragmentRoot) implClasses[i].getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
+          if (root != null) {
+            if (root.getKind() == IPackageFragmentRoot.K_SOURCE) {
+              IJavaProject ancestor = (IJavaProject) root.getAncestor(IJavaElement.JAVA_PROJECT);
+              if (project.equals(ancestor)) {
+                activators.add(implClasses[i]);
+              }
+            }
+          }
+        }
+      }
+    } catch (JavaModelException e) {
+      e.printStackTrace();
+    }
+    
+    return (IType[]) activators.toArray(new IType[activators.size()]);
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getLocalJars()
+   */
+  public IFile[] getJars() {
+    IFile[] files = null;
+    try {
+      files = getFiles(project.getProject(), "jar", project.getOutputLocation());
+    } catch (JavaModelException e) {
+      e.printStackTrace();
+    }
+    return files;
+  }
+
+  /****************************************************************************
+   * Check methods
+   ***************************************************************************/
+  public boolean checkManifestBundleActivator() {
+    // Check that bundle activator class exists
+    String activator = manifest.getActivator();
+    if (activator != null) {
+      IType[] types = getBundleActivators();
+      for(int i=0; i<types.length;i++) {
+        if (activator.trim().equals(types[i].getFullyQualifiedName())) {
+          return true;
+        }
+      }
+      //Could not find activator
+      return false;
+    } else {
+      return true;
+    }
+  }
+  
+  public boolean checkManifestBundleClassPath() { 
+    // Check that all libraries defined in bundle classpath
+    // are packed in the bundle
+
+    ArrayList errors = new ArrayList();
+    String[] classPaths = manifest.getBundleClassPath();
+    Map map = bundlePackDescription.getContentsMap(false);
+    for (int i=0; i<classPaths.length; i++) {
+      String path = classPaths[i];
+      if (path.startsWith("/")) path = path.substring(1);
+      
+      if (!map.containsKey(path)) {
+        errors.add(path);
+      }
+    }
+    
+    return  errors.size() == 0;
+  }
+  
   /****************************************************************************
    * Private worker methods
    ***************************************************************************/
+  private IFile[] getFiles(IResource resource, String extension, IPath exclude) {
+    if (resource instanceof IFile && extension.equalsIgnoreCase(resource.getFileExtension())) {
+      return new IFile[] {(IFile) resource};
+    } else if (resource instanceof IContainer) {
+      IContainer container = (IContainer) resource;
+      ArrayList files = new ArrayList();
+      try {
+        IResource[] resources = container.members();
+        if (resources != null) {
+          for(int i=0; i<resources.length; i++) {
+            if (!resources[i].getFullPath().equals(exclude)) {
+              files.addAll(Arrays.asList(getFiles(resources[i], extension, exclude)));
+            }
+          }
+        }
+      } catch (CoreException e) {
+      }
+      return (IFile[]) files.toArray(new IFile[files.size()]);
+    } else {
+      return new IFile[0];
+    }
+  }
   
-  public BundleJar createBundleJarDescription() throws CoreException {
+  public BundlePackDescription createBundlePackDescription() throws CoreException {
 
     // Try to load it, if it does not exist create it
-    BundleJar jar = loadBundleJarDescription();
+    BundlePackDescription packDescription = loadBundlePackDescription();
     try {
-      if (jar == null) {
+      if (packDescription == null) {
         // Create jar description
-        jar = new BundleJar();
+        packDescription = new BundlePackDescription();
         // Add output folder as resource
-        BundleJarResource resource = new BundleJarResource(
+        BundleResource resource = new BundleResource(
+            BundleResource.TYPE_CLASSES,
             project.getOutputLocation(), 
             "", 
             Pattern.compile(".*\\.class"));
-        jar.addResource(resource);
+        packDescription.addResource(resource);
         
         // Save description
         ByteArrayOutputStream baos = null;
         ByteArrayInputStream bais = null;
         try { 
           baos = new ByteArrayOutputStream();
-          jar.save(baos);
+          packDescription.save(baos);
           bais = new ByteArrayInputStream(baos.toByteArray());
         
-          IFile bundleJarFile = project.getProject().getFile(BUNDLEJAR_FILE);
-          if (!bundleJarFile.exists()) {
-            bundleJarFile.create(bais, false, null);
+          IFile bundlePackFile = project.getProject().getFile(BUNDLE_PACK_FILE);
+          if (!bundlePackFile.exists()) {
+            bundlePackFile.create(bais, false, null);
           }
         } finally {
           if (baos != null) baos.close();
@@ -199,19 +282,19 @@ public class BundleProject implements IBundleProject {
     } catch (Exception e) {
       OsgiPlugin.throwCoreException("Failed to create bundle jar description", e);
     }
-    return jar;
+    return packDescription;
   }
   
-  public BundleJar loadBundleJarDescription() throws CoreException {
+  public BundlePackDescription loadBundlePackDescription() throws CoreException {
     // Read bundle jar
     InputStream is = null;
-    BundleJar jar  = null;
+    BundlePackDescription jar  = null;
     try {
       try {
-        IFile bundleJarFile = project.getProject().getFile(BUNDLEJAR_FILE);
-        if (bundleJarFile.exists()) {
-          is = bundleJarFile.getContents();
-          jar = new BundleJar(project.getProject(), is);
+        IFile bundlePackFile = project.getProject().getFile(BUNDLE_PACK_FILE);
+        if (bundlePackFile.exists()) {
+          is = bundlePackFile.getContents();
+          jar = new BundlePackDescription(project.getProject(), is);
         }
       } finally {
         if (is != null) {
@@ -222,6 +305,34 @@ public class BundleProject implements IBundleProject {
       OsgiPlugin.throwCoreException("Failed to load bundle jar description", e);
     }
     return jar;
+  }
+
+  public void saveBundlePackDescription(BundlePackDescription packDescription) throws CoreException {
+    if (packDescription == null) return;
+    try {
+      // Save description
+      ByteArrayOutputStream baos = null;
+      ByteArrayInputStream bais = null;
+      try { 
+        baos = new ByteArrayOutputStream();
+        packDescription.save(baos);
+        bais = new ByteArrayInputStream(baos.toByteArray());
+      
+        IFile bundlePackFile = project.getProject().getFile(BUNDLE_PACK_FILE);
+        if (!bundlePackFile.exists()) {
+          bundlePackFile.create(bais, IResource.FORCE, null);
+        } else {
+          //bundlePackFile.setContents(bais, IResource.FORCE | IResource.KEEP_HISTORY, null);
+          bundlePackFile.setContents(bais, IResource.KEEP_HISTORY, null);
+        }
+      } finally {
+        if (baos != null) baos.close();
+        if (bais != null) bais.close();
+        
+      }
+    } catch (Exception e) {
+      OsgiPlugin.throwCoreException("Failed to create bundle jar description", e);
+    }
   }
   
   public void loadManifest() {
@@ -245,7 +356,7 @@ public class BundleProject implements IBundleProject {
     } catch (Exception e) {}
   }
 
-  public void saveManifest() {
+  public void saveManifest(BundleManifest manifest) {
     // Write manifest to file
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ByteArrayInputStream bais = null;
@@ -256,7 +367,11 @@ public class BundleProject implements IBundleProject {
         baos.flush();
         bais = new ByteArrayInputStream(baos.toByteArray());
         file = project.getProject().getFile(MANIFEST_FILE);
-        file.create(bais, true, null);
+        if (!file.exists()) {
+          file.create(bais, IResource.FORCE, null);
+        } else {
+          file.setContents(bais, IResource.KEEP_HISTORY, null);
+        }
       } finally {
         baos.close();
         bais.close();
@@ -265,5 +380,40 @@ public class BundleProject implements IBundleProject {
     }
   }
 
+  /*
+  public void updateClasspath() {
+    Map map = bundlePackDescription.getContentsMap();
+    HashMap resources = new HashMap();
+    List pathList = new ArrayList(Arrays.asList(manifest.getBundleClassPath()));
+    for (Iterator i = pathList.iterator(); i.hasNext(); ) {
+      String path = ((String) i.next()).trim();
+      if (path.startsWith("/")) path = path.substring(1);
+      
+      if (map.containsKey(path)) {
+        BundleResource resource = new BundleResource((IPath) map.get(path), path, null);
+        resources.put(resource.getSource().makeAbsolute().toString(), resource);
+      }
+    }
+
+    ArrayList entries = new ArrayList(Arrays.asList(project.getRawClasspath()));
+    boolean changed = false;
+    for(Iterator i=entries.iterator();i.hasNext();) {
+      IClasspathEntry entry = (IClasspathEntry) i.next();
+      if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
+        String path = entry.getPath().makeAbsolute().toString();
+        if (resources.containsKey(path)) {
+          i.remove();
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      project.setRawClasspath(
+          (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
+          null);
+    }
+    
+  }
+  */
 }
 

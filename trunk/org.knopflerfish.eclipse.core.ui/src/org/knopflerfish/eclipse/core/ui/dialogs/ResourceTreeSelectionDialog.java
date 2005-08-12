@@ -32,41 +32,31 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.project;
+package org.knopflerfish.eclipse.core.ui.dialogs;
 
-import org.eclipse.core.resources.IFile;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IType;
-import org.knopflerfish.eclipse.core.PackageDescription;
+import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.dialogs.ElementTreeSelectionDialog;
+import org.eclipse.ui.model.BaseWorkbenchContentProvider;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public interface IBundleProject {
+public class ResourceTreeSelectionDialog extends ElementTreeSelectionDialog {
 
-  public IJavaProject getJavaProject();
+  public ResourceTreeSelectionDialog(Shell parent, int[] types) {
+    this(parent, new BaseWorkbenchContentProvider(), types);
+  }
   
-  public BundleManifest getBundleManifest();
+  public ResourceTreeSelectionDialog(Shell parent, ITreeContentProvider contentProvider, int[] types) {
+    super(parent, new ResourceTreeLabelProvider(), contentProvider);
 
-  public BundlePackDescription getBundlePackDescription();
-  
-  public boolean hasExportedPackage(PackageDescription pkg);
-  
-  /**
-   * Returns all implementations of BundleActivator in this
-   * project.
-   * 
-   * @return array of BundleActivator implementations
-   */
-  public IType[] getBundleActivators();
-  
-  /**
-   * Returns all JAR files which can be found in the
-   * project.
-   * 
-   * @return array of JAR files
-   */
-  public IFile[] getJars();
- 
+    setImage(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_ELEMENT));
+    
+    setValidator(new ResourceValidator(types));
+  }
 }
+

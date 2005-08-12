@@ -75,10 +75,10 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.project.BundleJar;
-import org.knopflerfish.eclipse.core.project.BundleJarResource;
+import org.knopflerfish.eclipse.core.project.BundlePackDescription;
+import org.knopflerfish.eclipse.core.project.BundleResource;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
-import org.knopflerfish.eclipse.core.ui.dialogs.BundleJarResourceDialog;
+import org.knopflerfish.eclipse.core.ui.dialogs.BundleResourceDialog;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -108,7 +108,7 @@ public class ContentsSection extends SectionPart {
   private final IProject project;
   
   // Model objects
-  private BundleJar bundleJar = null;
+  private BundlePackDescription bundlePackDescription = null;
 
   public ContentsSection(Composite parent, FormToolkit toolkit, int style, IProject project) {
     super(parent, toolkit, style);
@@ -136,10 +136,10 @@ public class ContentsSection extends SectionPart {
     IManagedForm managedForm = getManagedForm();
     IDocument doc = (IDocument) managedForm.getInput();
 
-    if (bundleJar == null) return;
+    if (bundlePackDescription == null) return;
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try {
-      bundleJar.save(baos);
+      bundlePackDescription.save(baos);
       baos.flush();
       doc.set(baos.toString());
     } catch (Exception e) {
@@ -158,13 +158,13 @@ public class ContentsSection extends SectionPart {
     IDocument doc = (IDocument) getManagedForm().getInput();
     
     try {
-      bundleJar = new BundleJar(project, new ByteArrayInputStream(doc.get().getBytes()));
+      bundlePackDescription = new BundlePackDescription(project, new ByteArrayInputStream(doc.get().getBytes()));
     } catch (Exception e) {
       e.printStackTrace();
-      bundleJar = new BundleJar();
+      bundlePackDescription = new BundlePackDescription();
     }
     if (wResourceTableViewer != null) {
-      wResourceTableViewer.setInput(bundleJar);
+      wResourceTableViewer.setInput(bundlePackDescription);
     }
     UiUtils.packTableColumns(wResourceTableViewer.getTable());
   }
@@ -197,14 +197,10 @@ public class ContentsSection extends SectionPart {
     Table wResourceTable = toolkit.createTable(container, SWT.MULTI | SWT.FULL_SELECTION);
     wResourceTable.setData(FormToolkit.KEY_DRAW_BORDER, FormToolkit.TEXT_BORDER);
     wResourceTable.setData(PROP_DIRTY, new Boolean(false));
-    //wResourceTable.setData(PROP_NAME, BundleManifest.BUNDLE_CATEGORY);
 
     wResourceTableViewer = new TableViewer(wResourceTable);
     wResourceTableViewer.setContentProvider(new ResourceContentProvider());
     wResourceTableViewer.setLabelProvider(new ResourceLabelProvider());
-    
-    //wCategoryTable.setHeaderVisible(true);
-    //wCategoryTable.setLinesVisible(true);
     wResourceTableViewer.addOpenListener(new IOpenListener() {
 
       public void open(OpenEvent event) {
@@ -212,15 +208,12 @@ public class ContentsSection extends SectionPart {
           (IStructuredSelection) event.getSelection();
         
         if (selection.size() == 1) {
-          BundleJarResource r = (BundleJarResource) selection.getFirstElement();
-          BundleJarResourceDialog dialog =
-            new BundleJarResourceDialog(
-                Display.getCurrent().getActiveShell(),
-                r, 
-                "Edit resource");
+          BundleResource r = (BundleResource) selection.getFirstElement();
+          BundleResourceDialog dialog =
+            new BundleResourceDialog(Display.getCurrent().getActiveShell(), r, project);
           if (dialog.open() == Window.OK) {
-            BundleJarResource resource = dialog.getResource();
-            bundleJar.updateResource(resource);
+            BundleResource resource = dialog.getResource();
+            bundlePackDescription.updateResource(resource);
             wResourceTableViewer.refresh();
             UiUtils.packTableColumns(wResourceTableViewer.getTable());
             markDirty();
@@ -262,14 +255,11 @@ public class ContentsSection extends SectionPart {
     wResourceAddButton = toolkit.createButton(container, "Add...", SWT.PUSH);
     wResourceAddButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        BundleJarResourceDialog dialog =
-          new BundleJarResourceDialog(
-              Display.getCurrent().getActiveShell(),
-              null, 
-              "Add resource");
+        BundleResourceDialog dialog =
+          new BundleResourceDialog(Display.getCurrent().getActiveShell(),null,project);
         if (dialog.open() == Window.OK) {
-          BundleJarResource resource = dialog.getResource();
-          bundleJar.addResource(resource);
+          BundleResource resource = dialog.getResource();
+          bundlePackDescription.addResource(resource);
           wResourceTableViewer.refresh();
           UiUtils.packTableColumns(wResourceTableViewer.getTable());
           markDirty();
@@ -290,8 +280,8 @@ public class ContentsSection extends SectionPart {
         
         //List categories = new ArrayList(Arrays.asList(manifest.getCategories()));
         for (Iterator i = selection.iterator(); i.hasNext(); ) {
-          BundleJarResource resource = (BundleJarResource) i.next();
-          bundleJar.removeResource(resource);
+          BundleResource resource = (BundleResource) i.next();
+          bundlePackDescription.removeResource(resource);
         }
         wResourceTableViewer.refresh();
         UiUtils.packTableColumns(wResourceTableViewer.getTable());
@@ -317,11 +307,11 @@ public class ContentsSection extends SectionPart {
      * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
      */
     public Object[] getElements(Object inputElement) {
-      if ( !(inputElement instanceof BundleJar)) return null;
+      if ( !(inputElement instanceof BundlePackDescription)) return null;
         
-      BundleJar bundleJar = (BundleJar) inputElement; 
+      BundlePackDescription bundlePackDescription = (BundlePackDescription) inputElement; 
       
-      return bundleJar.getResources();
+      return bundlePackDescription.getResources();
     }
 
     /* (non-Javadoc)
@@ -349,7 +339,7 @@ public class ContentsSection extends SectionPart {
      * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.Object, int)
      */
     public Image getColumnImage(Object o, int columnIndex) {
-      BundleJarResource e = (BundleJarResource) o;
+      BundleResource e = (BundleResource) o;
       
       if (columnIndex == 0) {
         IPath src = e.getSource();
@@ -376,7 +366,7 @@ public class ContentsSection extends SectionPart {
      * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object, int)
      */
     public String getColumnText(Object o, int columnIndex) {
-      BundleJarResource e = (BundleJarResource) o;
+      BundleResource e = (BundleResource) o;
 
       switch (columnIndex) {
         case 0:

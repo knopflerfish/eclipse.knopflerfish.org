@@ -51,6 +51,7 @@ public class BundleManifest extends Manifest {
 
   public static final String BUNDLE_SYMBOLIC_NAME  = "Bundle-SymbolicName";
   public static final String BUNDLE_NAME           = "Bundle-Name";
+  public static final String BUNDLE_CLASSPATH      = "Bundle-ClassPath";
   public static final String BUNDLE_CATEGORY       = "Bundle-Category";
   public static final String BUNDLE_VERSION        = "Bundle-Version";
   public static final String BUNDLE_ACTIVATOR      = "Bundle-Activator";
@@ -174,6 +175,34 @@ public class BundleManifest extends Manifest {
         buf.append(value[i]);
       }
       setAttribute(BUNDLE_CATEGORY, buf.toString());
+    }
+  }
+  
+  public String[] getBundleClassPath() {
+    String attr = getAttribute(BUNDLE_CLASSPATH);
+    ArrayList classPath = new ArrayList();
+    if (attr != null) {
+      StringTokenizer st = new StringTokenizer(attr, ",");
+      while(st.hasMoreTokens()) {
+        classPath.add(st.nextToken().trim());
+      }
+    }
+    
+    return (String[]) classPath.toArray(new String[classPath.size()]);
+  }
+
+  public void setBundleClassPath(String[] value) {
+    if (value == null) {
+      setAttribute(BUNDLE_CLASSPATH, null);
+    } else {
+      StringBuffer buf = new StringBuffer("");
+      for(int i=0; i<value.length;i++) {
+        if (i != 0) {
+          buf.append(", ");
+        }
+        buf.append(value[i]);
+      }
+      setAttribute(BUNDLE_CLASSPATH, buf.toString());
     }
   }
   

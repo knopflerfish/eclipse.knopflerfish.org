@@ -101,9 +101,9 @@ public class BundleNature implements IProjectNature {
        command.setBuilderName(builderId);
        ICommand[] newCommands = new ICommand[commands.length + 1];
 
-       // Add it before other builders.
-       System.arraycopy(commands, 0, newCommands, 1, commands.length);
-       newCommands[0] = command;
+       // Add it after other builders.
+       System.arraycopy(commands, 0, newCommands, 0, commands.length);
+       newCommands[commands.length] = command;
        desc.setBuildSpec(newCommands);
        project.setDescription(desc, null);
     }

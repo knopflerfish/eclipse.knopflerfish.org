@@ -34,6 +34,9 @@
 
 package org.knopflerfish.eclipse.core.internal;
 
+import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Plugin;
@@ -48,69 +51,80 @@ import java.util.*;
  * @see http://www.gatespacetelematics.com/
  */
 public class OsgiPlugin extends Plugin {
-	//The shared instance.
-	private static OsgiPlugin plugin;
-	//Resource bundle.
-	private ResourceBundle resourceBundle;
-	
-	/**
-	 * The constructor.
-	 */
-	public OsgiPlugin() {
-		super();
-		plugin = this;
-		try {
-			resourceBundle = ResourceBundle.getBundle("org.knopflerfish.eclipse.core.OsgiPluginResources");
-		} catch (MissingResourceException x) {
-			resourceBundle = null;
-		}
-	}
-
-	/**
-	 * This method is called upon plug-in activation
-	 */
-	public void start(BundleContext context) throws Exception {
-		super.start(context);
-    
-	}
-
-	/**
-	 * This method is called when the plug-in is stopped
-	 */
-	public void stop(BundleContext context) throws Exception {
-		super.stop(context);
-	}
-
-	/**
-	 * Returns the shared instance.
-	 */
-	public static OsgiPlugin getDefault() {
-		return plugin;
-	}
-
-	/**
-	 * Returns the string from the plugin's resource bundle,
-	 * or 'key' if not found.
-	 */
-	public static String getResourceString(String key) {
-		ResourceBundle bundle = OsgiPlugin.getDefault().getResourceBundle();
-		try {
-			return (bundle != null) ? bundle.getString(key) : key;
-		} catch (MissingResourceException e) {
-			return key;
-		}
-	}
-
-	/**
-	 * Returns the plugin's resource bundle,
-	 */
-	public ResourceBundle getResourceBundle() {
-		return resourceBundle;
-	}
-    
-    public static void throwCoreException(String message, Throwable t) throws CoreException {
-      IStatus status =
-        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, message, t);
-      throw new CoreException(status);
+  //The shared instance.
+  private static OsgiPlugin plugin;
+  //Resource bundle.
+  private ResourceBundle resourceBundle;
+  
+  private ResourceChangeListener resourceListener;
+  
+  /**
+   * The constructor.
+   */
+  public OsgiPlugin() {
+    super();
+    plugin = this;
+    try {
+      resourceBundle = ResourceBundle.getBundle("org.knopflerfish.eclipse.core.OsgiPluginResources");
+    } catch (MissingResourceException x) {
+      resourceBundle = null;
     }
+  }
+  
+  /**
+   * This method is called upon plug-in activation
+   */
+  public void start(BundleContext context) throws Exception {
+    super.start(context);
+    
+    // Register resoure listener
+    resourceListener = new ResourceChangeListener();
+    IWorkspace workspace = ResourcesPlugin.getWorkspace();
+    workspace.addResourceChangeListener(resourceListener, 
+        IResourceChangeEvent.POST_CHANGE);
+  }
+  
+  /**
+   * This method is called when the plug-in is stopped
+   */
+  public void stop(BundleContext context) throws Exception {
+    super.stop(context);
+    
+    // Unregister resoure listener
+    IWorkspace workspace = ResourcesPlugin.getWorkspace();
+    workspace.removeResourceChangeListener(resourceListener);
+  }
+  
+  /**
+   * Returns the shared instance.
+   */
+  public static OsgiPlugin getDefault() {
+    return plugin;
+  }
+  
+  /**
+   * Returns the string from the plugin's resource bundle,
+   * or 'key' if not found.
+   */
+  public static String getResourceString(String key) {
+    ResourceBundle bundle = OsgiPlugin.getDefault().getResourceBundle();
+    try {
+      return (bundle != null) ? bundle.getString(key) : key;
+    } catch (MissingResourceException e) {
+      return key;
+    }
+  }
+  
+  /**
+   * Returns the plugin's resource bundle,
+   */
+  public ResourceBundle getResourceBundle() {
+    return resourceBundle;
+  }
+  
+  public static void throwCoreException(String message, Throwable t) throws CoreException {
+    IStatus status =
+      new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, message, t);
+    throw new CoreException(status);
+  }
 }
