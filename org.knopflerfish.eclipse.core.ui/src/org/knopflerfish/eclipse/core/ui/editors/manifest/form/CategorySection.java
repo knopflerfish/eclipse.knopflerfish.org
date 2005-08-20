@@ -73,21 +73,21 @@ import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class OverviewCategorySection extends SectionPart {
-
+public class CategorySection extends SectionPart  implements IStructuredContentProvider {
+  
   private static String TITLE_ADD_CATEGORY = "Add Category";
-
+  
   // Widget properties
   public static final String PROP_DIRTY = "dirty";
   public static final String PROP_NAME  = "name";
-
-
+  
+  
   // Section title and description
   private static final String TITLE = 
     "Categories";
   private static final String DESCRIPTION = 
     "This section lists the categories this bundle is part of.";
-
+  
   // SWT Widgets
   private Button    wCategoryAddButton;
   private Button    wCategoryRemoveButton;
@@ -98,7 +98,7 @@ public class OverviewCategorySection extends SectionPart {
   // Model objects
   private BundleManifest manifest = null;
   
-  public OverviewCategorySection(Composite parent, FormToolkit toolkit, int style) {
+  public CategorySection(Composite parent, FormToolkit toolkit, int style) {
     super(parent, toolkit, style);
     
     Section section = getSection();
@@ -106,11 +106,11 @@ public class OverviewCategorySection extends SectionPart {
     section.setDescription(DESCRIPTION);
     section.setText(TITLE);
   }
-
+  
   /****************************************************************************
    * org.eclipse.ui.forms.IFormPart methods
    ***************************************************************************/
-
+  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.ui.forms.IFormPart#commit(boolean)
@@ -121,7 +121,7 @@ public class OverviewCategorySection extends SectionPart {
     // Flush values to document
     IManagedForm managedForm = getManagedForm();
     IDocument doc = (IDocument) managedForm.getInput();
-
+    
     if (manifest == null) return;
     
     Table wCategoryTable = wCategoryTableViewer.getTable();
@@ -143,7 +143,7 @@ public class OverviewCategorySection extends SectionPart {
    */
   public void refresh() {
     super.refresh();
-
+    
     // Refresh values from document
     manifest = new BundleManifest(ManifestUtil.createManifest((IDocument) getManagedForm().getInput()));
     if (wCategoryTableViewer != null) {
@@ -153,14 +153,32 @@ public class OverviewCategorySection extends SectionPart {
   }
   
   /****************************************************************************
-   * Private helper methods
+   * org.eclipse.jface.viewers.IStructuredContentProvider methods
    ***************************************************************************/
   
   /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.ui.editors.ManifestSectionPart#createClient(org.eclipse.ui.forms.widgets.Section, org.eclipse.ui.forms.widgets.FormToolkit)
+   * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
    */
-  public void createClient(Section section, FormToolkit toolkit) {
-
+  public Object[] getElements(Object inputElement) {
+    if ( !(inputElement instanceof BundleManifest)) return null;
+    
+    BundleManifest manifest = (BundleManifest) inputElement; 
+    
+    return manifest.getCategories();
+  }
+  
+  /* (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+   */
+  public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+  }
+  
+  /****************************************************************************
+   * Private worker methods
+   ***************************************************************************/
+  
+  private void createClient(Section section, FormToolkit toolkit) {
+    
     // Set section layout
     ColumnLayoutData data = new ColumnLayoutData();
     section.setLayoutData(data);
@@ -169,21 +187,21 @@ public class OverviewCategorySection extends SectionPart {
         getManagedForm().getForm().reflow(true);
       }
     });
-
+    
     // Create section client
     Composite container = toolkit.createComposite(section);
     TableWrapLayout layout = new TableWrapLayout();
     layout.numColumns = 2;
     container.setLayout(layout);
-
+    
     // Create widgets
     Table wCategoryTable = toolkit.createTable(container, SWT.MULTI | SWT.FULL_SELECTION);
     wCategoryTable.setData(FormToolkit.KEY_DRAW_BORDER, FormToolkit.TEXT_BORDER);
     wCategoryTable.setData(PROP_DIRTY, new Boolean(false));
     wCategoryTable.setData(PROP_NAME, BundleManifest.BUNDLE_CATEGORY);
-
+    
     wCategoryTableViewer = new TableViewer(wCategoryTable);
-    wCategoryTableViewer.setContentProvider(new CategoryContentProvider());
+    wCategoryTableViewer.setContentProvider(this);
     wCategoryTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
       public void selectionChanged(SelectionChangedEvent event) {
         IStructuredSelection selection = 
@@ -207,7 +225,7 @@ public class OverviewCategorySection extends SectionPart {
     wd.align = TableWrapData.FILL;
     wd.valign = TableWrapData.FILL;
     wCategoryTable.setLayoutData(wd);
-
+    
     wCategoryRemoveButton = toolkit.createButton(container, "Remove", SWT.PUSH);
     wCategoryRemoveButton.setEnabled(false);
     wCategoryRemoveButton.addSelectionListener(new SelectionAdapter() {
@@ -269,35 +287,5 @@ public class OverviewCategorySection extends SectionPart {
     
     toolkit.paintBordersFor(container);
     section.setClient(container);
-  }
-  
-  /****************************************************************************
-   * Inner classes
-   ***************************************************************************/
-
-  class CategoryContentProvider  implements IStructuredContentProvider {
-
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
-     */
-    public Object[] getElements(Object inputElement) {
-      if ( !(inputElement instanceof BundleManifest)) return null;
-        
-      BundleManifest manifest = (BundleManifest) inputElement; 
-      
-      return manifest.getCategories();
-    }
-
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IContentProvider#dispose()
-     */
-    public void dispose() {
-    }
-
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-     */
-    public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-    }
   }
 }

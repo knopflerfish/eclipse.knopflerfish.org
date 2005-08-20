@@ -73,18 +73,11 @@
  <extension
        point="org.eclipse.ui.editors">
     <editor
-          filenames="bundle.manifest,Manifest,Manifest.bundle"
+          filenames="bundle.manifest"
           icon="icons/obj16/file_b_obj.gif"
-          class="org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestEditor"
-          name="Bundle Manifest Editor"
-          id="org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestEditor"
-          />
-    <editor
-          filenames="bundle-pack.desc"
-          icon="icons/obj16/jar_b_desc_obj.gif"
-          class="org.knopflerfish.eclipse.core.ui.editors.jar.JarEditor"
-          name="Bundle Jar Editor"
-          id="org.knopflerfish.eclipse.core.ui.editors.jar.JarEditor"
+          class="org.knopflerfish.eclipse.core.ui.editors.BundleEditor"
+          name="Bundle Editor"
+          id="org.knopflerfish.eclipse.core.ui.editors.BundleEditor"
           />
  </extension>
  <extension

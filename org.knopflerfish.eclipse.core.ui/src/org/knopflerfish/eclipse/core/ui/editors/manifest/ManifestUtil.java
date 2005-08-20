@@ -157,4 +157,14 @@ public class ManifestUtil {
     return manifest;
   }
   
+  static public Manifest createManifest(byte[] bytes) {
+    Manifest manifest = null;
+    try {
+      manifest = new Manifest(new ByteArrayInputStream(bytes));
+    } catch (IOException e) {
+      manifest = new Manifest();
+    }
+    
+    return manifest;
+  }
 }
