@@ -540,8 +540,19 @@ public class MainTab extends AbstractLaunchConfigurationTab {
    */
   public boolean isValid(ILaunchConfiguration configuration) {
     // Verify Osgi install
+    String name = null;
+    try {
+      name = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
+    } catch (CoreException e) {
+      e.printStackTrace();
+    }
+    if(Osgi.getOsgiInstall(name) == null) {
+      setErrorMessage("No framework selected.");
+      return false;
+    }
     
-    // Verify instance directory
+    
+    // TODO: Verify instance directory
     
     setErrorMessage(null);
     return true;
@@ -553,6 +564,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   private void updateOsgiInstalls() {
     wOsgiInstallCombo.removeAll();
     List l = Osgi.getOsgiInstalls();
+    
     if (l != null) {
       for(int i=0; i<l.size();i++) {
         wOsgiInstallCombo.add( ((IOsgiInstall) l.get(i)).getName());
@@ -562,6 +574,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   
   private void initializeSystemProperties(Map properties) {
     IOsgiInstall osgiInstall = Osgi.getOsgiInstall(wOsgiInstallCombo.getText());
+    if (osgiInstall == null) return;
     osgiInstall.addSystemPropertyGroup(userGroup);
     userGroup.clear();
     if (properties != null) {

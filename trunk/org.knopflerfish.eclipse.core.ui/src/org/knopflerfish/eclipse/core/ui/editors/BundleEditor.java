@@ -32,17 +32,12 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.manifest;
-
-import java.awt.Window;
+package org.knopflerfish.eclipse.core.ui.editors;
 
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
-import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -54,37 +49,54 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.forms.editor.FormEditor;
 import org.eclipse.ui.part.FileEditorInput;
+import org.eclipse.ui.texteditor.DocumentProviderRegistry;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.ui.editors.jar.form.JarFormEditor;
-import org.knopflerfish.eclipse.core.ui.editors.jar.text.JarTextEditor;
+import org.knopflerfish.eclipse.core.ui.editors.build.form.BuildDocument;
+import org.knopflerfish.eclipse.core.ui.editors.build.form.BuildFormEditor;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.form.ManifestFormEditor;
-import org.knopflerfish.eclipse.core.ui.editors.manifest.text.ManifestTextEditor;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class ManifestEditor extends FormEditor implements IResourceChangeListener, IResourceDeltaVisitor {
+public class BundleEditor extends FormEditor implements IResourceChangeListener {
   
   private static final String PAGE_OVERVIEW_ID      = "overviewId";
   private static final String PAGE_OVERVIEW_TITLE   = "Overview";
+  private static final String PAGE_BUILD_ID         = "buildId";
+  private static final String PAGE_BUILD_TITLE      = "Build";
   
   private IFile manifestFile;
   private IFile packFile;
+  private IFileEditorInput manifestInput;
+  private IFileEditorInput bundlePackInput;
   private ManifestFormEditor manifestFormEditor;
-  private ManifestTextEditor manifestTextEditor;
-  private JarFormEditor jarFormEditor;
-  private JarTextEditor jarTextEditor;
+  private TextEditor manifestTextEditor;
+  private BuildFormEditor buildFormEditor;
   private BundleProject project;
+  
+  private IDocumentProvider provider;
 
+  /****************************************************************************
+   * org.eclipse.ui.IWorkbenchPart methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.ui.IWorkbenchPart#dispose()
+   */
   public void dispose() {
     super.dispose();
+    
     // Add resource change listener
     IWorkspace workspace = ResourcesPlugin.getWorkspace();
     workspace.removeResourceChangeListener(this);
+    
+    disconnectBundlePack();
+    disconnectManifest();
   }
   
   /****************************************************************************
@@ -106,6 +118,8 @@ public class ManifestEditor extends FormEditor implements IResourceChangeListene
       project = new BundleProject(JavaCore.create(manifestFile.getProject()));
       packFile = project.getBundlePackDescriptionFile();
       IFileEditorInput bundlePackInput = new FileEditorInput(packFile);
+      connectManifest(manifestInput);
+      connectBundlePack(bundlePackInput);
       
       // Add resource change listener
       IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -114,30 +128,25 @@ public class ManifestEditor extends FormEditor implements IResourceChangeListene
       setPartName("Bundle "+manifestFile.getProject().getName());
         
       // Text manifest editor
-      manifestTextEditor = new ManifestTextEditor();
+      manifestTextEditor = new TextEditor();
       
       // Graphical manifest Editor
       manifestFormEditor =  new ManifestFormEditor(this, PAGE_OVERVIEW_ID, PAGE_OVERVIEW_TITLE, project);
         
-      // Text manifest editor
-      jarTextEditor = new JarTextEditor();
-      
       // Graphical manifest Editor
-      jarFormEditor =  new JarFormEditor(this, PAGE_OVERVIEW_ID, PAGE_OVERVIEW_TITLE, jarTextEditor);
+      buildFormEditor =  new BuildFormEditor(this, PAGE_BUILD_ID, PAGE_BUILD_TITLE, project);
 
       // Add editor pages to form editor
       addPage(manifestFormEditor);
+      addPage(buildFormEditor);
       addPage(manifestTextEditor, manifestInput);
-      setPageText(1, manifestFile.getName());
-      IDocumentProvider provider = manifestTextEditor.getDocumentProvider();
-      IDocument doc = provider.getDocument(manifestInput);
-      manifestFormEditor.attachDocument(doc);
-        
-      // Add editor pages to form editor
-      // TODO : Use graphical jar editor instead
-      //addPage(jarFormEditor, input);
-      addPage(jarTextEditor, bundlePackInput);
       setPageText(2, manifestFile.getName());
+      
+      IDocument manifestDoc = provider.getDocument(manifestInput);
+      manifestFormEditor.attachDocument(manifestDoc);
+      
+      IDocument packDoc = provider.getDocument(bundlePackInput);
+      buildFormEditor.attachDocument(new BuildDocument(manifestDoc, packDoc));
     } catch (CoreException e) {
       e.printStackTrace();
     }
@@ -146,6 +155,15 @@ public class ManifestEditor extends FormEditor implements IResourceChangeListene
   /****************************************************************************
    * org.eclipse.ui.part.EditorPart methods
    ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.ui.part.EditorPart#setInput(org.eclipse.ui.IEditorInput)
+   */
+  protected void setInput(IEditorInput input) {
+    super.setInput(input);
+    provider = DocumentProviderRegistry.getDefault().getDocumentProvider(input);
+  }
+  
   /* (non-Javadoc)
    * @see org.eclipse.ui.part.EditorPart#doSave(org.eclipse.core.runtime.IProgressMonitor)
    */
@@ -153,10 +171,13 @@ public class ManifestEditor extends FormEditor implements IResourceChangeListene
     // Commit form pages
     IWorkspaceRunnable runnable = new IWorkspaceRunnable() {
       public void run(IProgressMonitor monitor) throws CoreException {
+        // Commit changes
         manifestFormEditor.doSave(monitor);
-        manifestTextEditor.doSave(monitor);
-        jarFormEditor.doSave(monitor);
-        jarTextEditor.doSave(monitor);
+        buildFormEditor.doSave(monitor);
+        // Save documents
+        provider.saveDocument(monitor, manifestInput, buildFormEditor.getDocument().getManifestDocument(), true);
+        provider.saveDocument(monitor, bundlePackInput, buildFormEditor.getDocument().getPackDocument(), true);
+        firePropertyChange(PROP_DIRTY);
       }
     };
     IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -192,8 +213,8 @@ public class ManifestEditor extends FormEditor implements IResourceChangeListene
     if (manifestFormEditor != null) {
       dirty = dirty || manifestFormEditor.isDirty();
     }
-    if (jarFormEditor != null) {
-      dirty = dirty || jarFormEditor.isDirty();
+    if (buildFormEditor != null) {
+      dirty = dirty || buildFormEditor.isDirty();
     }
     return dirty;
   }
@@ -207,87 +228,123 @@ public class ManifestEditor extends FormEditor implements IResourceChangeListene
    */
   public void resourceChanged(IResourceChangeEvent event) {
     try {
-      event.getDelta().accept(this);
+      IResourceDelta delta = event.getDelta();
+      final BundleFilesVisitor visitor = 
+        new BundleFilesVisitor(project.getJavaProject().getProject());
+      delta.accept(visitor);
+      
+      // Check if manifest or pack description has changed
+      if (!visitor.isManifestChanged() && !visitor.isPackDescriptionChanged()) {
+        // Nothing changed
+        return;
+      }
+        
+      // If editors prompt user that files have changed
+      if (isDirty()) {
+        Display.getDefault().asyncExec(new Runnable() {
+          public void run() {
+            MessageDialog dialog = new MessageDialog(
+                Display.getDefault().getActiveShell(),
+                "Files changed",
+                null,
+                "Bundle files has changed, do you want to reload them?",
+                MessageDialog.QUESTION,
+                new String[] {"Yes", "No"},
+                0
+                );
+            if (dialog.open() == 0) {
+              refreshEditors(visitor);
+            }
+          }
+        });
+      } else {
+        refreshEditors(visitor);
+      }
     } catch (CoreException e) {
       e.printStackTrace();
     }
   }
 
   /****************************************************************************
-   * org.eclipse.core.resources.IResourceDeltaVisitor methods
+   * Private utility methods
    ***************************************************************************/
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.core.resources.IResourceDeltaVisitor#visit(org.eclipse.core.resources.IResourceDelta)
-   */
-  public boolean visit(IResourceDelta delta) throws CoreException {
-    IResource res = delta.getResource();
-    switch(res.getType()) {
-    case IResource.FILE:
-      final IFile file = (IFile) res;
-      if (BundleProject.MANIFEST_FILE.equals(file.getName())) {
-        // Input changed
-        if (isDirty()) {
-          // TODO:Only one dialg box if both pack and manifest is changed
-          Display.getDefault().asyncExec(new Runnable() {
-            public void run() {
-              MessageDialog dialog = new MessageDialog(
-                  Display.getDefault().getActiveShell(),
-                  "File changed",
-                  null,
-                  "File has changed, do you want to reload it?",
-                  MessageDialog.QUESTION,
-                  new String[] {"Ok", "Cancel"},
-                  0
-                  );
-              if (dialog.open() == 0) {
-                refreshManifestEditors(file);
-              }
+  
+  private void refreshEditors(final BundleFilesVisitor visitor) {
+    Display.getDefault().asyncExec(new Runnable() {
+      public void run() {
+        try {
+          System.err.println("BundleEditor - refreshEditors");
+          // Connect inputs
+          if (visitor.isManifestChanged()) {
+            IFileEditorInput input = new FileEditorInput(visitor.getManifestFile());
+            connectManifest(input);
+          }
+          if (visitor.isPackDescriptionChanged()) {
+            IFileEditorInput input = new FileEditorInput(visitor.getPackDescriptionFile());
+            connectBundlePack(input);
+          }
+          
+          // Update manifest editor
+          if (visitor.isManifestChanged()) {
+            if (manifestTextEditor.isDirty()) {
+              manifestTextEditor.doRevertToSaved();
             }
-          });
-          System.err.println("Dirty: notify user to refresh files");
-        } else {
-          refreshManifestEditors(file);
+            IDocument doc = provider.getDocument(manifestInput);
+            manifestFormEditor.attachDocument(doc);
+            manifestFormEditor.refresh();
+          }
+          
+          // Update build editor
+          if (visitor.isManifestChanged() || visitor.isPackDescriptionChanged()) {
+            IDocument manifestDoc = provider.getDocument(manifestInput);
+            IDocument packDoc = provider.getDocument(bundlePackInput);
+            buildFormEditor.attachDocument(new BuildDocument(manifestDoc, packDoc));
+            buildFormEditor.refresh();
+          }
+
+          firePropertyChange(PROP_DIRTY);
+        } catch (CoreException e) {
+          e.printStackTrace();
         }
-        return true;
-      } else if (BundleProject.BUNDLE_PACK_FILE.equals(file.getName())) {
-        // Input changed
-        System.err.println("ManifestEditor : Pack file changed");
-        if (isDirty()) { 
-          System.err.println("Dirty: notify user to refresh files");
-        } else {
-          System.err.println("Not dirty just update editors with new input");
-        }
-        return true;
-      } else {
-        return false;
       }
-    case IResource.FOLDER:
-      return false;
-    case IResource.PROJECT:
-      String name = ((IProject) res).getName();
-      if (project.getJavaProject().getProject().getName().equals(name)) {
-        return true;
-      } else {
-        return false;
-      }
-    case IResource.ROOT:
-      return true;
-    default:  
-      return false;
+    });
+  }
+  
+  private void connectBundlePack(IFileEditorInput bundlePackInput) throws CoreException {
+    if (provider == null) return;
+
+    disconnectBundlePack();
+    
+    if (bundlePackInput != null) {
+      provider.connect(bundlePackInput);
+      this.bundlePackInput = bundlePackInput;
     }
   }
   
-  private void refreshManifestEditors(final IFile file) {
-    Display.getDefault().asyncExec(new Runnable() {
-      public void run() {
-        IFileEditorInput input = new FileEditorInput(file);
-        manifestTextEditor.setInput(input);
-        IDocumentProvider provider = manifestTextEditor.getDocumentProvider();
-        IDocument doc = provider.getDocument(input);
-        manifestFormEditor.attachDocument(doc);
-        manifestFormEditor.refresh();
-      }
-    });
+  private void connectManifest(IFileEditorInput manifestInput) throws CoreException {
+    if (provider == null) return;
+
+    disconnectManifest();
+    
+    if (manifestInput != null) {
+      provider.connect(manifestInput);
+      this.manifestInput = manifestInput;
+    }
+  }
+  
+  private void disconnectBundlePack() {
+    if (provider == null) return;
+    
+    if (bundlePackInput != null) {
+      provider.disconnect(bundlePackInput);
+    }
+  }
+  
+  private void disconnectManifest() {
+    if (provider == null) return;
+    
+    if (manifestInput != null) {
+      provider.disconnect(manifestInput);
+    }
   }
 }

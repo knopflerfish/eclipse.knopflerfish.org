@@ -52,23 +52,21 @@ import org.knopflerfish.eclipse.core.project.BundleManifest;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class OverviewVendorSection extends ManifestSectionTextPart {
+public class DocumentationSection extends ManifestSectionTextPart {
 
   // Section title and description
-  private static final String TITLE = "Vendor Information";
-  private static final String DESCRIPTION = "This section describes vendor information for this bundle.";
-
+  private static final String TITLE = "Documentation";
+  private static final String DESCRIPTION = "This section contains description and documentation references for this bundle.";
+  
   // Initialize attributes, use array to keep order of attributes
   static private String[][] widgetAttributes = new String[][] {
-    new String[] {BundleManifest.BUNDLE_VENDOR,    "Vendor Name:",
-        "A text description of the vendor."},  
-    new String[] {BundleManifest.BUNDLE_CONTACT,   "Contact Address:",
-        "Contact address if it is necessary to contact the vendor."},  
-    new String[] {BundleManifest.BUNDLE_COPYRIGHT, "Copyright:",
-        "Copyright specification for this bundle."}  
+    new String[] {BundleManifest.BUNDLE_DESCRIPTION, "Description:", 
+        "A short description of this bundle."},  
+    new String[] {BundleManifest.BUNDLE_DOCURL, "Documentation URL:",
+        "A URL to documentation about this bundle."},  
   };
   
-  public OverviewVendorSection(Composite parent, FormToolkit toolkit, int style) {
+  public DocumentationSection(Composite parent, FormToolkit toolkit, int style) {
     super(parent, toolkit, style, widgetAttributes.length);
     
     Section section = getSection();
@@ -79,7 +77,6 @@ public class OverviewVendorSection extends ManifestSectionTextPart {
   /****************************************************************************
    * org.gstproject.eclipse.osgi.ui.editors.ManifestSectionPart methods
    ***************************************************************************/
-
   /*
    *  (non-Javadoc)
    * @see org.gstproject.eclipse.osgi.ui.editors.ManifestSectionPart#createClient(org.eclipse.ui.forms.widgets.Section, org.eclipse.ui.forms.widgets.FormToolkit)
@@ -126,5 +123,4 @@ public class OverviewVendorSection extends ManifestSectionTextPart {
     
     updateValues();
   }
-
 }

@@ -35,6 +35,7 @@
 package org.knopflerfish.eclipse.core.internal;
 
 import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -50,13 +51,11 @@ import java.util.*;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class OsgiPlugin extends Plugin {
+public class OsgiPlugin extends Plugin implements IResourceChangeListener {
   //The shared instance.
   private static OsgiPlugin plugin;
   //Resource bundle.
   private ResourceBundle resourceBundle;
-  
-  private ResourceChangeListener resourceListener;
   
   /**
    * The constructor.
@@ -78,10 +77,8 @@ public class OsgiPlugin extends Plugin {
     super.start(context);
     
     // Register resoure listener
-    resourceListener = new ResourceChangeListener();
     IWorkspace workspace = ResourcesPlugin.getWorkspace();
-    workspace.addResourceChangeListener(resourceListener, 
-        IResourceChangeEvent.POST_CHANGE);
+    workspace.addResourceChangeListener(this, IResourceChangeEvent.POST_CHANGE);
   }
   
   /**
@@ -92,7 +89,7 @@ public class OsgiPlugin extends Plugin {
     
     // Unregister resoure listener
     IWorkspace workspace = ResourcesPlugin.getWorkspace();
-    workspace.removeResourceChangeListener(resourceListener);
+    workspace.removeResourceChangeListener(this);
   }
   
   /**
@@ -122,9 +119,32 @@ public class OsgiPlugin extends Plugin {
     return resourceBundle;
   }
   
+  /****************************************************************************
+   * org.eclipse.core.resources.IResourceChangeListener methods
+   ***************************************************************************/
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.core.resources.IResourceChangeListener#resourceChanged(org.eclipse.core.resources.IResourceChangeEvent)
+   */
+  public void resourceChanged(IResourceChangeEvent event) {
+    System.err.println("Core Listener - resourceChanged");
+    try {
+      ResourceDeltaVisitor visitor = new ResourceDeltaVisitor();
+      event.getDelta().accept(visitor);
+    } catch (CoreException e) {
+      e.printStackTrace();
+    }
+  }
+
+  /****************************************************************************
+   * Public utility methods
+   ***************************************************************************/
+  
   public static void throwCoreException(String message, Throwable t) throws CoreException {
     IStatus status =
       new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, message, t);
     throw new CoreException(status);
   }
+
 }

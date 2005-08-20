@@ -58,7 +58,7 @@ public class FileTreeSelectionDialog extends ElementTreeSelectionDialog {
   private BundleResource bundleResource;
   
   // Widgets
-  private Text wDestinationText;
+  //private Text wDestinationText;
   
   public FileTreeSelectionDialog(Shell parent, IFile[] files) {
     super(parent, new ResourceTreeLabelProvider(), new FileTreeContentProvider(files));
@@ -71,6 +71,7 @@ public class FileTreeSelectionDialog extends ElementTreeSelectionDialog {
    *  (non-Javadoc)
    * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets.Composite)
    */
+  /*
   protected Control createDialogArea(Composite parent) {
     Control c = super.createDialogArea(parent);
     
@@ -82,11 +83,13 @@ public class FileTreeSelectionDialog extends ElementTreeSelectionDialog {
 
     return c;
   }
+  */
   
   /*
    *  (non-Javadoc)
    * @see org.eclipse.ui.dialogs.ElementTreeSelectionDialog#updateOKStatus()
    */
+  /*
   protected void updateOKStatus() {
     super.updateOKStatus();
     
@@ -101,6 +104,7 @@ public class FileTreeSelectionDialog extends ElementTreeSelectionDialog {
       wDestinationText.setText(file.getFullPath().removeFirstSegments(1).toString());
     }
   }
+  */
   
   /*
    *  (non-Javadoc)
@@ -108,13 +112,15 @@ public class FileTreeSelectionDialog extends ElementTreeSelectionDialog {
    */
   protected void okPressed() {
     IResource r = (IResource) getResult()[0];
+    /*
     String loc = wDestinationText.getText();
     
     if (r == null || loc == null || loc.trim().length()==0) {
       return;
     }
+    */
     
-    bundleResource = new BundleResource(BundleResource.TYPE_USER, r.getFullPath(), loc, null);
+    bundleResource = new BundleResource(BundleResource.TYPE_USER, r.getFullPath(), r.getFullPath().toString(), null);
     
     super.okPressed();
   }

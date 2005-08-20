@@ -37,14 +37,17 @@ package org.knopflerfish.eclipse.core.internal;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
-import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.project.BundleManifest;
 import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
@@ -56,12 +59,15 @@ import org.knopflerfish.eclipse.core.project.BundleResource;
  */
 public class SynchManifestRunnable implements IWorkspaceRunnable, Runnable {
 
-  private final BundleProject project;
+  private final IProject project;
+  private final BundleProject bundleProject;
   private final IClasspathEntry[] entries;
   
-  public SynchManifestRunnable(BundleProject project, IClasspathEntry[] entries) {
+  public SynchManifestRunnable(IProject project) throws CoreException {
     this.project = project;
-    this.entries = entries;
+    IJavaProject javaProject = JavaCore.create(project);
+    this.bundleProject = new BundleProject(javaProject);
+    this.entries = javaProject.getRawClasspath();
   }
   
   /****************************************************************************
@@ -74,7 +80,7 @@ public class SynchManifestRunnable implements IWorkspaceRunnable, Runnable {
   public void run() {
     try {
       IWorkspace workspace = ResourcesPlugin.getWorkspace();
-      workspace.run(this, project.getJavaProject().getProject(), IWorkspace.AVOID_UPDATE, null);
+      workspace.run(this, project, IWorkspace.AVOID_UPDATE, null);
     } catch (Throwable t) {
       t.printStackTrace();
     }
@@ -90,40 +96,39 @@ public class SynchManifestRunnable implements IWorkspaceRunnable, Runnable {
   public void run(IProgressMonitor monitor) throws CoreException {
     if (project == null) return;
     
-    BundlePackDescription packDescription = project.getBundlePackDescription();
+    BundlePackDescription packDescription = bundleProject.getBundlePackDescription();
     packDescription.removeResource(BundleResource.TYPE_CLASSPATH);
-    BundleManifest manifest = project.getBundleManifest();
+    BundleManifest manifest = bundleProject.getBundleManifest();
     Map contents = packDescription.getContentsMap(true);
     ArrayList bundleClasspath = new ArrayList();
-    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot(); 
    
     for (int i=0; i<entries.length; i++) {
       IClasspathEntry entry = entries[i];
       if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE && !bundleClasspath.contains(".")) {
         bundleClasspath.add(".");
       } else if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
-        //IPath path = (IPath) contents.get(bundleClassPath[idx]);
-        IResource lib = root.findMember(entry.getPath());
-        if (project.getJavaProject().getProject().equals(lib.getProject())) {
-          String path = (String) contents.get(entry.getPath()); 
+        IPath defaultPath = entry.getPath().removeFirstSegments(1);
+        IResource lib = project.findMember(defaultPath);
+        if (lib != null) {
+          String path = (String) contents.get(entry.getPath());
           if (path == null) {
-            path = entry.getPath().makeAbsolute().removeFirstSegments(1).toString();
-            // Create map entry
-            BundleResource resource = new BundleResource(
-                BundleResource.TYPE_CLASSPATH,
-                entry.getPath(), 
-                path,
-                null);
-            packDescription.addResource(resource);
+            path = defaultPath.toString();
           }
+          // Create map entry
+          BundleResource resource = new BundleResource(
+              BundleResource.TYPE_CLASSPATH,
+              entry.getPath(), 
+              defaultPath.toString(),
+              null);
+          packDescription.addResource(resource);
           bundleClasspath.add(path);
         }
       }
     }
     
-    project.saveBundlePackDescription(packDescription);
+    bundleProject.saveBundlePackDescription(packDescription);
     manifest.setBundleClassPath((String[]) bundleClasspath.toArray(new String[bundleClasspath.size()]));
-    project.saveManifest(manifest);
+    bundleProject.saveManifest(manifest);
   }
 
 }

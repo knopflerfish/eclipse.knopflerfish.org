@@ -40,10 +40,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
@@ -62,11 +62,8 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Path;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -85,12 +82,15 @@ public class BundlePackDescription {
   private static String TAG_BUNDLEJAR = "bundlejar";
   private static String TAG_RESOURCE = "resource";
   
-  private ArrayList resources = new ArrayList();
-  
-  public BundlePackDescription() {
+  private TreeSet resources = new TreeSet();
+  private final IProject project;
+
+  public BundlePackDescription(IProject project) {
+    this.project = project;
   }
   
   public BundlePackDescription(IProject project, InputStream is) throws IOException, ParserConfigurationException, SAXException {
+    this.project = project;
     load(project, is);
   }
   
@@ -110,6 +110,16 @@ public class BundlePackDescription {
     for(Iterator i=resources.iterator();i.hasNext();) {
       BundleResource resource = (BundleResource) i.next();
       if (resource.getType() == type) {
+        i.remove();
+      }
+    }
+  }
+
+  public void removeResource(IPath src) {
+    if (src == null)  return;
+    for(Iterator i=resources.iterator();i.hasNext();) {
+      BundleResource resource = (BundleResource) i.next();
+      if (src.equals(resource.getSource())) {
         i.remove();
       }
     }
@@ -191,23 +201,13 @@ public class BundlePackDescription {
     transformer.transform(source, result);
   }
  
-  public IPath getLocation(String path) {
-    Map map = getContentsMap(false);
-    if (map.containsKey(path)) {
-      return new Path((String) map.get(path));
-    } else {
-      return null;
-    }
-  }
-  
   public Map getContentsMap(boolean invert) {
     // Add contents
     BundleResource[] resources = getResources();
-    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
     HashMap map = new HashMap();
     for(int i=0; i<resources.length; i++) {
       IPath src = resources[i].getSource();
-      IResource resource = root.findMember(src);
+      IResource resource = project.findMember(src.removeFirstSegments(1));
       if (resource == null) continue;
       if (resource.getType() == IResource.FILE) {
         try {
@@ -222,38 +222,32 @@ public class BundlePackDescription {
     return map;
   }
   
-  public File export(IBundleProject project, String path) throws IOException {
+  public File export(IBundleProject bundleProject, String path) throws IOException {
     JarOutputStream jos = null;
     InputStream is = null;
     File jarFile = null;
 
     try {
-      
       // Create jar file
       jarFile = new File(path);
       if (jarFile.exists()) jarFile.delete();
 
       // Create manifest output stream
-      
-      jos = new JarOutputStream(new FileOutputStream(jarFile), project.getBundleManifest());
+      jos = new JarOutputStream(new FileOutputStream(jarFile), bundleProject.getBundleManifest());
       
       // Add contents
-      BundleResource[] resources = getResources();
-      IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot(); 
-      for(int i=0; i<resources.length; i++) {
-        IPath src = resources[i].getSource();
-        IResource resource = root.findMember(src);
-        if (resource == null) continue;
-        if (resource.getType() == IResource.FILE) {
+      Map contents = getContentsMap(true);
+      for(Iterator i=contents.entrySet().iterator(); i.hasNext();) {
+        Map.Entry entry = (Map.Entry) i.next();
+        IPath src = (IPath) entry.getKey();
+        IResource resource = project.findMember(src.removeFirstSegments(1));
+        if (resource == null) {
+          continue;
+        } else if (resource.getType() == IResource.FILE) {
           try {
             File file = new File(resource.getRawLocation().toString());
-            addFileToJar(jos, file, resources[i].getDestination(), resources[i].getPattern());
-          } catch (Throwable t) {} 
-        } else if(resource.getType() == IResource.FOLDER) {
-          try {
-            File dir = new File(resource.getRawLocation().toString());
-            addDirToJar(jos, dir, resources[i].getDestination(), resources[i].getPattern());
-          } catch (Throwable t) {} 
+            addFileToJar(jos, file, (String) entry.getValue(), null);
+          } catch (Throwable t) {}
         }
       }
     } finally {
@@ -261,8 +255,6 @@ public class BundlePackDescription {
         is.close();
       }
       if (jos != null) {
-        //jos.flush();
-        //jos.finish();
         jos.close();
       }
     }
@@ -271,30 +263,6 @@ public class BundlePackDescription {
     
   }
   
-  private void addDirToJar(JarOutputStream jos, File dir, String path, Pattern pattern) throws IOException {
-    if (dir == null || !dir.isDirectory()) return;
-    File [] files = dir.listFiles();
-    
-    if (files  == null) return;
-    if (path == null) path = "";
-    if (path.length() > 0 && !path.endsWith(SEPARATOR)) {
-      path += SEPARATOR;
-    }
-    
-    for (int i=0; i<files.length; i++) {
-      if(files[i].isDirectory()) {
-        String newPath = path+files[i].getName()+SEPARATOR;
-        JarEntry entry = new JarEntry(newPath);
-        jos.putNextEntry(entry);
-        addDirToJar(jos, files[i], newPath, pattern);
-      } else {
-        try {
-          addFileToJar(jos, files[i], path+files[i].getName(), pattern);
-        } catch (Throwable t) {}
-      }
-    }
-  }
-
   private void addFileToJar(JarOutputStream jos, File file, String path, Pattern pattern) throws IOException { 
     if (file == null || !file.isFile()) return;
     
@@ -336,12 +304,17 @@ public class BundlePackDescription {
       path += SEPARATOR;
     }
     
+    StringBuffer buf = new StringBuffer(path);
+    int pathLen = path.length();
     for (int i=0; i<resources.length; i++) {
+      buf.setLength(pathLen);
       if (resources[i] instanceof IFolder) {
-        String newPath = path+resources[i].getName()+SEPARATOR;
-        addDirToMap(map, (IFolder) resources[i], newPath, pattern, invert);
+        buf.append(resources[i].getName());
+        buf.append(SEPARATOR);
+        addDirToMap(map, (IFolder) resources[i], buf.toString(), pattern, invert);
       } else if (resources[i] instanceof IFile) {
-        addFileToMap(map, (IFile) resources[i], path+resources[i].getName(), pattern, invert);
+        buf.append(resources[i].getName());
+        addFileToMap(map, (IFile) resources[i], buf.toString(), pattern, invert);
       }
     }
   }

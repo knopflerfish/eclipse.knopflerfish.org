@@ -614,6 +614,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
 
     // Get exported packages by runtime
     // TODO: Fix this better, should check the property exported packages as well
+    if (osgiInstall == null) return;
     IFrameworkDefinition framework = Osgi.getFrameworkDefinition(osgiInstall.getType());
     IOsgiLibrary [] libraries = osgiInstall.getRuntimeLibraries();
     PackageDescription [] frameworkPackages = framework.getExportedPackages(libraries);

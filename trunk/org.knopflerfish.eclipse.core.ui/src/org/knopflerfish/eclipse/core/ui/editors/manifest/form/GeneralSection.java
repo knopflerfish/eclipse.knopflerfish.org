@@ -61,7 +61,7 @@ import org.knopflerfish.eclipse.core.ui.dialogs.TypeSelectionDialog;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class OverviewGeneralSection extends ManifestSectionTextPart {
+public class GeneralSection extends ManifestSectionTextPart {
 
   // Section title and description
   private static final String TITLE = "General Information";
@@ -83,7 +83,7 @@ public class OverviewGeneralSection extends ManifestSectionTextPart {
   
   private final BundleProject project;
   
-  public OverviewGeneralSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
+  public GeneralSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
     super(parent, toolkit, style, widgetAttributes.length);
     
     this.project = project;
@@ -95,15 +95,11 @@ public class OverviewGeneralSection extends ManifestSectionTextPart {
   /****************************************************************************
    * org.gstproject.eclipse.osgi.ui.editors.ManifestSectionPart methods
    ***************************************************************************/
-
   /*
    *  (non-Javadoc)
    * @see org.gstproject.eclipse.osgi.ui.editors.ManifestSectionPart#createClient(org.eclipse.ui.forms.widgets.Section, org.eclipse.ui.forms.widgets.FormToolkit)
    */
   public void createClient(Section section, FormToolkit toolkit) {
-    
-    
-
     // Set section layout
     ColumnLayoutData data = new ColumnLayoutData();
     section.setLayoutData(data);

@@ -32,35 +32,52 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.jar.text;
+package org.knopflerfish.eclipse.core.ui.editors.build.form;
 
-import org.eclipse.ui.editors.text.TextEditor;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IDocumentListener;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class JarTextEditor extends TextEditor {
+public class BuildDocument {
 
-
-  public JarTextEditor() {
-    super();
-    setSourceViewerConfiguration(new XMLSourceViewerConfig());
-    //colorManager = new ColorManager();
-    //setDocumentProvider(new ManifestDocumentProvider());
-  }
-  public void dispose() {
-    //colorManager.dispose();
-    super.dispose();
+  private final IDocument manifestDocument;
+  private final IDocument packDocument;
+  
+  public BuildDocument(IDocument manifestDocument, IDocument packDocument) {
+    this.manifestDocument = manifestDocument;
+    this.packDocument = packDocument;
   }
   
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.ui.IWorkbenchPart#getTitle()
-   */
-  /*
-  public String getTitle() {
-    return "manifest.mf";
+  public void addDocumentListener(IDocumentListener listener) {
+    if (manifestDocument != null) {
+      manifestDocument.addDocumentListener(listener);
+    }
+    /*
+    if (packDocument != null) {
+      packDocument.addDocumentListener(listener);
+    }
+    */
   }
-  */
+  
+  public void removeDocumentListener(IDocumentListener listener) {
+    if (manifestDocument != null) {
+      manifestDocument.removeDocumentListener(listener);
+    }
+    /*
+    if (packDocument != null) {
+      packDocument.removeDocumentListener(listener);
+    }
+    */
+  }
+
+  public IDocument getManifestDocument() {
+    return manifestDocument;
+  }
+
+  public IDocument getPackDocument() {
+    return packDocument;
+  }
 }

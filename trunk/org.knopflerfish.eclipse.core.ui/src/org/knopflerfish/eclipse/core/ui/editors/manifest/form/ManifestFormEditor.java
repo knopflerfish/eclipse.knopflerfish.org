@@ -55,38 +55,32 @@ import org.knopflerfish.eclipse.core.project.BundleProject;
  */
 public class ManifestFormEditor extends FormPage implements IDocumentListener {
 
-  private static final String TITLE = "Overview";
-  
+  // Model objects
   private final BundleProject project;
   private IDocument doc;
   
   // Sections
-  private OverviewGeneralSection generalSection;
-  private OverviewClasspathSection classPathSection;
-  private OverviewCategorySection categorySection;
-  private OverviewVendorSection vendorSection;
-  private OverviewDocumentationSection docSection;
+  private GeneralSection generalSection;
+  private CategorySection categorySection;
+  private VendorSection vendorSection;
+  private DocumentationSection docSection;
  
   public ManifestFormEditor(FormEditor editor, String id, String title, BundleProject project) {
     super(editor, id, title);
     this.project = project;
   }
-
+  
   public IDocument getDocument() {
     return doc;
   }
   
   public void refresh() {
     generalSection.refresh();
-    classPathSection.refresh();
     categorySection.refresh();
     vendorSection.refresh();
     docSection.refresh();
   }
   
-  /****************************************************************************
-   * org.eclipse.ui.forms.editor.FormPage methods
-   ***************************************************************************/
   public void attachDocument(IDocument doc) {
     // Remove listener from old doc
     if (this.doc != null) {
@@ -105,6 +99,24 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     firePropertyChange(PROP_INPUT);
   }
   
+  /****************************************************************************
+   * org.eclipse.ui.IWorkbenchPart methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.ui.IWorkbenchPart#dispose()
+   */
+  public void dispose() {
+    super.dispose();
+
+    if (this.doc != null) {
+      this.doc.removeDocumentListener(this);
+    }
+  }
+  
+  /****************************************************************************
+   * org.eclipse.ui.forms.editor.FormPage methods
+   ***************************************************************************/
   /*
    *  (non-Javadoc)
    * @see org.eclipse.ui.forms.editor.FormPage#createFormContent(org.eclipse.ui.forms.IManagedForm)
@@ -117,7 +129,7 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     // Create form
     FormToolkit toolkit = managedForm.getToolkit();   
     ScrolledForm form = managedForm.getForm(); 
-    form.setText(TITLE); 
+    form.setText(getTitle()); 
     Composite body = form.getBody();
 
     // Set layout manager
@@ -127,29 +139,24 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     body.setLayout(layout);
     
     // Create sections
-    generalSection = new OverviewGeneralSection(body, toolkit, 
+    generalSection = new GeneralSection(body, toolkit, 
         Section.DESCRIPTION | Section.TITLE_BAR, project);
     generalSection.initialize(managedForm);
 
-    classPathSection = new OverviewClasspathSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR, project);
-    classPathSection.initialize(managedForm);
-
-    categorySection = new OverviewCategorySection(body, toolkit, 
+    categorySection = new CategorySection(body, toolkit, 
         Section.DESCRIPTION | Section.TITLE_BAR);
     categorySection.initialize(managedForm);
     
-    vendorSection = new OverviewVendorSection(body, toolkit, 
+    vendorSection = new VendorSection(body, toolkit, 
         Section.DESCRIPTION | Section.TITLE_BAR);
     vendorSection.initialize(managedForm);
     
-    docSection = new OverviewDocumentationSection(body, toolkit, 
+    docSection = new DocumentationSection(body, toolkit, 
         Section.DESCRIPTION | Section.TITLE_BAR);
     docSection.initialize(managedForm);
     
     // Add sections to form
     managedForm.addPart(generalSection);
-    managedForm.addPart(classPathSection);
     managedForm.addPart(categorySection);
     managedForm.addPart(vendorSection);
     managedForm.addPart(docSection);

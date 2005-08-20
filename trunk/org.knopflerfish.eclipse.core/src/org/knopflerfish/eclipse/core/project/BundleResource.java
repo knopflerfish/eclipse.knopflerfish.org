@@ -49,10 +49,10 @@ import org.w3c.dom.Node;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class BundleResource {
-  public static int TYPE_USER       = 0;
-  public static int TYPE_CLASSPATH  = 1;
-  public static int TYPE_CLASSES    = 2;
+public class BundleResource implements Comparable {
+  public static final int TYPE_CLASSES    = 0;
+  public static final int TYPE_CLASSPATH  = 1;
+  public static final int TYPE_USER       = 2;
   
   
   // Attributes
@@ -159,5 +159,21 @@ public class BundleResource {
 
   public void setDestination(String dst) {
     this.dst = dst;
+  }
+
+  /*
+   * 
+   */
+  public int compareTo(Object o) {
+    if (!(o instanceof BundleResource)) return 0;
+    
+    BundleResource resource = (BundleResource) o;
+    
+    // Check type, therafter source
+    if (type == resource.getType()) {
+      return src.toString().compareTo(resource.getSource().toString());
+    } else {
+      return type-resource.getType();
+    }
   }
 }

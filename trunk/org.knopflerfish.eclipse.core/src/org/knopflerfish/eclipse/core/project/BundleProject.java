@@ -252,7 +252,7 @@ public class BundleProject implements IBundleProject {
     try {
       if (packDescription == null) {
         // Create jar description
-        packDescription = new BundlePackDescription();
+        packDescription = new BundlePackDescription(project.getProject());
         // Add output folder as resource
         BundleResource resource = new BundleResource(
             BundleResource.TYPE_CLASSES,
@@ -293,7 +293,7 @@ public class BundleProject implements IBundleProject {
       try {
         IFile bundlePackFile = project.getProject().getFile(BUNDLE_PACK_FILE);
         if (bundlePackFile.exists()) {
-          is = bundlePackFile.getContents();
+          is = bundlePackFile.getContents(true);
           jar = new BundlePackDescription(project.getProject(), is);
         }
       } finally {
@@ -308,6 +308,7 @@ public class BundleProject implements IBundleProject {
   }
 
   public void saveBundlePackDescription(BundlePackDescription packDescription) throws CoreException {
+    System.err.println("BundleProject - saveBundlePackDescription");
     if (packDescription == null) return;
     try {
       // Save description
@@ -357,6 +358,7 @@ public class BundleProject implements IBundleProject {
   }
 
   public void saveManifest(BundleManifest manifest) {
+    System.err.println("BundleProject - saveManifest");
     // Write manifest to file
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ByteArrayInputStream bais = null;

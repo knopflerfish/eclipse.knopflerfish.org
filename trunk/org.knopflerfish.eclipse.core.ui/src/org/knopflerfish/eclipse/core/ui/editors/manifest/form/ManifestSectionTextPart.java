@@ -76,7 +76,6 @@ abstract public class ManifestSectionTextPart extends SectionPart {
   /****************************************************************************
    * org.eclipse.ui.forms.IFormPart methods
    ***************************************************************************/
-
   /*
    *  (non-Javadoc)
    * @see org.eclipse.ui.forms.IFormPart#commit(boolean)
@@ -108,9 +107,6 @@ abstract public class ManifestSectionTextPart extends SectionPart {
         wAttributeControls[i].setData(PROP_DIRTY, new Boolean(false));
       }
     }
-    
-    // Update manifest from document
-    //ManifestUtil.createManifest(doc);
   }
   
   /*
@@ -194,7 +190,9 @@ abstract public class ManifestSectionTextPart extends SectionPart {
     
     if (dirty) {
       markDirty();
+    } else {
+      super.refresh();
+      getManagedForm().dirtyStateChanged();
     }
   }
-
 }
