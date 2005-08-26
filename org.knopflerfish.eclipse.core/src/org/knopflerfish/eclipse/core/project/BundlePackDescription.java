@@ -309,9 +309,13 @@ public class BundlePackDescription {
     for (int i=0; i<resources.length; i++) {
       buf.setLength(pathLen);
       if (resources[i] instanceof IFolder) {
-        buf.append(resources[i].getName());
-        buf.append(SEPARATOR);
-        addDirToMap(map, (IFolder) resources[i], buf.toString(), pattern, invert);
+        // Skip subversion and CVS directories
+        String folderName = resources[i].getName();
+        if(!".svn".equalsIgnoreCase(folderName) && !"CVS".equalsIgnoreCase(folderName)) {
+          buf.append(resources[i].getName());
+          buf.append(SEPARATOR);
+          addDirToMap(map, (IFolder) resources[i], buf.toString(), pattern, invert);
+        }
       } else if (resources[i] instanceof IFile) {
         buf.append(resources[i].getName());
         addFileToMap(map, (IFile) resources[i], buf.toString(), pattern, invert);

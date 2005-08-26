@@ -32,95 +32,114 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
+package org.knopflerfish.eclipse.core.ui.editors.packaging.form;
 
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
+import java.io.IOException;
+
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.ui.forms.events.ExpansionAdapter;
-import org.eclipse.ui.forms.events.ExpansionEvent;
-import org.eclipse.ui.forms.widgets.ColumnLayoutData;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
-import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.project.BundleManifest;
+import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class DocumentationSection extends ManifestSectionTextPart {
+public class ExportSection extends SectionPart {
 
   // Section title and description
-  private static final String TITLE = "Documentation";
-  private static final String DESCRIPTION = "This section contains description and documentation references for this bundle.";
+  private static final String TITLE = 
+    "Export";
+  private static final String DESCRIPTION = 
+    "Packages and exports the bundle";
+
+  private final BundleProject project;
   
-  // Initialize attributes, use array to keep order of attributes
-  static private String[][] widgetAttributes = new String[][] {
-    new String[] {BundleManifest.BUNDLE_DESCRIPTION, "Description:", 
-        "A short description of this bundle."},  
-    new String[] {BundleManifest.BUNDLE_DOCURL, "Documentation URL:",
-        "A URL to documentation about this bundle."},  
-  };
-  
-  public DocumentationSection(Composite parent, FormToolkit toolkit, int style) {
-    super(parent, toolkit, style, widgetAttributes.length);
+  // SWT Widgets
+  private Button    wExportButton;
+
+  public ExportSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
+    super(parent, toolkit, style);
+    
+    this.project = project;
     
     Section section = getSection();
+    createClient(section, toolkit);
     section.setDescription(DESCRIPTION);
     section.setText(TITLE);
   }
 
+
   /****************************************************************************
-   * org.gstproject.eclipse.osgi.ui.editors.ManifestSectionPart methods
+   * org.eclipse.ui.forms.IFormPart methods
    ***************************************************************************/
+
   /*
    *  (non-Javadoc)
-   * @see org.gstproject.eclipse.osgi.ui.editors.ManifestSectionPart#createClient(org.eclipse.ui.forms.widgets.Section, org.eclipse.ui.forms.widgets.FormToolkit)
+   * @see org.eclipse.ui.forms.IFormPart#commit(boolean)
+   */
+  public void commit(boolean onSave) {
+    super.commit(onSave);
+  }
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.ui.forms.IFormPart#refresh()
+   */
+  public void refresh() {
+    super.refresh();
+  }
+  
+  /****************************************************************************
+   * Private helper methods
+   ***************************************************************************/
+  
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.ui.editors.ManifestSectionPart#createClient(org.eclipse.ui.forms.widgets.Section, org.eclipse.ui.forms.widgets.FormToolkit)
    */
   public void createClient(Section section, FormToolkit toolkit) {
 
     // Set section layout
-    ColumnLayoutData data = new ColumnLayoutData();
+    GridData data = new GridData(SWT.FILL);
+    data.grabExcessHorizontalSpace = true;
+    data.horizontalAlignment = SWT.FILL;
+    data.verticalAlignment = SWT.TOP;
     section.setLayoutData(data);
-    section.addExpansionListener(new ExpansionAdapter() {
-      public void expansionStateChanged(ExpansionEvent e) {
-        getManagedForm().getForm().reflow(true);
-      }
-    });
 
     // Create section client
     Composite container = toolkit.createComposite(section);
     TableWrapLayout layout = new TableWrapLayout();
-    layout.numColumns = 2;
+    layout.numColumns = 1;
     container.setLayout(layout);
-    
-    // Create widgets for attributes
-    for (int i = 0 ; i<widgetAttributes.length; i++) {
-      String attr = widgetAttributes[i][0];
-      String label = widgetAttributes[i][1];
-      String tooltip = widgetAttributes[i][2];
-      
-      Label wLabel = toolkit.createLabel(container, label);
-      wLabel.setToolTipText(tooltip);
-      wAttributeControls[i] = toolkit.createText(container, "");
-      wAttributeControls[i].setData(PROP_DIRTY, new Boolean(false));
-      wAttributeControls[i].setData(PROP_NAME, attr);
-      ((Text) wAttributeControls[i]).addModifyListener(new ModifyListener() {
-        public void modifyText(ModifyEvent e) {
-          textChanged((Text) e.widget);
+
+    // Create widgets
+    wExportButton = toolkit.createButton(container, "Export...", SWT.PUSH);
+    wExportButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent event) {
+        
+        FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.SAVE);
+        dialog.setFileName(project.getFileName());
+        String path = dialog.open();
+        if (path != null) {
+          try {
+            project.getBundlePackDescription().export(project, path);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
         }
-      });
-      TableWrapData td = new TableWrapData(TableWrapData.FILL_GRAB);
-      wAttributeControls[i].setLayoutData(td);
-    }
+      }
+    });
     
     toolkit.paintBordersFor(container);
     section.setClient(container);
-    
-    updateValues();
   }
 }

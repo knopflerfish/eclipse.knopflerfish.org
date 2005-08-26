@@ -36,6 +36,8 @@ package org.knopflerfish.eclipse.core;
 
 import java.io.File;
 
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/

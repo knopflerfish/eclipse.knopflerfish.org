@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.project;
+package org.knopflerfish.eclipse.core.manifest;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +41,6 @@ import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import org.knopflerfish.eclipse.core.PackageDescription;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -49,20 +48,23 @@ import org.knopflerfish.eclipse.core.PackageDescription;
  */
 public class BundleManifest extends Manifest {
 
-  public static final String BUNDLE_SYMBOLIC_NAME  = "Bundle-SymbolicName";
-  public static final String BUNDLE_NAME           = "Bundle-Name";
-  public static final String BUNDLE_CLASSPATH      = "Bundle-ClassPath";
-  public static final String BUNDLE_CATEGORY       = "Bundle-Category";
-  public static final String BUNDLE_VERSION        = "Bundle-Version";
-  public static final String BUNDLE_ACTIVATOR      = "Bundle-Activator";
-  public static final String BUNDLE_VENDOR         = "Bundle-Vendor";
-  public static final String BUNDLE_CONTACT        = "Bundle-ContactAddress";
-  public static final String BUNDLE_COPYRIGHT      = "Bundle-Copyright";
-  public static final String BUNDLE_DESCRIPTION    = "Bundle-Description";
-  public static final String BUNDLE_DOCURL         = "Bundle-DocURL";
-  public static final String BUNDLE_UPDATELOCATION = "Bundle-UpdateLocation";
-  public static final String EXPORT_PACKAGE        = "Export-Package";
-  public static final String IMPORT_PACKAGE        = "Import-Package";
+  public static final String BUNDLE_SYMBOLIC_NAME   = "Bundle-SymbolicName";
+  public static final String BUNDLE_NAME            = "Bundle-Name";
+  public static final String BUNDLE_CLASSPATH       = "Bundle-ClassPath";
+  public static final String BUNDLE_CATEGORY        = "Bundle-Category";
+  public static final String BUNDLE_VERSION         = "Bundle-Version";
+  public static final String BUNDLE_ACTIVATOR       = "Bundle-Activator";
+  public static final String BUNDLE_VENDOR          = "Bundle-Vendor";
+  public static final String BUNDLE_CONTACT         = "Bundle-ContactAddress";
+  public static final String BUNDLE_COPYRIGHT       = "Bundle-Copyright";
+  public static final String BUNDLE_DESCRIPTION     = "Bundle-Description";
+  public static final String BUNDLE_DOCURL          = "Bundle-DocURL";
+  public static final String BUNDLE_UPDATELOCATION  = "Bundle-UpdateLocation";
+  public static final String BUNDLE_NATIVECODE      = "Bundle-NativeCode";
+  public static final String BUNDLE_EXEC_ENV        = "Bundle-RequiredExecutionEnvironment";
+  public static final String EXPORT_PACKAGE         = "Export-Package";
+  public static final String IMPORT_PACKAGE         = "Import-Package";
+  public static final String DYNAMIC_IMPORT_PACKAGE = "DynamicImport-Package";
 
   public static final String BUILT_FROM            = "Built-From";
   
@@ -208,7 +210,7 @@ public class BundleManifest extends Manifest {
   
   public PackageDescription[] getImportedPackages() {
     String attr = getAttribute(IMPORT_PACKAGE);
-    if (attr == null) return null;
+    if (attr == null) return new PackageDescription[0];
     
     ArrayList importedPackages = new ArrayList();
     StringTokenizer st = new StringTokenizer(attr, ",");
@@ -221,9 +223,37 @@ public class BundleManifest extends Manifest {
     return (PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]);
   }
 
+  public String[] getDynamicImportedPakages() {
+    String attr = getAttribute(DYNAMIC_IMPORT_PACKAGE);
+    ArrayList packages = new ArrayList();
+    if (attr != null) {
+      StringTokenizer st = new StringTokenizer(attr, ",");
+      while(st.hasMoreTokens()) {
+        packages.add(st.nextToken().trim());
+      }
+    }
+    
+    return (String[]) packages.toArray(new String[packages.size()]);
+  }
+
+  public void setDynamicImportedPakages(String[] value) {
+    if (value == null) {
+      setAttribute(DYNAMIC_IMPORT_PACKAGE, null);
+    } else {
+      StringBuffer buf = new StringBuffer("");
+      for(int i=0; i<value.length;i++) {
+        if (i != 0) {
+          buf.append(", ");
+        }
+        buf.append(value[i]);
+      }
+      setAttribute(DYNAMIC_IMPORT_PACKAGE, buf.toString());
+    }
+  }
+  
   public PackageDescription[] getExportedPackages() {
     String attr = getAttribute(EXPORT_PACKAGE);
-    if (attr == null) return null;
+    if (attr == null) return new PackageDescription[0];
     
     ArrayList exportedPackages = new ArrayList();
     StringTokenizer st = new StringTokenizer(attr, ",");
@@ -236,6 +266,49 @@ public class BundleManifest extends Manifest {
     return (PackageDescription[]) exportedPackages.toArray(new PackageDescription[exportedPackages.size()]);
   }
 
+  public NativeCodeClause[] getNativeCodeClauses() {
+    String attr = getAttribute(BUNDLE_NATIVECODE);
+    if (attr == null) return new NativeCodeClause[0];
+    
+    ArrayList nativeCodeClauses = new ArrayList();
+    StringTokenizer st = new StringTokenizer(attr, ",");
+    while(st.hasMoreTokens()) {
+      try {
+        nativeCodeClauses.add(new NativeCodeClause(st.nextToken()));
+      } catch(Exception e) {}
+    }
+    
+    return (NativeCodeClause[]) nativeCodeClauses.toArray(new NativeCodeClause[nativeCodeClauses.size()]);
+  }
+
+  public String[] getExecutionEnvironments() {
+    String attr = getAttribute(BUNDLE_EXEC_ENV);
+    ArrayList environments = new ArrayList();
+    if (attr != null) {
+      StringTokenizer st = new StringTokenizer(attr, ",");
+      while(st.hasMoreTokens()) {
+        environments.add(st.nextToken().trim());
+      }
+    }
+    
+    return (String[]) environments.toArray(new String[environments.size()]);
+  }
+
+  public void setExecutionEnvironments(String[] value) {
+    if (value == null) {
+      setAttribute(BUNDLE_EXEC_ENV, null);
+    } else {
+      StringBuffer buf = new StringBuffer("");
+      for(int i=0; i<value.length;i++) {
+        if (i != 0) {
+          buf.append(", ");
+        }
+        buf.append(value[i]);
+      }
+      setAttribute(BUNDLE_EXEC_ENV, buf.toString());
+    }
+  }
+  
   /****************************************************************************
    * Private worker methods
    ***************************************************************************/

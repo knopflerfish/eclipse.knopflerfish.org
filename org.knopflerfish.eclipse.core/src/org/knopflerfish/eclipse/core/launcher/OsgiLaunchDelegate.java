@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -63,7 +64,6 @@ import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
-import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
@@ -125,27 +125,20 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     }
     
     // Add projects to be launched
+    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
     if (projectMap != null) {
-      File jarDirectory = new File(instanceDir, "jars");
-      if (!jarDirectory.exists()) {
-        jarDirectory.mkdir();
-      }
       for (Iterator i=projectMap.entrySet().iterator();i.hasNext();) {
         Map.Entry entry = (Map.Entry) i.next();
         IJavaProject project = (IJavaProject) entry.getKey();
-        // Build bundle jar
         try {
-          // TODO: This shall be changed, takes to long time if many projects exist
           BundleProject bundleProject = new BundleProject(project);
-          BundlePackDescription bundlePack = bundleProject.getBundlePackDescription();
-          String name = project.getProject().getName()+ ".jar";
-          File path = new File(jarDirectory, name);
-          File jarFile = bundlePack.export(bundleProject, path.getAbsolutePath());
+          IFolder folder = root.getFolder(project.getOutputLocation());
+          File jarFile = new File(folder.getLocation().toString(), bundleProject.getFileName());
           IOsgiBundle bundle = new OsgiBundle(jarFile);
           conf.addBundle(bundle, (BundleLaunchInfo) entry.getValue());
         } catch (IOException e) {
-          // Failed to create jar file
-          e.printStackTrace();
+          abort("Error reading JAR file for bundle project ["+project.getProject().getName()+"].", e,
+              IOsgiLaunchConfigurationConstants.ERR_BUNDLE_LIST);
         }
       }
     }

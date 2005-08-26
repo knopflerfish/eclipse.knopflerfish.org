@@ -60,9 +60,7 @@ public class BundleBuilder extends IncrementalProjectBuilder {
   /* (non-Javadoc)
    * @see org.eclipse.core.internal.events.InternalBuilder#build(int, java.util.Map, org.eclipse.core.runtime.IProgressMonitor)
    */
-  protected IProject[] build(int kind, Map args, IProgressMonitor monitor)
-  throws CoreException {
-    System.err.println("BundleBuilder - build project "+getProject().getName());
+  protected IProject[] build(int kind, Map args, IProgressMonitor monitor) throws CoreException {
 
     // Get output directory
     IProject project = getProject();
@@ -78,8 +76,7 @@ public class BundleBuilder extends IncrementalProjectBuilder {
     case FULL_BUILD:
     case INCREMENTAL_BUILD:
       // Build bundle JAR
-      String name = getProject().getName()+ ".jar";
-      File jarFile = new File(outDir, name);
+      File jarFile = new File(outDir, bundleProject.getFileName());
       try {
         bundlePackDescription.export(bundleProject, jarFile.getAbsolutePath());
       } catch (IOException e) {

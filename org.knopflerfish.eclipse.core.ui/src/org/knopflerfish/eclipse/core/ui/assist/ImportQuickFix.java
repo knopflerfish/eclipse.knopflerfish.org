@@ -48,7 +48,7 @@ import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.jdt.ui.text.java.IQuickFixProcessor;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.PackageDescription;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.pkg.PackageUtil;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
@@ -80,7 +80,6 @@ public class ImportQuickFix implements IQuickFixProcessor {
     
     ArrayList proposals = new ArrayList();
     for(int i=0; i<locations.length; i++) {
-      System.err.println("problemId="+locations[i].getProblemId());
       if (locations[i].getProblemId() != IProblem.ImportNotFound) continue;
 
       // Import declaration
@@ -100,7 +99,6 @@ public class ImportQuickFix implements IQuickFixProcessor {
         name = name.substring(0, idx);
       }
       PackageDescription pkg = new PackageDescription(name, null);
-      System.err.println("Missing package :"+pkg.getPackageName());
 
       IOsgiBundle[] bundles = PackageUtil.findExportingBundles(pkg);
       for (int j=0; bundles != null && j<bundles.length; j++) {

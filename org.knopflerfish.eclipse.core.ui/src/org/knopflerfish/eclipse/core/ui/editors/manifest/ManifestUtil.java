@@ -48,7 +48,7 @@ import org.eclipse.jface.text.IDocument;
  * @see http://www.gatespacetelematics.com/
  */
 public class ManifestUtil {
-
+  
   /**
    * Adds a main attribute to a manifest file. The document passed shall 
    * contain a manifest file.
@@ -122,6 +122,71 @@ public class ManifestUtil {
     }
   }
   
+  static public StringBuffer setManifestAttribute(StringBuffer buf, String attr, String value) {
+    
+    // Find position of attribute
+    BufferedReader reader = new BufferedReader(new StringReader(buf.toString()));
+    int startPos = -1;
+    int endPos = -1;
+    String line = null;
+    try {
+      while((line = reader.readLine()) != null) {
+        if (startPos == -1 && line.startsWith(attr)) {
+          // Find start of manifest attribute
+          startPos = buf.indexOf(line);
+          endPos = startPos+line.length();
+          if (buf.charAt(endPos) == '\r') {
+            endPos += 1;
+          }
+          if (buf.charAt(endPos) == '\n') {
+            endPos += 1;
+          }
+        } else if (startPos != -1) {
+          // Find end of manifest attribute
+          if (line.startsWith(" ")) {
+            endPos += line.length();
+            if (buf.charAt(endPos) == '\r') {
+              endPos += 1;
+            }
+            if (buf.charAt(endPos) == '\n') {
+              endPos += 1;
+            }
+          } else {
+            break;
+          }
+        }
+      }
+    } catch (IOException e) {}
+    
+    if (startPos != -1) {
+      
+      // Check if attribute shall be added or removed
+      if (value != null && value.trim().length() > 0) {
+        // Replace attribute
+        buf.replace(startPos, endPos, createAttributeLine(attr, value));
+      } else  {
+        // Remove attribute
+        buf.replace(startPos, endPos, "");
+      }
+      
+    } else if (value != null && value.trim().length() > 0) {
+      // Append attribute
+      int idx = buf.indexOf("\r\n\r\n");
+      if (idx != -1) {
+        // Insert attribute
+        buf.insert(idx+2, createAttributeLine(attr, value));
+      } else {
+        // Add attribute to end
+        if (!buf.toString().endsWith("\r\n")) {
+          buf.append("\r\n");
+        }
+        buf.append(createAttributeLine(attr, value));
+      }
+    }
+    
+    return buf;
+  }
+  
   /**
    * Concatenates a name and value into a manifest attribute line.
    *  
@@ -129,7 +194,7 @@ public class ManifestUtil {
    * @param value attribute value
    * @return concatenated attribute line
    */
-  static public String createAttributeLine(String name, String value) {
+  private static String createAttributeLine(String name, String value) {
     StringBuffer buf = new StringBuffer();
     buf.append(name);
     buf.append(": ");
@@ -137,7 +202,7 @@ public class ManifestUtil {
     buf.append("\r\n");
     return buf.toString();
   }
-
+  
   /**
    * Creates an manifes object from a document containing a manifest
    * file. If there is an error reading/parsing the document contents

@@ -108,9 +108,7 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
     int idx = 0;
     for (int i=0; i<bundleClasspath.length; i++) {
       String path = bundleClasspath[i];
-      System.err.println("BundleClasspath "+i+", path="+path);
       if (".".equals(path)) {
-        System.err.println("SOURCE");
         // Find source entry
         int srcIdx = findSourceEntry(idx, entries);
         if (srcIdx != -1) {
@@ -123,10 +121,8 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
           idx = entries.length;
         }
       } else {
-        System.err.println("LIBRARY");
         // Find library entry
         IPath libPath = (IPath) contents.get(path);
-        System.err.println("Lib path :"+libPath);
         if (libPath == null) {
           // Something wrong with contents file, nothing to do just continue
           continue;
@@ -149,19 +145,10 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
     }
     
     // Update raw classpath
-    System.err.println("Original Classpath ");
-    for (int i=0; i<entries.length;i++) {
-      System.err.println("Entry "+i+" :"+entries[i].toString());
-    }
     IClasspathEntry[] rawClasspath = 
       (IClasspathEntry[]) projectClasspath.toArray(new IClasspathEntry[projectClasspath.size()]);
-    System.err.println("Update Classpath with ");
-    for (int i=0; i<rawClasspath.length;i++) {
-      System.err.println("Entry "+i+" :"+rawClasspath[i].toString());
-    }
     IJavaProject javaProject = bundleProject.getJavaProject();
     IPath outPath = javaProject.getOutputLocation();
-    System.err.println("Output path :"+outPath.toString());
     
     javaProject.setRawClasspath(
         rawClasspath,
@@ -170,14 +157,12 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
   }
   
   private int findSourceEntry(int startIdx, IClasspathEntry[] entries) {
-    System.err.println("findSourceEntry");
     if (entries == null || startIdx < 0 || startIdx >= entries.length) {
       return -1;
     }
     
     for (int i=startIdx; i<entries.length; i++) {
       if(entries[i].getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-        System.err.println("Found source entry at idx "+i);
         return i;
       }
     }
@@ -186,7 +171,6 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
   }
 
   private int findLibraryEntry(int startIdx, IClasspathEntry[] entries, IPath path) {
-    System.err.println("findLibraryEntry");
     if (entries == null || startIdx < 0 || startIdx >= entries.length || path == null) {
       return -1;
     }
@@ -194,7 +178,6 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
     for (int i=startIdx; i<entries.length; i++) {
       if(entries[i].getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
         if (entries[i].getPath().equals(path)) {
-          System.err.println("Found library entry at idx "+i);
           return i;
         }
       }
@@ -255,6 +238,4 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
     
     return sourceEntry;
   }
-  
-  
 }

@@ -64,7 +64,7 @@ import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
-import org.knopflerfish.eclipse.core.project.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;

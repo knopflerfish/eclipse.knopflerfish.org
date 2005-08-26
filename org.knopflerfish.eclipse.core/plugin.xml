@@ -12,6 +12,7 @@
          <export name="org.knopflerfish.eclipse.core.launcher.*"/>
          <export name="org.knopflerfish.eclipse.core.pkg.*"/>
          <export name="org.knopflerfish.eclipse.core.project.*"/>
+         <export name="org.knopflerfish.eclipse.core.manifest.*"/>
       </library>
    </runtime>
 

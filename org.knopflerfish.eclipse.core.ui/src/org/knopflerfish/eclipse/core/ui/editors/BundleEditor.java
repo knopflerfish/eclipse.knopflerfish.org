@@ -55,9 +55,8 @@ import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.texteditor.DocumentProviderRegistry;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.ui.editors.build.form.BuildDocument;
-import org.knopflerfish.eclipse.core.ui.editors.build.form.BuildFormEditor;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.form.ManifestFormEditor;
+import org.knopflerfish.eclipse.core.ui.editors.packaging.form.PackagingFormEditor;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -65,10 +64,10 @@ import org.knopflerfish.eclipse.core.ui.editors.manifest.form.ManifestFormEditor
  */
 public class BundleEditor extends FormEditor implements IResourceChangeListener {
   
-  private static final String PAGE_OVERVIEW_ID      = "overviewId";
-  private static final String PAGE_OVERVIEW_TITLE   = "Overview";
-  private static final String PAGE_BUILD_ID         = "buildId";
-  private static final String PAGE_BUILD_TITLE      = "Build";
+  private static final String PAGE_MANIFEST_ID     = "manifestId";
+  private static final String PAGE_MANIFEST_TITLE  = "Bundle Manifest";
+  private static final String PAGE_PACKAGING_ID    = "packagingId";
+  private static final String PAGE_PACKAGING_TITLE = "Bundle Packaging";
   
   private IFile manifestFile;
   private IFile packFile;
@@ -76,7 +75,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
   private IFileEditorInput bundlePackInput;
   private ManifestFormEditor manifestFormEditor;
   private TextEditor manifestTextEditor;
-  private BuildFormEditor buildFormEditor;
+  private PackagingFormEditor buildFormEditor;
   private BundleProject project;
   
   private IDocumentProvider provider;
@@ -131,10 +130,10 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
       manifestTextEditor = new TextEditor();
       
       // Graphical manifest Editor
-      manifestFormEditor =  new ManifestFormEditor(this, PAGE_OVERVIEW_ID, PAGE_OVERVIEW_TITLE, project);
+      manifestFormEditor =  new ManifestFormEditor(this, PAGE_MANIFEST_ID, PAGE_MANIFEST_TITLE, project);
         
-      // Graphical manifest Editor
-      buildFormEditor =  new BuildFormEditor(this, PAGE_BUILD_ID, PAGE_BUILD_TITLE, project);
+      // Graphical build Editor
+      buildFormEditor =  new PackagingFormEditor(this, PAGE_PACKAGING_ID, PAGE_PACKAGING_TITLE, project);
 
       // Add editor pages to form editor
       addPage(manifestFormEditor);
@@ -143,10 +142,10 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
       setPageText(2, manifestFile.getName());
       
       IDocument manifestDoc = provider.getDocument(manifestInput);
-      manifestFormEditor.attachDocument(manifestDoc);
-      
       IDocument packDoc = provider.getDocument(bundlePackInput);
-      buildFormEditor.attachDocument(new BuildDocument(manifestDoc, packDoc));
+      BundleDocument buildDoc = new BundleDocument(manifestDoc, packDoc);
+      manifestFormEditor.attachDocument(buildDoc);
+      buildFormEditor.attachDocument(buildDoc);
     } catch (CoreException e) {
       e.printStackTrace();
     }
@@ -273,7 +272,6 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
     Display.getDefault().asyncExec(new Runnable() {
       public void run() {
         try {
-          System.err.println("BundleEditor - refreshEditors");
           // Connect inputs
           if (visitor.isManifestChanged()) {
             IFileEditorInput input = new FileEditorInput(visitor.getManifestFile());
@@ -289,8 +287,9 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
             if (manifestTextEditor.isDirty()) {
               manifestTextEditor.doRevertToSaved();
             }
-            IDocument doc = provider.getDocument(manifestInput);
-            manifestFormEditor.attachDocument(doc);
+            IDocument manifestDoc = provider.getDocument(manifestInput);
+            IDocument packDoc = provider.getDocument(bundlePackInput);
+            manifestFormEditor.attachDocument(new BundleDocument(manifestDoc, packDoc));
             manifestFormEditor.refresh();
           }
           
@@ -298,7 +297,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
           if (visitor.isManifestChanged() || visitor.isPackDescriptionChanged()) {
             IDocument manifestDoc = provider.getDocument(manifestInput);
             IDocument packDoc = provider.getDocument(bundlePackInput);
-            buildFormEditor.attachDocument(new BuildDocument(manifestDoc, packDoc));
+            buildFormEditor.attachDocument(new BundleDocument(manifestDoc, packDoc));
             buildFormEditor.refresh();
           }
 
