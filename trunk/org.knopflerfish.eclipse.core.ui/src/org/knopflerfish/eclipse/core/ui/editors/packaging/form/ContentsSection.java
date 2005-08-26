@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.build.form;
+package org.knopflerfish.eclipse.core.ui.editors.packaging.form;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -59,6 +59,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -68,18 +69,16 @@ import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
-import org.eclipse.ui.forms.events.ExpansionAdapter;
-import org.eclipse.ui.forms.events.ExpansionEvent;
-import org.eclipse.ui.forms.widgets.ColumnLayoutData;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.project.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleResource;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.BundleResourceDialog;
+import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
 /**
@@ -88,7 +87,7 @@ import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
  */
 public class ContentsSection extends SectionPart implements ITableLabelProvider, IStructuredContentProvider {
   
-  private static final int NUM_TABLE_ROWS = 8;
+  private static final int NUM_TABLE_ROWS = 15;
   
   // Widget properties
   public static final String PROP_DIRTY = "dirty";
@@ -110,14 +109,14 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
   // Model objects
   private BundlePackDescription bundlePackDescription = null;
   private final IProject project;
-  private final BuildFormEditor editor;
+  private final PackagingFormEditor editor;
   
   // Graphic Resources
   private Image imageJar  = JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR);
   private Image imageClass = JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_CLASS);
   //private Image imageNative = JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
   
-  public ContentsSection(Composite parent, FormToolkit toolkit, int style, IProject project, BuildFormEditor editor) {
+  public ContentsSection(Composite parent, FormToolkit toolkit, int style, IProject project, PackagingFormEditor editor) {
     super(parent, toolkit, style);
     
     this.project = project;
@@ -276,13 +275,11 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
   private void createClient(Section section, FormToolkit toolkit) {
     
     // Set section layout
-    ColumnLayoutData data = new ColumnLayoutData();
+    GridData data = new GridData(SWT.FILL);
+    data.grabExcessHorizontalSpace = true;
+    data.horizontalAlignment = SWT.FILL;
+    data.verticalAlignment = SWT.TOP;
     section.setLayoutData(data);
-    section.addExpansionListener(new ExpansionAdapter() {
-      public void expansionStateChanged(ExpansionEvent e) {
-        getManagedForm().getForm().reflow(true);
-      }
-    });
     
     // Create section client
     Composite container = toolkit.createComposite(section);
@@ -298,31 +295,6 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
     wResourceTableViewer = new TableViewer(wResourceTable);
     wResourceTableViewer.setContentProvider(this);
     wResourceTableViewer.setLabelProvider(this);
-    /*
-    wResourceTableViewer.addOpenListener(new IOpenListener() {
-      
-      public void open(OpenEvent event) {
-        IStructuredSelection selection = 
-          (IStructuredSelection) event.getSelection();
-        
-        if (selection.size() == 1) {
-          BundleResource r = (BundleResource) selection.getFirstElement();
-          BundleResourceDialog dialog =
-            new BundleResourceDialog(Display.getCurrent().getActiveShell(), r, project);
-          if (dialog.open() == Window.OK) {
-            BundleResource resource = dialog.getResource();
-            bundlePackDescription.updateResource(resource);
-            wResourceTableViewer.refresh();
-            UiUtils.packTableColumns(wResourceTableViewer.getTable());
-            markDirty();
-            
-            // Update document and notify classpath section
-            setBundlePackDescription(bundlePackDescription, true);
-          }
-        }
-      }
-    });
-    */
     wResourceTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
       public void selectionChanged(SelectionChangedEvent event) {
         IStructuredSelection selection = 
@@ -340,13 +312,16 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
       }
     });
     TableColumn wSrcTableColumn = new TableColumn(wResourceTable, SWT.LEFT);
-    wSrcTableColumn.setText("Source");
+    wSrcTableColumn.setText("Project Path");
     TableColumn wDstTableColumn = new TableColumn(wResourceTable, SWT.LEFT);
-    wDstTableColumn.setText("Destination");
+    wDstTableColumn.setText("Bundle Path");
     TableColumn wPatternTableColumn = new TableColumn(wResourceTable, SWT.LEFT);
     wPatternTableColumn.setText("Pattern");
     TableColumn wErrorTableColumn = new TableColumn(wResourceTable, SWT.LEFT);
     wErrorTableColumn.setText("Error");
+    
+    wResourceTable.setHeaderVisible(true);
+    wResourceTable.setLinesVisible(true);
     
     TableWrapData wd = new TableWrapData();
     wd.rowspan = 2;
@@ -364,7 +339,7 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
           new BundleResourceDialog(Display.getCurrent().getActiveShell(),null,project);
         if (dialog.open() == Window.OK) {
           BundleResource resource = dialog.getResource();
-          addResource(resource);
+          updateResources(resource, false);
 
           wResourceTableViewer.refresh();
           UiUtils.packTableColumns(wResourceTableViewer.getTable());
@@ -389,7 +364,7 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
         for (Iterator i = selection.iterator(); i.hasNext(); ) {
           BundleResource resource = (BundleResource) i.next();
           if (resource.getType() == BundleResource.TYPE_USER) {
-            removeResource(resource);
+            updateResources(resource, true);
             changed = true;
           }
         }
@@ -415,7 +390,7 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
 
   private BundlePackDescription getBundlePackDescription() {
     try {
-      BuildDocument buildDoc = (BuildDocument) getManagedForm().getInput();
+      BundleDocument buildDoc = (BundleDocument) getManagedForm().getInput();
       BundlePackDescription bundlePackDescription = new BundlePackDescription(
           project, 
           new ByteArrayInputStream(buildDoc.getPackDocument().get().getBytes()));
@@ -428,100 +403,32 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
 
   private void setBundlePackDescription(BundlePackDescription bundlePackDescription) {
     try {
-      BuildDocument buildDoc = (BuildDocument) getManagedForm().getInput();
+      BundleDocument buildDoc = (BundleDocument) getManagedForm().getInput();
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       bundlePackDescription.save(baos);
       baos.flush();
-      System.err.println(baos.toString());
       buildDoc.getPackDocument().set(baos.toString());
     } catch (Throwable t) {
     }
   }
-  
-  private BundleManifest getManifest() {
-    BuildDocument buildDoc = (BuildDocument) getManagedForm().getInput();
-    BundleManifest manifest = new BundleManifest(ManifestUtil.createManifest(buildDoc.getManifestDocument()));
-    
-    return manifest;
-  }
 
-  /*
-  private void setManifest(BundleManifest manifest) {
+  private void updateResources(BundleResource resource, boolean remove) {
     // Flush values to document
     IManagedForm managedForm = getManagedForm();
-    BuildDocument doc = (BuildDocument) managedForm.getInput();
-    
-    if (manifest == null) return;
-    
-    Table wClassPathTable = wClassPathTableViewer.getTable();
-    try {
-      String attribute = (String) wClassPathTable.getData(PROP_NAME);
-      if (attribute != null) {
-        String value = manifest.getAttribute(BundleManifest.BUNDLE_CLASSPATH);
-        if (value == null) value = "";
-        ManifestUtil.setManifestAttribute(doc.getManifestDocument(), attribute, value);
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-  */
-  
-  private void removeResource(BundleResource resource) {
-    // Flush values to document
-    IManagedForm managedForm = getManagedForm();
-    BuildDocument doc = (BuildDocument) managedForm.getInput();
+    BundleDocument doc = (BundleDocument) managedForm.getInput();
 
     // Update manifest classpath
-    BundleManifest manifest = getManifest();
+    BundleManifest manifest = new BundleManifest(ManifestUtil.createManifest(doc.getManifestDocument()));
     String [] oldClassPath = manifest.getBundleClassPath();
     ArrayList newClassPath = new ArrayList();
     Map oldContents = bundlePackDescription.getContentsMap(false);
-    bundlePackDescription.removeResource(resource);
-    Map newContents = bundlePackDescription.getContentsMap(true);
-    for (int i=0; i<oldClassPath.length;i++) {
-      if (".".equals(oldClassPath[i])) {
-        newClassPath.add(oldClassPath[i]);
-      } else {
-        IPath path = (IPath) oldContents.get(oldClassPath[i]);
-        if (path != null) {
-          String newPath = (String) newContents.get(path);
-          if (newPath != null) {
-            newClassPath.add(newPath);
-          }
-        }
-      }
-    }
-    manifest.setBundleClassPath((String[]) newClassPath.toArray(new String[newClassPath.size()]));
     
-    // Update document
-    setBundlePackDescription(bundlePackDescription);
-
-    // Update manifest document
-    try {
-      String value = manifest.getAttribute(BundleManifest.BUNDLE_CLASSPATH);
-      if (value == null) value = "";
-      ManifestUtil.setManifestAttribute(
-          doc.getManifestDocument(), 
-          BundleManifest.BUNDLE_CLASSPATH, 
-          value);
-    } catch (Throwable t) {
-      t.printStackTrace();
+    if (remove) {
+      bundlePackDescription.removeResource(resource);
+    } else {
+      bundlePackDescription.addResource(resource);
     }
-    editor.markClasspathStale();
-  }
-
-  private void addResource(BundleResource resource) {
-    // Flush values to document
-    IManagedForm managedForm = getManagedForm();
-    BuildDocument doc = (BuildDocument) managedForm.getInput();
-
-    // Update manifest classpath
-    BundleManifest manifest = getManifest();
-    String [] oldClassPath = manifest.getBundleClassPath();
-    ArrayList newClassPath = new ArrayList();
-    Map oldContents = bundlePackDescription.getContentsMap(false);
-    bundlePackDescription.addResource(resource);
+    
     Map newContents = bundlePackDescription.getContentsMap(true);
     for (int i=0; i<oldClassPath.length;i++) {
       if (".".equals(oldClassPath[i])) {

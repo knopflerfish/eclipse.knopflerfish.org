@@ -37,7 +37,8 @@ package org.knopflerfish.eclipse.core;
 import java.io.File;
 import java.io.IOException;
 
-import org.knopflerfish.eclipse.core.project.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 /**
  * @author Anders Rimén, Gatespace Telematics

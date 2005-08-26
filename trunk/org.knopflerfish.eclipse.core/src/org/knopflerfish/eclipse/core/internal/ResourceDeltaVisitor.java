@@ -73,29 +73,18 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
       IFile file = (IFile) res;
       IProject project = file.getProject();
       if (BundleProject.CLASSPATH_FILE.equals(file.getName())) {
-        System.err.println("Core Listener ["+project.getName()+"] - Classpath file changed");
 
         if (!isClasspathSynched(project)) {
-          System.err.println("Core Listener ["+project.getName()+"] - Classpath file changed, synching manifest");
           // Update manifest
           Runnable runnable = new SynchManifestRunnable(project);
           new Thread(runnable).start();
-        } else {
-          System.err.println("Core Listener ["+project.getName()+"] - Classpath file changed, but manifest already in synch");
         }
       } else if (BundleProject.MANIFEST_FILE.equals(file.getName())) {
-        System.err.println("Core Listener ["+project.getName()+"] - Manifest file changed");
         if (!isClasspathSynched(project)) {
-          System.err.println("Core Listener ["+project.getName()+"] - Manifest file changed, synching classpath");
           // Update classpath
           Runnable runnable = new SynchClasspathRunnable(project);
           new Thread(runnable).start();
-          
-        } else {
-          System.err.println("Core Listener ["+project.getName()+"] - Manifest file changed, but classpath already in synch");
         }
-      } else if (BundleProject.BUNDLE_PACK_FILE.equals(file.getName())) {
-        System.err.println("Core Listener ["+project.getName()+"] - Pack file changed");
       }
       return false;
     case IResource.FOLDER:
@@ -119,8 +108,7 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
    ***************************************************************************/
 
   private boolean isClasspathSynched(IProject project) throws CoreException {
-    System.err.println("Core Listener isClasspathSynched ["+project.getName()+"]");
-    
+
     boolean synchClasspath = false;
     
     // Get references to project
@@ -138,18 +126,15 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
     int idx = 0;
     for (int i=0; i<rawClassPath.length; i++) {
       IClasspathEntry entry = rawClassPath[i];
-      System.err.println("Entry :"+entry.getPath());
 
       if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
         if (idx == 0 && bundleClassPath.length == 0) {
           continue;
         } else if (idx > bundleClassPath.length-1) {
           // Check array bounds
-          System.err.println("More entries in raw classpath than in bundle classpath");
           synchClasspath = true;
           break;
         } else if (!".".equals(bundleClassPath[idx])) {
-          System.err.println("Expected .");
           synchClasspath = true;
           break;
         } else {
@@ -157,23 +142,16 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
         }
       } else if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
         // Check that library is a member of this project
-        System.err.println("Find member ["+entry.getPath().removeFirstSegments(1).toString()+"] in project:"+project.getName());
         IResource lib = project.findMember(entry.getPath().removeFirstSegments(1));
-        System.err.println("Found :"+lib);
         if (lib != null) {
           // Check array bounds
           if (idx > bundleClassPath.length-1) {
-            System.err.println("More entries in raw classpath than in bundle classpath");
             synchClasspath = true;
             break;
           }
           
-          
-          System.err.println("Checking contents for bundle classpath :"+bundleClassPath[idx]);
           IPath path = (IPath) contents.get(bundleClassPath[idx]);
-          System.err.println("Found contents :"+path);
           if (!entry.getPath().equals(path)) {
-            System.err.println("Entry does not match :"+path);
             synchClasspath = true;
             break;
           }
@@ -183,7 +161,6 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
     }
 
     if(idx != bundleClassPath.length) {
-      System.err.println("Number of entries in raw classpath does not match bundle classpath");
       synchClasspath = true; 
     }
     

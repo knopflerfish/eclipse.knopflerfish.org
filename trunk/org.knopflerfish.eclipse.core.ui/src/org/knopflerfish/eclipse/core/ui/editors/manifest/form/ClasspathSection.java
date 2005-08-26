@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.build.form;
+package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -62,6 +62,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -70,20 +71,18 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
-import org.eclipse.ui.forms.events.ExpansionAdapter;
-import org.eclipse.ui.forms.events.ExpansionEvent;
-import org.eclipse.ui.forms.widgets.ColumnLayoutData;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.project.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.BundleResource;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.FileTreeSelectionDialog;
+import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
 /**
@@ -115,7 +114,6 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
   // Model objects
   private BundleManifest manifest = null;
   private final BundleProject project;
-  private final BuildFormEditor editor;
   
   // Images
   private String IMAGE_BUNDLE = "icons/obj16/jar_b_obj.gif";
@@ -128,11 +126,10 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
   private Image imageClass = JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_CLASS);
   private Image imageProject = null;
   
-  public ClasspathSection(Composite parent, FormToolkit toolkit, int style, BundleProject project, BuildFormEditor editor) {
+  public ClasspathSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
     super(parent, toolkit, style);
     
     this.project = project;
-    this.editor = editor;
     
     // Create images
     ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
@@ -189,8 +186,9 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
    * @see org.eclipse.ui.forms.IFormPart#commit(boolean)
    */
   public void commit(boolean onSave) {
-    super.commit(onSave);
     setManifest(manifest);
+    
+    super.commit(onSave);
   }
   
   /*
@@ -198,7 +196,6 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
    * @see org.eclipse.ui.forms.IFormPart#refresh()
    */
   public void refresh() {
-    super.refresh();
     // Refresh values from document
     manifest = getManifest();
     
@@ -207,6 +204,8 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
       wClassPathTableViewer.setInput(manifest);
     }
     UiUtils.packTableColumns(wClassPathTableViewer.getTable());
+
+    super.refresh();
   }
   
   /****************************************************************************
@@ -219,13 +218,11 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
   public void createClient(Section section, FormToolkit toolkit) {
     
     // Set section layout
-    ColumnLayoutData data = new ColumnLayoutData();
+    GridData data = new GridData(SWT.FILL);
+    data.grabExcessHorizontalSpace = true;
+    data.horizontalAlignment = SWT.FILL;
+    data.verticalAlignment = SWT.TOP;
     section.setLayoutData(data);
-    section.addExpansionListener(new ExpansionAdapter() {
-      public void expansionStateChanged(ExpansionEvent e) {
-        getManagedForm().getForm().reflow(true);
-      }
-    });
     
     // Create section client
     Composite container = toolkit.createComposite(section);
@@ -527,7 +524,7 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
 
   private BundlePackDescription getBundlePackDescription() {
     try {
-      BuildDocument buildDoc = (BuildDocument) getManagedForm().getInput();
+      BundleDocument buildDoc = (BundleDocument) getManagedForm().getInput();
       BundlePackDescription bundlePackDescription = new BundlePackDescription(
           project.getJavaProject().getProject(), 
           new ByteArrayInputStream(buildDoc.getPackDocument().get().getBytes()));
@@ -540,18 +537,17 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
 
   private void setBundlePackDescription(BundlePackDescription bundlePackDescription) {
     try {
-      BuildDocument buildDoc = (BuildDocument) getManagedForm().getInput();
+      BundleDocument buildDoc = (BundleDocument) getManagedForm().getInput();
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       bundlePackDescription.save(baos);
       baos.flush();
       buildDoc.getPackDocument().set(baos.toString());
-      editor.markContentsStale();
     } catch (Throwable t) {
     }
   }
 
   private BundleManifest getManifest() {
-    BuildDocument buildDoc = (BuildDocument) getManagedForm().getInput();
+    BundleDocument buildDoc = (BundleDocument) getManagedForm().getInput();
     BundleManifest manifest = new BundleManifest(ManifestUtil.createManifest(buildDoc.getManifestDocument()));
     
     return manifest;
@@ -560,7 +556,7 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
   private void setManifest(BundleManifest manifest) {
     // Flush values to document
     IManagedForm managedForm = getManagedForm();
-    BuildDocument doc = (BuildDocument) managedForm.getInput();
+    BundleDocument doc = (BundleDocument) managedForm.getInput();
     
     if (manifest == null) return;
     

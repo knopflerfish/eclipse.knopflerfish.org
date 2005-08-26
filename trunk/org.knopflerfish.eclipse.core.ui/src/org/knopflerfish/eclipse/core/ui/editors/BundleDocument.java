@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.build.form;
+package org.knopflerfish.eclipse.core.ui.editors;
 
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
@@ -41,12 +41,12 @@ import org.eclipse.jface.text.IDocumentListener;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class BuildDocument {
+public class BundleDocument {
 
   private final IDocument manifestDocument;
   private final IDocument packDocument;
   
-  public BuildDocument(IDocument manifestDocument, IDocument packDocument) {
+  public BundleDocument(IDocument manifestDocument, IDocument packDocument) {
     this.manifestDocument = manifestDocument;
     this.packDocument = packDocument;
   }
@@ -55,22 +55,12 @@ public class BuildDocument {
     if (manifestDocument != null) {
       manifestDocument.addDocumentListener(listener);
     }
-    /*
-    if (packDocument != null) {
-      packDocument.addDocumentListener(listener);
-    }
-    */
   }
   
   public void removeDocumentListener(IDocumentListener listener) {
     if (manifestDocument != null) {
       manifestDocument.removeDocumentListener(listener);
     }
-    /*
-    if (packDocument != null) {
-      packDocument.removeDocumentListener(listener);
-    }
-    */
   }
 
   public IDocument getManifestDocument() {

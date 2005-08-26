@@ -32,11 +32,10 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.build.form;
+package org.knopflerfish.eclipse.core.ui.editors.packaging.form;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -46,43 +45,43 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocumentListener;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.forms.IFormPart;
 import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.editor.FormEditor;
 import org.eclipse.ui.forms.editor.FormPage;
-import org.eclipse.ui.forms.widgets.ColumnLayout;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
-import org.knopflerfish.eclipse.core.project.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.BundleResource;
+import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class BuildFormEditor extends FormPage implements IDocumentListener {
+public class PackagingFormEditor extends FormPage implements IDocumentListener {
   
   // Model objects
   private final BundleProject project;
-  private BuildDocument doc;
+  private BundleDocument doc;
   
   // Sections
   private ExportSection exportSection;
-  private ClasspathSection classPathSection;
   private ContentsSection resourceSection;
   
-  public BuildFormEditor(FormEditor editor, String id, String title, BundleProject project) {
+  public PackagingFormEditor(FormEditor editor, String id, String title, BundleProject project) {
     super(editor, id, title);
     this.project = project;
   }
 
-  public BuildDocument getDocument() {
+  public BundleDocument getDocument() {
     return doc;
   }
   
@@ -93,9 +92,6 @@ public class BuildFormEditor extends FormPage implements IDocumentListener {
     if (resourceSection != null) {
       resourceSection.refresh();
     }
-    if (classPathSection != null) {
-      classPathSection.refresh();
-    }
   }
   
   public void markContentsStale() {
@@ -103,10 +99,10 @@ public class BuildFormEditor extends FormPage implements IDocumentListener {
   }
 
   public void markClasspathStale() {
-    classPathSection.markStale();
+    //classPathSection.markStale();
   }
   
-  public void attachDocument(BuildDocument doc) {
+  public void attachDocument(BundleDocument doc) {
     // Remove listener from old doc
     if (this.doc != null) {
       this.doc.removeDocumentListener(this);
@@ -158,27 +154,20 @@ public class BuildFormEditor extends FormPage implements IDocumentListener {
     Composite body = form.getBody();
     
     // Set layout manager
-    ColumnLayout layout = new ColumnLayout();
-    layout.maxNumColumns = 1;
-    layout.minNumColumns = 1;
+    GridLayout layout = new GridLayout();
     body.setLayout(layout);
     
     // Create sections
     exportSection = new ExportSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR, project.getJavaProject().getProject());
+        Section.DESCRIPTION | Section.TITLE_BAR, project);
     exportSection.initialize(managedForm);
     
-    classPathSection = new ClasspathSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR, project, this);
-    classPathSection.initialize(managedForm);
-
     resourceSection = new ContentsSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE, project.getJavaProject().getProject(), this);
+        Section.DESCRIPTION | Section.TITLE_BAR, project.getJavaProject().getProject(), this);
     resourceSection.initialize(managedForm);
     
     // Add sections to form
     managedForm.addPart(exportSection);
-    managedForm.addPart(classPathSection);
     managedForm.addPart(resourceSection);
   }
   
@@ -190,7 +179,6 @@ public class BuildFormEditor extends FormPage implements IDocumentListener {
    * @see org.eclipse.jface.text.IDocumentListener#documentAboutToBeChanged(org.eclipse.jface.text.DocumentEvent)
    */
   public void documentAboutToBeChanged(DocumentEvent event) {
-    System.err.println("---- Document about to Changed ----");
     if (isActive()) return;
     
     BundleManifest oldManifest = new BundleManifest(ManifestUtil.createManifest(doc.getManifestDocument()));
@@ -205,21 +193,17 @@ public class BuildFormEditor extends FormPage implements IDocumentListener {
     // Check if bundle class path changed
     for (int i=0; i<oldClassPath.size(); i++) {
       String path = (String) oldClassPath.get(i);
-      System.err.println("Old classpath entry "+i+":"+path);
       if (!newClassPath.contains(path)) {
-        System.err.println("Remove classpath resource :"+path);
         removeClasspathResource(path);
       }
     }
     Map contents = getBundlePackDescription().getContentsMap(false);
     for (int i=0; i<newClassPath.size(); i++) {
       String path = (String) newClassPath.get(i);
-      System.err.println("New classpath entry "+i+":"+path);
       if (!oldClassPath.contains(path)) {
         IPath file = (IPath) contents.get(path);
         if (file == null) {
           IProject p = project.getJavaProject().getProject();
-          System.err.println("Find member "+path+" in project "+p.getName());
           IResource resource = p.findMember(path);
           
           if (resource != null && resource.getType() == IResource.FILE) {
@@ -228,7 +212,6 @@ public class BuildFormEditor extends FormPage implements IDocumentListener {
         }
         
         if (file != null) {
-          System.err.println("Add classpath resource :"+path);
           addClasspathResource(file);
         }
       }
@@ -242,14 +225,7 @@ public class BuildFormEditor extends FormPage implements IDocumentListener {
    * @see org.eclipse.jface.text.IDocumentListener#documentChanged(org.eclipse.jface.text.DocumentEvent)
    */
   public void documentChanged(DocumentEvent event) {
-    System.err.println("---- Document Changed ----");
     if (isActive()) return;
-    
-    // Update pack description document if needed
-    BundleManifest manifest = getManifest();
-    BundlePackDescription description = getBundlePackDescription();
-    //Map contents = description.getContentsMap();
-    
     
     IManagedForm form = getManagedForm();
     if (form == null) return;
@@ -284,13 +260,6 @@ public class BuildFormEditor extends FormPage implements IDocumentListener {
     }
   }
   
-  
-  private BundleManifest getManifest() {
-    BundleManifest manifest = new BundleManifest(ManifestUtil.createManifest(doc.getManifestDocument()));
-    
-    return manifest;
-  }
-
   private void removeClasspathResource(String name) {
     // Refresh values from document
     BundlePackDescription bundlePackDescription = getBundlePackDescription();
@@ -310,6 +279,5 @@ public class BuildFormEditor extends FormPage implements IDocumentListener {
         null);
     bundlePackDescription.addResource(resource);
     setBundlePackDescription(bundlePackDescription);
-  }
-  
+  } 
 }

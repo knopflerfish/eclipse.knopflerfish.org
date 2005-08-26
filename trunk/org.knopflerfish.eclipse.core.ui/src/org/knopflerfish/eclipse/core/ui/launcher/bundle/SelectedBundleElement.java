@@ -35,8 +35,8 @@
 package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**

@@ -154,7 +154,7 @@ public class Osgi {
             try {
               return (IFrameworkDefinition) configs[j].createExecutableExtension("class");
             } catch (CoreException e) {
-              System.err.println("Failed to create executable extension / "+e);
+              e.printStackTrace();
             }
           }
         }
@@ -179,7 +179,7 @@ public class Osgi {
             try {
               definitions.add( configs[j].createExecutableExtension("class"));
             } catch (CoreException e) {
-              System.err.println("Failed to create executable extension / "+e);
+              e.printStackTrace();
             }
           }
         }

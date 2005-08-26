@@ -57,8 +57,9 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-import org.knopflerfish.eclipse.core.PackageDescription;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -179,6 +180,22 @@ public class BundleProject implements IBundleProject {
     }
     return files;
   }
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getFileName()
+   */
+  public String getFileName() {
+    StringBuffer buf = new StringBuffer(project.getProject().getName());
+    String version = manifest.getVersion();
+    if (version != null && version.trim().length() > 0) {
+      buf.append("-");
+      buf.append(version.trim());
+    }
+    buf.append(".jar");
+    
+    return buf.toString();
+  }
 
   /****************************************************************************
    * Check methods
@@ -217,6 +234,10 @@ public class BundleProject implements IBundleProject {
     }
     
     return  errors.size() == 0;
+  }
+  
+  public boolean checkManifestDynamicImports() {
+    return true;
   }
   
   /****************************************************************************
@@ -308,7 +329,6 @@ public class BundleProject implements IBundleProject {
   }
 
   public void saveBundlePackDescription(BundlePackDescription packDescription) throws CoreException {
-    System.err.println("BundleProject - saveBundlePackDescription");
     if (packDescription == null) return;
     try {
       // Save description
@@ -358,7 +378,6 @@ public class BundleProject implements IBundleProject {
   }
 
   public void saveManifest(BundleManifest manifest) {
-    System.err.println("BundleProject - saveManifest");
     // Write manifest to file
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ByteArrayInputStream bais = null;

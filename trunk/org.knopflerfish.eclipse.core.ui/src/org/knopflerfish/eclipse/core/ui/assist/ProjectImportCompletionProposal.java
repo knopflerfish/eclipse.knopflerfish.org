@@ -42,7 +42,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.PackageDescription;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
@@ -76,14 +76,12 @@ public class ProjectImportCompletionProposal implements IJavaCompletionProposal 
    * @see org.eclipse.jface.text.contentassist.ICompletionProposal#apply(org.eclipse.jface.text.IDocument)
    */
   public void apply(IDocument document) {
-    System.err.println("apply project");
   }
 
   /* (non-Javadoc)
    * @see org.eclipse.jface.text.contentassist.ICompletionProposal#getSelection(org.eclipse.jface.text.IDocument)
    */
   public Point getSelection(IDocument document) {
-    System.err.println("getSelection");
     return null;
   }
 
@@ -119,7 +117,6 @@ public class ProjectImportCompletionProposal implements IJavaCompletionProposal 
    * @see org.eclipse.jface.text.contentassist.ICompletionProposal#getContextInformation()
    */
   public IContextInformation getContextInformation() {
-    System.err.println("getContextInformation");
     return null;
   }
 

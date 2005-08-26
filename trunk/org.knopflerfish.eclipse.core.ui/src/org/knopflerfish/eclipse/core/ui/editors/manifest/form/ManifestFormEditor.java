@@ -35,19 +35,19 @@
 package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
 
 import org.eclipse.jface.text.DocumentEvent;
-import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.forms.IFormPart;
 import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.editor.FormEditor;
 import org.eclipse.ui.forms.editor.FormPage;
-import org.eclipse.ui.forms.widgets.ColumnLayout;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -57,31 +57,39 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
 
   // Model objects
   private final BundleProject project;
-  private IDocument doc;
+  private BundleDocument doc;
   
   // Sections
   private GeneralSection generalSection;
-  private CategorySection categorySection;
-  private VendorSection vendorSection;
-  private DocumentationSection docSection;
- 
+  private PackageSection packageSection;
+  private NativeCodeSection nativeCodeSection;
+  private ClasspathSection classPathSection;
+
   public ManifestFormEditor(FormEditor editor, String id, String title, BundleProject project) {
     super(editor, id, title);
     this.project = project;
   }
   
-  public IDocument getDocument() {
+  public BundleDocument getDocument() {
     return doc;
   }
   
   public void refresh() {
-    generalSection.refresh();
-    categorySection.refresh();
-    vendorSection.refresh();
-    docSection.refresh();
+    if (generalSection != null) {
+      generalSection.refresh();
+    }
+    if (classPathSection != null) {
+      classPathSection.refresh();
+    }
+    if (packageSection != null) {
+      packageSection.refresh();
+    }
+    if (nativeCodeSection != null) {
+      nativeCodeSection.refresh();
+    }
   }
   
-  public void attachDocument(IDocument doc) {
+  public void attachDocument(BundleDocument doc) {
     // Remove listener from old doc
     if (this.doc != null) {
       this.doc.removeDocumentListener(this);
@@ -133,9 +141,9 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     Composite body = form.getBody();
 
     // Set layout manager
-    ColumnLayout layout = new ColumnLayout();
-    layout.maxNumColumns = 2;
-    layout.minNumColumns = 2;
+    GridLayout layout = new GridLayout();
+    layout.numColumns = 2;
+    layout.makeColumnsEqualWidth = true;
     body.setLayout(layout);
     
     // Create sections
@@ -143,23 +151,23 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
         Section.DESCRIPTION | Section.TITLE_BAR, project);
     generalSection.initialize(managedForm);
 
-    categorySection = new CategorySection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR);
-    categorySection.initialize(managedForm);
+    classPathSection = new ClasspathSection(body, toolkit, 
+        Section.DESCRIPTION | Section.TITLE_BAR, project);
+    classPathSection.initialize(managedForm);
     
-    vendorSection = new VendorSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR);
-    vendorSection.initialize(managedForm);
-    
-    docSection = new DocumentationSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR);
-    docSection.initialize(managedForm);
+    packageSection = new PackageSection(body, toolkit, 
+        Section.DESCRIPTION | Section.TITLE_BAR, project);
+    packageSection.initialize(managedForm);
+
+    nativeCodeSection = new NativeCodeSection(body, toolkit, 
+        Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE, project);
+    nativeCodeSection.initialize(managedForm);
     
     // Add sections to form
     managedForm.addPart(generalSection);
-    managedForm.addPart(categorySection);
-    managedForm.addPart(vendorSection);
-    managedForm.addPart(docSection);
+    managedForm.addPart(classPathSection);
+    managedForm.addPart(packageSection);
+    managedForm.addPart(nativeCodeSection);
   }
 
   /****************************************************************************

@@ -46,7 +46,7 @@ import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.PackageDescription;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 
