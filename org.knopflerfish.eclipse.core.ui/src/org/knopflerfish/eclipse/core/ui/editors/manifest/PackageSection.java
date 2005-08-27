@@ -32,16 +32,19 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
+package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TreeMap;
 
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.ICellModifier;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -49,7 +52,9 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -58,6 +63,8 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.forms.SectionPart;
@@ -67,12 +74,13 @@ import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
+import org.knopflerfish.eclipse.core.ui.dialogs.PackageListSelectionDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.PropertyDialog;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
-import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -86,6 +94,12 @@ public class PackageSection extends SectionPart {
 
   // Dialog titles
   private static String TITLE_ADD_DYNAMIC_IMPORT = "Add Dynamic Import";
+  
+  // Column Properties
+  public static String PROP_PACKAGE_NAME    = "name";
+  public static String PROP_PACKAGE_VERSION = "version";
+  public static String NO_VERSION_STR = "[No version]";
+
   
   // Section title and description
   private static final String TITLE = 
@@ -151,7 +165,7 @@ public class PackageSection extends SectionPart {
   public void refresh() {
     // Refresh values from document
     IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
-    manifest = new BundleManifest(ManifestUtil.createManifest(doc));
+    manifest = ManifestUtil.createManifest(doc.get().getBytes());
     
     // Refresh viewers
     if (wExportPackageTableViewer != null) {
@@ -216,6 +230,12 @@ public class PackageSection extends SectionPart {
     ExportProvider exportProvider = new ExportProvider();
     wExportPackageTableViewer.setContentProvider(exportProvider);
     wExportPackageTableViewer.setLabelProvider(exportProvider);
+    wExportPackageTableViewer.setSorter(exportProvider);
+    wExportPackageTableViewer.setColumnProperties(new String[] {PROP_PACKAGE_NAME, PROP_PACKAGE_VERSION});
+    wExportPackageTableViewer.setCellModifier(exportProvider);
+    TextCellEditor packageVersionEditor = new TextCellEditor(wExportPackageTable, SWT.NONE);
+    wExportPackageTableViewer.setCellEditors(
+        new CellEditor[] {null, packageVersionEditor});
     wExportPackageTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
       public void selectionChanged(SelectionChangedEvent event) {
         IStructuredSelection selection = 
@@ -252,6 +272,14 @@ public class PackageSection extends SectionPart {
         
         if (selection == null || selection.isEmpty()) return;
 
+        List packages = new ArrayList(Arrays.asList(manifest.getExportedPackages()));
+        for (Iterator i = selection.iterator(); i.hasNext(); ) {
+          PackageDescription pd = (PackageDescription) i.next();
+          packages.remove(pd);
+        }
+        manifest.setExportedPackages((PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]));
+        
+        UiUtils.packTableColumns(wExportPackageTableViewer.getTable());
         wExportPackageTableViewer.refresh();
         markDirty();
       }
@@ -263,6 +291,41 @@ public class PackageSection extends SectionPart {
     wExportPackageAddButton = toolkit.createButton(wExportComposite, "Add...", SWT.PUSH);
     wExportPackageAddButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
+        PackageDescription[] exportablePackages = project.getExportablePackages();
+        ArrayList exportedPackages = new ArrayList(Arrays.asList(manifest.getExportedPackages()));
+        
+        // Remove already exported packages from list of exportable
+        TreeMap map = new TreeMap();
+        for (int i=0; i<exportablePackages.length; i++) {
+          map.put(exportablePackages[i].getPackageName(), exportablePackages[i]);
+        }
+        for (Iterator i=exportedPackages.iterator(); i.hasNext();) {
+          PackageDescription pd = (PackageDescription) i.next();
+          map.remove(pd.getPackageName());
+        }
+        
+        PackageListSelectionDialog dialog = new PackageListSelectionDialog(
+            Display.getCurrent().getActiveShell());
+        dialog.setElements(map.values().toArray(new PackageDescription[map.size()]));
+        dialog.setMultipleSelection(true);
+        dialog.setTitle("Select package");
+        dialog.setImage(JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE));
+        dialog.setMessage("Select package to export.");
+        if (dialog.open() == Window.OK) {
+          Object[] packages = (Object[]) dialog.getResult();
+          for(int i=0; i<packages.length;i++) {
+            if (packages[i] instanceof PackageDescription) {
+              PackageDescription pd = (PackageDescription) packages[i];
+              if (!exportedPackages.contains(pd)) {
+                exportedPackages.add(pd);
+              }
+            }
+          }
+          manifest.setExportedPackages((PackageDescription[]) exportedPackages.toArray(new PackageDescription[exportedPackages.size()]));
+          wExportPackageTableViewer.refresh();
+          UiUtils.packTableColumns(wExportPackageTableViewer.getTable());
+          markDirty();
+        }
       }
     });
     wd = new TableWrapData();
@@ -474,7 +537,14 @@ public class PackageSection extends SectionPart {
   /****************************************************************************
    * ExportProvider Inner classes
    ***************************************************************************/
-  class ExportProvider implements IStructuredContentProvider, ITableLabelProvider {
+  class ExportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider, ICellModifier {
+    
+    public int compare(Viewer viewer, Object o1, Object o2) {
+      PackageDescription pd1 = (PackageDescription) o1;
+      PackageDescription pd2 = (PackageDescription) o2;
+      
+      return pd1.getPackageName().compareTo(pd2.getPackageName());
+    }
     
     public Object[] getElements(Object inputElement) {
       if ( !(inputElement instanceof BundleManifest)) return null;
@@ -489,6 +559,7 @@ public class PackageSection extends SectionPart {
     public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
     }
 
+    
     public Image getColumnImage(Object element, int columnIndex) {
       if (columnIndex == 0) {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
@@ -506,7 +577,7 @@ public class PackageSection extends SectionPart {
       case 1:
         String version = desc.getSpecificationVersion();
         if (version == null) {
-          version = "";
+          version = NO_VERSION_STR;
         }
         return version;
       }
@@ -521,6 +592,52 @@ public class PackageSection extends SectionPart {
     }
 
     public void removeListener(ILabelProviderListener listener) {
+    }
+
+    public boolean canModify(Object element, String property) {
+      return PROP_PACKAGE_VERSION.equals(property);
+    }
+
+    public Object getValue(Object element, String property) {
+      PackageDescription pd = (PackageDescription) element;
+      if (PROP_PACKAGE_VERSION.equals(property)) {
+        String version = pd.getSpecificationVersion();
+        if (version == null) {
+          version = "";
+        }
+        return version;
+      } else if (PROP_PACKAGE_NAME.equals(property)) {
+        return pd.getPackageName();
+      } else {
+        return null;
+      }
+    }
+
+    public void modify(Object element, String property, Object value) {
+      if (element instanceof Item && ((Item) element).getData() instanceof PackageDescription) {
+        if (PROP_PACKAGE_VERSION.equals(property)) {
+          List packages = new ArrayList(Arrays.asList(manifest.getExportedPackages()));
+          PackageDescription pdElement = (PackageDescription) ((Item) element).getData();
+          int idx = packages.indexOf(pdElement);
+          if (idx != -1) {
+            
+            PackageDescription pd = (PackageDescription) packages.get(idx);
+            if (value== null || NO_VERSION_STR.equals(value)) {
+              pd.setSpecificationVersion(null);
+            } else {
+              pd.setSpecificationVersion(value.toString());
+            }
+            
+            packages.remove(idx);
+            packages.add(idx, pd);
+            manifest.setExportedPackages((PackageDescription []) packages.toArray(new PackageDescription[packages.size()]));
+            
+            wExportPackageTableViewer.refresh();
+            UiUtils.packTableColumns(wExportPackageTableViewer.getTable());
+            markDirty();
+          }
+        }
+      }
     }
   }
   

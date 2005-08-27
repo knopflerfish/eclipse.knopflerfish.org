@@ -32,22 +32,40 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.manifest;
+package org.knopflerfish.eclipse.core.manifest;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.jar.Manifest;
-
-import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.IDocument;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class ManifestUtil {
+  
+  private static final int MAX_LINE_LENGTH_EXCL_NEWLINE = 70;
+
+  static public int findAttributeLine(StringBuffer buf, String attr) {
+    // Find position of attribute
+    BufferedReader reader = new BufferedReader(new StringReader(buf.toString()));
+    int attrLine = -1;
+    int currentLine = 1;
+    
+    String line = null;
+    try {
+      while((line = reader.readLine()) != null && attrLine == -1) {
+        if (attrLine == -1 && line.startsWith(attr)) {
+          // Find start of manifest attribute
+          attrLine = currentLine;
+        }
+        currentLine++;
+      }
+    } catch (IOException e) {}
+    
+    return attrLine;
+  }
   
   /**
    * Adds a main attribute to a manifest file. The document passed shall 
@@ -56,72 +74,7 @@ public class ManifestUtil {
    * @param doc document containing a manifest file
    * @param name attribute name
    * @param value attribute value
-   * @throws IOException
-   * @throws BadLocationException
    */
-  static public void setManifestAttribute(IDocument doc, String name, String value) throws IOException, BadLocationException {
-    // Check if entry exists
-    String contents = doc.get();
-    BufferedReader reader = new BufferedReader(new StringReader(contents));
-    
-    int startLine = -1;
-    int endLine = -1;
-    int lineNo = 0;
-    String line = null;
-    
-    while((line = reader.readLine()) != null) {
-      if (startLine == -1 && line.startsWith(name)) {
-        // Find start of manifest attribute
-        startLine = lineNo;
-        endLine = lineNo;
-      } else if (startLine != -1) {
-        // Find end of manifest attribute
-        if (line.startsWith(" ")) {
-          endLine = lineNo;
-        } else {
-          break;
-        }
-      }
-      lineNo++;
-    }
-    
-    // Check if attribute exists
-    if (startLine != -1) {
-      int offset = doc.getLineOffset(startLine);
-      int length = 0;
-      for (int i=startLine; i<=endLine; i++) {
-        length += doc.getLineLength(i);
-      }
-      
-      // Check if attribute shall be added or removed
-      if (value != null && value.trim().length() > 0) {
-        // Replace attribute
-        doc.replace(offset, length, createAttributeLine(name, value));
-      } else  {
-        // Remove attribute
-        doc.replace(offset, length, "");
-      }
-    } else if (value != null && value.trim().length() > 0) {
-      // Add attribute last in main section 
-      // TODO: Does not support JAR specific sections, should be improved
-      // maybe 
-      StringBuffer buf = new StringBuffer(contents);
-      
-      int idx = buf.indexOf("\r\n\r\n");
-      if (idx != -1) {
-        // Insert attribute
-        buf.insert(idx+2, createAttributeLine(name, value));
-      } else {
-        // Add attribute to end
-        if (!buf.toString().endsWith("\r\n")) {
-          buf.append("\r\n");
-        }
-        buf.append(createAttributeLine(name, value));
-      }
-      doc.set(buf.toString());
-    }
-  }
-  
   static public StringBuffer setManifestAttribute(StringBuffer buf, String attr, String value) {
     
     // Find position of attribute
@@ -135,20 +88,20 @@ public class ManifestUtil {
           // Find start of manifest attribute
           startPos = buf.indexOf(line);
           endPos = startPos+line.length();
-          if (buf.charAt(endPos) == '\r') {
+          if (endPos < buf.length() && buf.charAt(endPos) == '\r') {
             endPos += 1;
           }
-          if (buf.charAt(endPos) == '\n') {
+          if (endPos < buf.length() && buf.charAt(endPos) == '\n') {
             endPos += 1;
           }
         } else if (startPos != -1) {
           // Find end of manifest attribute
           if (line.startsWith(" ")) {
             endPos += line.length();
-            if (buf.charAt(endPos) == '\r') {
+            if (endPos < buf.length() && buf.charAt(endPos) == '\r') {
               endPos += 1;
             }
-            if (buf.charAt(endPos) == '\n') {
+            if (endPos < buf.length() && buf.charAt(endPos) == '\n') {
               endPos += 1;
             }
           } else {
@@ -198,8 +151,26 @@ public class ManifestUtil {
     StringBuffer buf = new StringBuffer();
     buf.append(name);
     buf.append(": ");
-    buf.append(value);
-    buf.append("\r\n");
+    // Line length not allowed to exceed 72 bytes including \r\n
+    int lineLength = buf.length();
+    int offset = 0;
+    int restLength = value.length();
+    while (restLength > 0) {
+      if (lineLength+restLength > MAX_LINE_LENGTH_EXCL_NEWLINE) {
+        String s = value.substring(offset, offset+MAX_LINE_LENGTH_EXCL_NEWLINE-lineLength);
+        offset += s.length();
+        restLength = restLength - s.length();
+        buf.append(s);
+        buf.append("\r\n ");
+        lineLength = 1;
+      } else {
+        String s = value.substring(offset);
+        offset += s.length();
+        restLength = restLength - s.length();
+        buf.append(s);
+        buf.append("\r\n");
+      }
+    }
     return buf.toString();
   }
   
@@ -211,23 +182,12 @@ public class ManifestUtil {
    * @param doc document containing a manifest file
    * @return manifest object
    */
-  static public Manifest createManifest(IDocument doc) {
-    Manifest manifest = null;
+  static public BundleManifest createManifest(byte[] bytes) {
+    BundleManifest manifest = null;
     try {
-      manifest = new Manifest(new ByteArrayInputStream(doc.get().getBytes()));
+      manifest = new BundleManifest(new ByteArrayInputStream(bytes));
     } catch (IOException e) {
-      manifest = new Manifest();
-    }
-    
-    return manifest;
-  }
-  
-  static public Manifest createManifest(byte[] bytes) {
-    Manifest manifest = null;
-    try {
-      manifest = new Manifest(new ByteArrayInputStream(bytes));
-    } catch (IOException e) {
-      manifest = new Manifest();
+      manifest = new BundleManifest();
     }
     
     return manifest;

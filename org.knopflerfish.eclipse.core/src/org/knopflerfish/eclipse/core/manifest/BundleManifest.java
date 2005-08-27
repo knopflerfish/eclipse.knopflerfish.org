@@ -48,6 +48,7 @@ import java.util.jar.Manifest;
  */
 public class BundleManifest extends Manifest {
 
+  // OSGi specified attributes
   public static final String BUNDLE_SYMBOLIC_NAME   = "Bundle-SymbolicName";
   public static final String BUNDLE_NAME            = "Bundle-Name";
   public static final String BUNDLE_CLASSPATH       = "Bundle-ClassPath";
@@ -66,7 +67,9 @@ public class BundleManifest extends Manifest {
   public static final String IMPORT_PACKAGE         = "Import-Package";
   public static final String DYNAMIC_IMPORT_PACKAGE = "DynamicImport-Package";
 
+  // Build information attributes
   public static final String BUILT_FROM            = "Built-From";
+  public static final String BUILD_DATE            = "Build-Date";
   
   public BundleManifest() {
     super();
@@ -75,6 +78,10 @@ public class BundleManifest extends Manifest {
     }
   }
 
+  public BundleManifest(Manifest manifest) {
+    super(manifest);
+  }
+  
   public BundleManifest(InputStream is) throws IOException {
     super(is);
     if (!getMainAttributes().containsKey(Attributes.Name.MANIFEST_VERSION)) {
@@ -82,15 +89,6 @@ public class BundleManifest extends Manifest {
     }
   }
 
-  public BundleManifest(Manifest man) {
-    super(man);
-    if (!getMainAttributes().containsKey(Attributes.Name.MANIFEST_VERSION)) {
-      getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-    }
-  }
-
-
-  
   /****************************************************************************
    * Setters and getters for OSGi attributes
    ***************************************************************************/
@@ -266,6 +264,21 @@ public class BundleManifest extends Manifest {
     return (PackageDescription[]) exportedPackages.toArray(new PackageDescription[exportedPackages.size()]);
   }
 
+  public void setExportedPackages(PackageDescription[] value) {
+    if (value == null) {
+      setAttribute(EXPORT_PACKAGE, null);
+    } else {
+      StringBuffer buf = new StringBuffer("");
+      for(int i=0; i<value.length;i++) {
+        if (i != 0) {
+          buf.append(", ");
+        }
+        buf.append(value[i].toString());
+      }
+      setAttribute(EXPORT_PACKAGE, buf.toString());
+    }
+  }
+  
   public NativeCodeClause[] getNativeCodeClauses() {
     String attr = getAttribute(BUNDLE_NATIVECODE);
     if (attr == null) return new NativeCodeClause[0];

@@ -32,52 +32,41 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.project;
+package org.knopflerfish.eclipse.core.ui.dialogs;
 
-import org.eclipse.core.resources.IFile;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IType;
-import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.viewers.ILabelProvider;
+import org.eclipse.jface.viewers.ILabelProviderListener;
+import org.eclipse.swt.graphics.Image;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public interface IBundleProject {
+public class PackageLabelProvider implements ILabelProvider {
 
-  public IJavaProject getJavaProject();
-  
-  public BundleManifest getBundleManifest();
+  /****************************************************************************
+   * org.eclipse.ui.forms.IFormPart methods
+   ***************************************************************************/
+  public Image getImage(Object element) {
+    return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
+  }
 
-  public BundlePackDescription getBundlePackDescription();
-  
-  public boolean hasExportedPackage(PackageDescription pkg);
+  public String getText(Object element) {
+    return ((PackageDescription) element).getPackageName();
+  }
 
-  /**
-   * Returns all packages available for export in this
-   * project.
-   * 
-   * @return array of BundleActivator implementations
-   */
-  public PackageDescription[] getExportablePackages();
-  
-  /**
-   * Returns all implementations of BundleActivator in this
-   * project.
-   * 
-   * @return array of BundleActivator implementations
-   */
-  public IType[] getBundleActivators();
-  
-  /**
-   * Returns all JAR files which can be found in the
-   * project.
-   * 
-   * @return array of JAR files
-   */
-  public IFile[] getJars();
-  
-  public String getFileName();
- 
+  public void addListener(ILabelProviderListener listener) {
+  }
+
+  public void dispose() {
+  }
+
+  public boolean isLabelProperty(Object element, String property) {
+    return false;
+  }
+
+  public void removeListener(ILabelProviderListener listener) {
+  }
 }

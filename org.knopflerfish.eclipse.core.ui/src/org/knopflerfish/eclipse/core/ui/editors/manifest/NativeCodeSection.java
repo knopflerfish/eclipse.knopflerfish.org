@@ -1,10 +1,11 @@
-package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
+package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Map;
 
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -29,13 +30,13 @@ import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.NativeCodeClause;
 import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.BundleResource;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
-import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
 public class NativeCodeSection extends SectionPart implements IStructuredContentProvider, ITableLabelProvider {
   
@@ -362,26 +363,22 @@ public class NativeCodeSection extends SectionPart implements IStructuredContent
   }
 
   private BundleManifest getManifest() {
-    BundleDocument buildDoc = (BundleDocument) getManagedForm().getInput();
-    BundleManifest manifest = new BundleManifest(ManifestUtil.createManifest(buildDoc.getManifestDocument()));
+    IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
+    BundleManifest manifest = ManifestUtil.createManifest(doc.get().getBytes());
     
     return manifest;
   }
 
   private void setManifest(BundleManifest manifest) {
     // Flush values to document
-    IManagedForm managedForm = getManagedForm();
-    BundleDocument doc = (BundleDocument) managedForm.getInput();
+    IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
     
     if (manifest == null) return;
     
-    try {
-      String value = manifest.getAttribute(BundleManifest.BUNDLE_NATIVECODE);
-      if (value == null) value = "";
-      ManifestUtil.setManifestAttribute(doc.getManifestDocument(), BundleManifest.BUNDLE_NATIVECODE, value);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    StringBuffer buf = new StringBuffer(doc.get());
+    ManifestUtil.setManifestAttribute(buf, 
+        BundleManifest.BUNDLE_NATIVECODE, manifest.getAttribute(BundleManifest.BUNDLE_NATIVECODE));
+    doc.set(buf.toString());
   }
   
   private void removeClasspathResource(String name) {

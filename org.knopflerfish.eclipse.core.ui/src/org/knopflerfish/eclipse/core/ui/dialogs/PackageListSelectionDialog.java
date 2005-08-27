@@ -32,52 +32,19 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.project;
+package org.knopflerfish.eclipse.core.ui.dialogs;
 
-import org.eclipse.core.resources.IFile;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IType;
-import org.knopflerfish.eclipse.core.manifest.BundleManifest;
-import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public interface IBundleProject {
-
-  public IJavaProject getJavaProject();
+public class PackageListSelectionDialog extends ElementListSelectionDialog {
   
-  public BundleManifest getBundleManifest();
-
-  public BundlePackDescription getBundlePackDescription();
+  public PackageListSelectionDialog(Shell parent) {
+    super(parent, new PackageLabelProvider());
+  }
   
-  public boolean hasExportedPackage(PackageDescription pkg);
-
-  /**
-   * Returns all packages available for export in this
-   * project.
-   * 
-   * @return array of BundleActivator implementations
-   */
-  public PackageDescription[] getExportablePackages();
-  
-  /**
-   * Returns all implementations of BundleActivator in this
-   * project.
-   * 
-   * @return array of BundleActivator implementations
-   */
-  public IType[] getBundleActivators();
-  
-  /**
-   * Returns all JAR files which can be found in the
-   * project.
-   * 
-   * @return array of JAR files
-   */
-  public IFile[] getJars();
-  
-  public String getFileName();
- 
 }

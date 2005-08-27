@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
+package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -48,6 +48,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -69,13 +70,13 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.BundleResource;
@@ -83,7 +84,6 @@ import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.FileTreeSelectionDialog;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
-import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -353,6 +353,8 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
             libraries);
         dialog.setInput(project.getJavaProject().getProject());
         dialog.setTitle("Select library");
+        dialog.setImage(JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR));
+
         dialog.setMessage("Select library to add to bundle classpath.");
         if (dialog.open() == Window.OK && dialog.getResource() != null) {
           BundleResource resource = dialog.getResource();
@@ -547,30 +549,22 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
   }
 
   private BundleManifest getManifest() {
-    BundleDocument buildDoc = (BundleDocument) getManagedForm().getInput();
-    BundleManifest manifest = new BundleManifest(ManifestUtil.createManifest(buildDoc.getManifestDocument()));
+    IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
+    BundleManifest manifest = ManifestUtil.createManifest(doc.get().getBytes());
     
     return manifest;
   }
 
   private void setManifest(BundleManifest manifest) {
     // Flush values to document
-    IManagedForm managedForm = getManagedForm();
-    BundleDocument doc = (BundleDocument) managedForm.getInput();
+    IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
     
     if (manifest == null) return;
     
-    Table wClassPathTable = wClassPathTableViewer.getTable();
-    try {
-      String attribute = (String) wClassPathTable.getData(PROP_NAME);
-      if (attribute != null) {
-        String value = manifest.getAttribute(BundleManifest.BUNDLE_CLASSPATH);
-        if (value == null) value = "";
-        ManifestUtil.setManifestAttribute(doc.getManifestDocument(), attribute, value);
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    StringBuffer buf = new StringBuffer(doc.get());
+    ManifestUtil.setManifestAttribute(buf, 
+        BundleManifest.BUNDLE_CLASSPATH, manifest.getAttribute(BundleManifest.BUNDLE_CLASSPATH));
+    doc.set(buf.toString());
   }
   
   private void removeClasspathResource(String name) {

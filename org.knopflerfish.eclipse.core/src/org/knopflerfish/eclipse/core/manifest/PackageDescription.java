@@ -35,6 +35,7 @@
 package org.knopflerfish.eclipse.core.manifest;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -43,6 +44,7 @@ import java.util.StringTokenizer;
  * @see http://www.gatespacetelematics.com/
  */
 public class PackageDescription {
+  public static String SEPARATOR = ";";
   public static String SPECIFICATION_VERSION = "specification-version";
 
   private String packageName;
@@ -56,7 +58,7 @@ public class PackageDescription {
   }
   
   public PackageDescription(String s) {
-    StringTokenizer st = new StringTokenizer(s, ";");
+    StringTokenizer st = new StringTokenizer(s, SEPARATOR);
     
     // First token is package name
     packageName = st.nextToken().trim();
@@ -85,8 +87,22 @@ public class PackageDescription {
     return getAttribute(SPECIFICATION_VERSION);
   }
   
+  public void setSpecificationVersion(String version) {
+    setAttribute(SPECIFICATION_VERSION, version);
+  }
+  
   public String getAttribute(String attr) {
     return (String) attributes.get(attr);
+  }
+
+  public void setAttribute(String attr, String value) {
+    if (attr == null) return;
+    
+    if (value == null || value.trim().length() ==0 ) {
+      attributes.remove(attr);
+    } else {
+      attributes.put(attr, value);
+    }
   }
 
   public boolean isCompatible(PackageDescription pkg) {
@@ -105,4 +121,42 @@ public class PackageDescription {
     //StringTokenize
   }
 
+  /****************************************************************************
+   * java.lang.Object methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof PackageDescription)) {
+      return false;
+    }
+    
+    PackageDescription pd = (PackageDescription) obj;
+    
+    return packageName.equals(pd.packageName);
+  }
+  
+  public String toString() {
+    StringBuffer buf = new StringBuffer(packageName);
+    
+    for(Iterator i=attributes.entrySet().iterator(); i.hasNext();) {
+      Map.Entry entry = (Map.Entry) i.next();
+      buf.append(SEPARATOR);
+      buf.append(entry.getKey());
+      buf.append("=");
+      String value = (String) entry.getValue();
+      boolean qoute = value.indexOf(" ") != -1;
+      if (qoute) {
+        buf.append("\"");
+      }
+      buf.append(value);
+      if (qoute) {
+        buf.append("\"");
+      }
+    }
+    
+    return buf.toString();
+  }
 }
