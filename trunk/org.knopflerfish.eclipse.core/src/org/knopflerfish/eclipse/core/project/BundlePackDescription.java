@@ -40,6 +40,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -64,6 +65,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -233,7 +235,12 @@ public class BundlePackDescription {
       if (jarFile.exists()) jarFile.delete();
 
       // Create manifest output stream
-      jos = new JarOutputStream(new FileOutputStream(jarFile), bundleProject.getBundleManifest());
+      BundleManifest manifest = new BundleManifest(bundleProject.getBundleManifest());
+      // Put build attributes
+      Date date = new Date();
+      manifest.getMainAttributes().putValue(BundleManifest.BUILD_DATE, date.toString());
+
+      jos = new JarOutputStream(new FileOutputStream(jarFile), manifest);
       
       // Add contents
       Map contents = getContentsMap(true);

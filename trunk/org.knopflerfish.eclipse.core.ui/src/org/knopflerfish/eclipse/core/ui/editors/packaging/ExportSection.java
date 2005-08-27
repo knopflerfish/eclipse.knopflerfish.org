@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.packaging.form;
+package org.knopflerfish.eclipse.core.ui.editors.packaging;
 
 import java.io.IOException;
 

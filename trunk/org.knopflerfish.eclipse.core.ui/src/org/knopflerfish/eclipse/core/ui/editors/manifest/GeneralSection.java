@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.manifest.form;
+package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +58,7 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
@@ -74,12 +75,12 @@ import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.PropertyDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.TypeSelectionDialog;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
-import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -125,7 +126,7 @@ public class GeneralSection extends SectionPart {
   private static final String BUNDLE_DESCRIPTION_TOOLTIP = 
     "A short description of this bundle.";
   private static final String BUNDLE_DOCURL_LABEL = 
-    "Documentation URL:";
+    "Documentation:";
   private static final String BUNDLE_DOCURL_TOOLTIP = 
     "A URL to documentation about this bundle.";
   
@@ -162,7 +163,6 @@ public class GeneralSection extends SectionPart {
   private TableViewer wCategoryTableViewer;
   private TableViewer wEnvironmentTableViewer;
   
-  
   // Model
   private final BundleProject project;
   private BundleManifest manifest = null;
@@ -175,6 +175,16 @@ public class GeneralSection extends SectionPart {
     createClient(section, toolkit);
     section.setDescription(DESCRIPTION);
     section.setText(TITLE);
+  }
+  
+  public void setErrors(List errors) {
+    Color c = null;
+    if (errors != null && errors.contains(BundleManifest.BUNDLE_ACTIVATOR)) {
+      c = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+    }
+    if (wActivatorText != null) {
+      wActivatorText.setForeground(c);
+    }
   }
   
   /****************************************************************************
@@ -228,7 +238,7 @@ public class GeneralSection extends SectionPart {
     
     // Refresh values from document
     IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
-    manifest = new BundleManifest(ManifestUtil.createManifest(doc));
+    manifest = ManifestUtil.createManifest(doc.get().getBytes());
     Attributes attributes = manifest.getMainAttributes();
     
     setText(wSymbolicNameText, attributes, BundleManifest.BUNDLE_SYMBOLIC_NAME);

@@ -32,21 +32,19 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.packaging.form;
+package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
 
-import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocumentListener;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.forms.IFormPart;
 import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
@@ -56,50 +54,47 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
-import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.project.BundleResource;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
-import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestUtil;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class PackagingFormEditor extends FormPage implements IDocumentListener {
-  
+public class ManifestFormEditor extends FormPage implements IDocumentListener {
+
   // Model objects
   private final BundleProject project;
   private BundleDocument doc;
   
   // Sections
-  private ExportSection exportSection;
-  private ContentsSection resourceSection;
-  
-  public PackagingFormEditor(FormEditor editor, String id, String title, BundleProject project) {
+  private GeneralSection generalSection;
+  private PackageSection packageSection;
+  private NativeCodeSection nativeCodeSection;
+  private ClasspathSection classPathSection;
+
+  public ManifestFormEditor(FormEditor editor, String id, String title, BundleProject project) {
     super(editor, id, title);
     this.project = project;
   }
-
+  
   public BundleDocument getDocument() {
     return doc;
   }
   
   public void refresh() {
-    if (exportSection != null) {
-      exportSection.refresh();
+    if (generalSection != null) {
+      generalSection.refresh();
     }
-    if (resourceSection != null) {
-      resourceSection.refresh();
+    if (classPathSection != null) {
+      classPathSection.refresh();
     }
-  }
-  
-  public void markContentsStale() {
-    resourceSection.markStale();
-  }
-
-  public void markClasspathStale() {
-    //classPathSection.markStale();
+    if (packageSection != null) {
+      packageSection.refresh();
+    }
+    if (nativeCodeSection != null) {
+      nativeCodeSection.refresh();
+    }
   }
   
   public void attachDocument(BundleDocument doc) {
@@ -112,11 +107,11 @@ public class PackagingFormEditor extends FormPage implements IDocumentListener {
     if (this.doc != null) {
       this.doc.addDocumentListener(this);
     }
-    
+
     IManagedForm form = getManagedForm();
     if (form == null) return;
     form.setInput(doc);
-    
+
     firePropertyChange(PROP_INPUT);
   }
   
@@ -129,7 +124,7 @@ public class PackagingFormEditor extends FormPage implements IDocumentListener {
    */
   public void dispose() {
     super.dispose();
-    
+
     if (this.doc != null) {
       this.doc.removeDocumentListener(this);
     }
@@ -146,31 +141,52 @@ public class PackagingFormEditor extends FormPage implements IDocumentListener {
     if (doc != null) {
       managedForm.setInput(doc);
     }
-    
+
     // Create form
     FormToolkit toolkit = managedForm.getToolkit();   
     ScrolledForm form = managedForm.getForm(); 
     form.setText(getTitle()); 
     Composite body = form.getBody();
-    
+
     // Set layout manager
     GridLayout layout = new GridLayout();
+    layout.numColumns = 2;
+    layout.makeColumnsEqualWidth = true;
     body.setLayout(layout);
     
     // Create sections
-    exportSection = new ExportSection(body, toolkit, 
+    generalSection = new GeneralSection(body, toolkit, 
         Section.DESCRIPTION | Section.TITLE_BAR, project);
-    exportSection.initialize(managedForm);
+    generalSection.initialize(managedForm);
+
+    classPathSection = new ClasspathSection(body, toolkit, 
+        Section.DESCRIPTION | Section.TITLE_BAR, project);
+    classPathSection.initialize(managedForm);
     
-    resourceSection = new ContentsSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR, project.getJavaProject().getProject(), this);
-    resourceSection.initialize(managedForm);
+    packageSection = new PackageSection(body, toolkit, 
+        Section.DESCRIPTION | Section.TITLE_BAR, project);
+    packageSection.initialize(managedForm);
+
+    nativeCodeSection = new NativeCodeSection(body, toolkit, 
+        Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE, project);
+    nativeCodeSection.initialize(managedForm);
     
     // Add sections to form
-    managedForm.addPart(exportSection);
-    managedForm.addPart(resourceSection);
+    managedForm.addPart(generalSection);
+    managedForm.addPart(classPathSection);
+    managedForm.addPart(packageSection);
+    managedForm.addPart(nativeCodeSection);
+    
+    // Pass markers to graphical view
+    try {
+      IFileEditorInput manifestInput = (IFileEditorInput) getEditorInput();
+      IFile manifestFile = manifestInput.getFile();
+      setErrors(manifestFile.findMarkers(null, true, IResource.DEPTH_INFINITE));
+    } catch (CoreException e) {
+      e.printStackTrace();
+    }
   }
-  
+
   /****************************************************************************
    * org.eclipse.jface.text.IDocumentListener methods
    ***************************************************************************/
@@ -179,47 +195,8 @@ public class PackagingFormEditor extends FormPage implements IDocumentListener {
    * @see org.eclipse.jface.text.IDocumentListener#documentAboutToBeChanged(org.eclipse.jface.text.DocumentEvent)
    */
   public void documentAboutToBeChanged(DocumentEvent event) {
-    if (isActive()) return;
-    
-    BundleManifest oldManifest = new BundleManifest(ManifestUtil.createManifest(doc.getManifestDocument()));
-    List oldClassPath = Arrays.asList(oldManifest.getBundleClassPath());
-    StringBuffer buf = new StringBuffer(event.getDocument().get());
-    int startIdx = event.getOffset();
-    int endIdx = startIdx + event.getLength();
-    buf = buf.replace(startIdx, endIdx, event.getText());
-    BundleManifest newManifest = new BundleManifest(ManifestUtil.createManifest(buf.toString().getBytes()));
-    List newClassPath = Arrays.asList(newManifest.getBundleClassPath());
-    
-    // Check if bundle class path changed
-    for (int i=0; i<oldClassPath.size(); i++) {
-      String path = (String) oldClassPath.get(i);
-      if (!newClassPath.contains(path)) {
-        removeClasspathResource(path);
-      }
-    }
-    Map contents = getBundlePackDescription().getContentsMap(false);
-    for (int i=0; i<newClassPath.size(); i++) {
-      String path = (String) newClassPath.get(i);
-      if (!oldClassPath.contains(path)) {
-        IPath file = (IPath) contents.get(path);
-        if (file == null) {
-          IProject p = project.getJavaProject().getProject();
-          IResource resource = p.findMember(path);
-          
-          if (resource != null && resource.getType() == IResource.FILE) {
-            file = resource.getFullPath();
-          }
-        }
-        
-        if (file != null) {
-          addClasspathResource(file);
-        }
-      }
-    }
-    
-    
   }
-  
+
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.text.IDocumentListener#documentChanged(org.eclipse.jface.text.DocumentEvent)
@@ -229,7 +206,7 @@ public class PackagingFormEditor extends FormPage implements IDocumentListener {
     
     IManagedForm form = getManagedForm();
     if (form == null) return;
-    
+
     IFormPart[] parts = form.getParts();
     if (parts != null) {
       for(int i=0; i<parts.length;i++) {
@@ -237,47 +214,22 @@ public class PackagingFormEditor extends FormPage implements IDocumentListener {
       }
     }
   }
-
-  private BundlePackDescription getBundlePackDescription() {
-    try {
-      BundlePackDescription bundlePackDescription = new BundlePackDescription(
-          project.getJavaProject().getProject(), 
-          new ByteArrayInputStream(doc.getPackDocument().get().getBytes()));
+  
+  public void setErrors(IMarker[] markers) {
+    if (generalSection != null) {
+      ArrayList errorsGeneralSection = new ArrayList();
+      for (int i=0; i<markers.length; i++) {
+        try {
+          if (markers[i].getType().equals(BundleProject.MARKER_BUNDLE_ACTIVATOR)) {
+            errorsGeneralSection.add(BundleManifest.BUNDLE_ACTIVATOR);
+          }
+        } catch (CoreException e) {
+          e.printStackTrace();
+        }
+      }
       
-      return bundlePackDescription;
-    } catch (Throwable t) {
-      return new BundlePackDescription(project.getJavaProject().getProject());
+      generalSection.setErrors(errorsGeneralSection);
     }
+    
   }
-  
-  private void setBundlePackDescription(BundlePackDescription bundlePackDescription) {
-    try {
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      bundlePackDescription.save(baos);
-      baos.flush();
-      doc.getPackDocument().set(baos.toString());
-    } catch (Throwable t) {
-    }
-  }
-  
-  private void removeClasspathResource(String name) {
-    // Refresh values from document
-    BundlePackDescription bundlePackDescription = getBundlePackDescription();
-    Map contents = bundlePackDescription.getContentsMap(false);
-    bundlePackDescription.removeResource((IPath) contents.get(name));
-    setBundlePackDescription(bundlePackDescription);
-  }
-
-  private void addClasspathResource(IPath path) {
-    if (path == null) return;
-    BundlePackDescription bundlePackDescription = getBundlePackDescription();
-    bundlePackDescription.removeResource(path);
-    BundleResource resource = new BundleResource(
-        BundleResource.TYPE_CLASSPATH,
-        path,
-        path.removeFirstSegments(1).toString(),
-        null);
-    bundlePackDescription.addResource(resource);
-    setBundlePackDescription(bundlePackDescription);
-  } 
 }

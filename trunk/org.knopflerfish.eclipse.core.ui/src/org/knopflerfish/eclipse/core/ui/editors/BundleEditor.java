@@ -35,6 +35,7 @@
 package org.knopflerfish.eclipse.core.ui.editors;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
@@ -55,8 +56,8 @@ import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.texteditor.DocumentProviderRegistry;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.ui.editors.manifest.form.ManifestFormEditor;
-import org.knopflerfish.eclipse.core.ui.editors.packaging.form.PackagingFormEditor;
+import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestFormEditor;
+import org.knopflerfish.eclipse.core.ui.editors.packaging.PackagingFormEditor;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -146,6 +147,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
       BundleDocument buildDoc = new BundleDocument(manifestDoc, packDoc);
       manifestFormEditor.attachDocument(buildDoc);
       buildFormEditor.attachDocument(buildDoc);
+
     } catch (CoreException e) {
       e.printStackTrace();
     }
@@ -287,6 +289,8 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
             if (manifestTextEditor.isDirty()) {
               manifestTextEditor.doRevertToSaved();
             }
+            // Pass markers to graphical view
+            manifestFormEditor.setErrors(visitor.getManifestFile().findMarkers(null, true, IResource.DEPTH_INFINITE));
             IDocument manifestDoc = provider.getDocument(manifestInput);
             IDocument packDoc = provider.getDocument(bundlePackInput);
             manifestFormEditor.attachDocument(new BundleDocument(manifestDoc, packDoc));

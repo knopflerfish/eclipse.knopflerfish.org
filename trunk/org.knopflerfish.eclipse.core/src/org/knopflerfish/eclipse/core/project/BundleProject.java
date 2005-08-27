@@ -39,11 +39,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -52,6 +54,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
@@ -59,6 +62,7 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 /**
@@ -66,11 +70,16 @@ import org.knopflerfish.eclipse.core.manifest.PackageDescription;
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleProject implements IBundleProject {
+  // Markers
+  public static final String MARKER_MANIFEST = "manifest";
+  public static final String MARKER_BUNDLE_ACTIVATOR = "org.knopflerfish.eclipse.core.activator";
+  public static final String MARKER_EXPORT_PACKAGES = "org.knopflerfish.eclipse.core.packageExports";
+  
   public static final String CLASSPATH_FILE = ".classpath";
   public static final String MANIFEST_FILE  = "bundle.manifest";
   public static final String BUNDLE_PACK_FILE = ".bundle-pack";
   
-  private final IJavaProject project;
+  private final IJavaProject javaProject;
   private BundleManifest manifest;
   private BundlePackDescription bundlePackDescription;
 
@@ -78,13 +87,13 @@ public class BundleProject implements IBundleProject {
     IWorkspaceRoot workspace = ResourcesPlugin.getWorkspace().getRoot();
     IProject project = workspace.getProject(name);
     IJavaProject javaProject = JavaCore.create(project);
-    this.project = javaProject;
+    this.javaProject = javaProject;
     loadManifest();
     bundlePackDescription = createBundlePackDescription();
   }
   
   public BundleProject(IJavaProject project) throws CoreException {
-    this.project = project;
+    this.javaProject = project;
     loadManifest();
     bundlePackDescription = createBundlePackDescription();
   }
@@ -97,7 +106,7 @@ public class BundleProject implements IBundleProject {
    * @see org.knopflerfish.eclipse.core.IBundleProject#getJavaProject()
    */
   public IJavaProject getJavaProject() {
-    return project;
+    return javaProject;
   }
 
   /*
@@ -108,7 +117,7 @@ public class BundleProject implements IBundleProject {
     return bundlePackDescription;
   }
   public IFile getBundlePackDescriptionFile() {
-    return project.getProject().getFile(BUNDLE_PACK_FILE);
+    return javaProject.getProject().getFile(BUNDLE_PACK_FILE);
   }
 
   /* (non-Javadoc)
@@ -118,7 +127,7 @@ public class BundleProject implements IBundleProject {
     return manifest;
   }
   public IFile getBundleManifestFile() {
-    return project.getProject().getFile(MANIFEST_FILE);
+    return javaProject.getProject().getFile(MANIFEST_FILE);
   }
   
   public void setBundleManifest(BundleManifest manifest) {
@@ -138,14 +147,48 @@ public class BundleProject implements IBundleProject {
 
   /*
    *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getExportablePackages()
+   */
+  public PackageDescription[] getExportablePackages() {
+    ArrayList packages = new ArrayList();
+    IProject project = javaProject.getProject();
+    try {
+      IPackageFragmentRoot[] fragmentRoot = javaProject.getAllPackageFragmentRoots();
+      for (int i=0; i<fragmentRoot.length; i++) {
+        if (fragmentRoot[i].isExternal()) continue;
+        
+        IProject fragmentProject = fragmentRoot[i].getCorrespondingResource().getProject();
+        if (fragmentRoot[i].getKind() == IPackageFragmentRoot.K_SOURCE ||
+            (fragmentRoot[i].isArchive() && project.equals(fragmentProject))) {
+          
+          IJavaElement[] elements = fragmentRoot[i].getChildren();
+          for (int j=0; j<elements.length; j++) {
+            if (elements[j].getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
+              // Check if package fragment has any classes to export
+              IPackageFragment fragment = (IPackageFragment) elements[j];
+              if (fragment.containsJavaResources()) {
+                packages.add(new PackageDescription(fragment.getElementName(), null));
+              }
+            }
+          }
+        }
+      }
+    } catch (CoreException e) {
+      e.printStackTrace();
+    }
+    return (PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]);
+  }
+  
+  /*
+   *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.project.IBundleProject#getBundleActivators()
    */
   public IType[] getBundleActivators() {
     ArrayList activators = new ArrayList();
 
     try{
-      IType activatorType = project.findType("org.osgi.framework.BundleActivator");
-      ITypeHierarchy hierarchy = activatorType.newTypeHierarchy(project, null);
+      IType activatorType = javaProject.findType("org.osgi.framework.BundleActivator");
+      ITypeHierarchy hierarchy = activatorType.newTypeHierarchy(javaProject, null);
       IType[] implClasses = hierarchy.getImplementingClasses(activatorType);
       if (implClasses != null) {
         for(int i=0;i<implClasses.length;i++) {
@@ -153,7 +196,7 @@ public class BundleProject implements IBundleProject {
           if (root != null) {
             if (root.getKind() == IPackageFragmentRoot.K_SOURCE) {
               IJavaProject ancestor = (IJavaProject) root.getAncestor(IJavaElement.JAVA_PROJECT);
-              if (project.equals(ancestor)) {
+              if (javaProject.equals(ancestor)) {
                 activators.add(implClasses[i]);
               }
             }
@@ -174,7 +217,7 @@ public class BundleProject implements IBundleProject {
   public IFile[] getJars() {
     IFile[] files = null;
     try {
-      files = getFiles(project.getProject(), "jar", project.getOutputLocation());
+      files = getFiles(javaProject.getProject(), "jar", javaProject.getOutputLocation());
     } catch (JavaModelException e) {
       e.printStackTrace();
     }
@@ -186,7 +229,7 @@ public class BundleProject implements IBundleProject {
    * @see org.knopflerfish.eclipse.core.project.IBundleProject#getFileName()
    */
   public String getFileName() {
-    StringBuffer buf = new StringBuffer(project.getProject().getName());
+    StringBuffer buf = new StringBuffer(javaProject.getProject().getName());
     String version = manifest.getVersion();
     if (version != null && version.trim().length() > 0) {
       buf.append("-");
@@ -200,21 +243,117 @@ public class BundleProject implements IBundleProject {
   /****************************************************************************
    * Check methods
    ***************************************************************************/
-  public boolean checkManifestBundleActivator() {
+  public void checkManifest() throws CoreException {
+    IFile manifestFile = getBundleManifestFile();
+
+    InputStream is = null;
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    try {
+      try {
+        is = manifestFile.getContents();
+        
+        byte [] buf = new byte[256];
+        int numRead = 0;
+        while( (numRead = is.read(buf)) != -1) {
+          baos.write(buf, 0, numRead);
+        }
+      } finally {
+        if (is != null) is.close();
+        baos.flush();
+        baos.close();
+      }
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
+    StringBuffer manifestContents = new StringBuffer(baos.toString());
+    
+
+    // Remove all old markers
+    /*
+    int depth = IResource.DEPTH_INFINITE;
+    try {
+       manifestFile.deleteMarkers(IMarker.PROBLEM, true, depth);
+    } catch (CoreException e) {
+       // something went wrong
+    }
+    */
+
+    // Check Bundle activator
+    String error = checkManifestBundleActivator();
+    if (error != null) {
+      IMarker marker = manifestFile.createMarker(MARKER_BUNDLE_ACTIVATOR);
+      if (marker.exists()) {
+         marker.setAttribute(IMarker.MESSAGE, error);
+         marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+         int line = ManifestUtil.findAttributeLine(manifestContents, BundleManifest.BUNDLE_ACTIVATOR);
+         if (line != -1) {
+           marker.setAttribute(IMarker.LINE_NUMBER, line);
+         }
+      }
+    } else {
+      manifestFile.deleteMarkers(MARKER_BUNDLE_ACTIVATOR, false, IResource.DEPTH_INFINITE);
+    }
+    
+    // Check Exports
+    error = checkPackageExports();
+    if (error != null) {
+      IMarker marker = manifestFile.createMarker(MARKER_EXPORT_PACKAGES);
+      if (marker.exists()) {
+         marker.setAttribute(IMarker.MESSAGE, error);
+         marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+         int line = ManifestUtil.findAttributeLine(manifestContents, BundleManifest.EXPORT_PACKAGE);
+         if (line != -1) {
+           marker.setAttribute(IMarker.LINE_NUMBER, line);
+         }
+      }
+    } else {
+      manifestFile.deleteMarkers(MARKER_EXPORT_PACKAGES, false, IResource.DEPTH_INFINITE);
+    }
+    
+    // Dynamic Imports
+    /*
+    if (!checkManifestDynamicImports()) {
+      IMarker marker = manifestFile.createMarker(IMarker.PROBLEM);
+      if (marker.exists()) {
+        try {
+           marker.setAttribute(IMarker.MESSAGE, "Invalid DynamicImports specified in manifest.");
+           marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+        } catch (CoreException e) {
+           // You need to handle the case where the marker no longer exists      
+        }
+      }
+    }
+    */
+    
+  }
+  
+  public String checkManifestBundleActivator() {
     // Check that bundle activator class exists
     String activator = manifest.getActivator();
     if (activator != null) {
       IType[] types = getBundleActivators();
       for(int i=0; i<types.length;i++) {
         if (activator.trim().equals(types[i].getFullyQualifiedName())) {
-          return true;
+          return null;
         }
       }
       //Could not find activator
-      return false;
+      return "Bundle activator "+activator+" does not exist.";
     } else {
-      return true;
+      return null;
     }
+  }
+
+  public String checkPackageExports() {
+    List exportablePackages = Arrays.asList(getExportablePackages());
+
+    PackageDescription[] packages = manifest.getExportedPackages();
+    for(int i=0; i<packages.length;i++) {
+      if (!exportablePackages.contains(packages[i])) {
+        return "Can not export package "+packages[i]+".";
+      }
+    }
+    return null;
   }
   
   public boolean checkManifestBundleClassPath() { 
@@ -237,7 +376,7 @@ public class BundleProject implements IBundleProject {
   }
   
   public boolean checkManifestDynamicImports() {
-    return true;
+    return false;
   }
   
   /****************************************************************************
@@ -273,11 +412,11 @@ public class BundleProject implements IBundleProject {
     try {
       if (packDescription == null) {
         // Create jar description
-        packDescription = new BundlePackDescription(project.getProject());
+        packDescription = new BundlePackDescription(javaProject.getProject());
         // Add output folder as resource
         BundleResource resource = new BundleResource(
             BundleResource.TYPE_CLASSES,
-            project.getOutputLocation(), 
+            javaProject.getOutputLocation(), 
             "", 
             Pattern.compile(".*\\.class"));
         packDescription.addResource(resource);
@@ -290,7 +429,7 @@ public class BundleProject implements IBundleProject {
           packDescription.save(baos);
           bais = new ByteArrayInputStream(baos.toByteArray());
         
-          IFile bundlePackFile = project.getProject().getFile(BUNDLE_PACK_FILE);
+          IFile bundlePackFile = javaProject.getProject().getFile(BUNDLE_PACK_FILE);
           if (!bundlePackFile.exists()) {
             bundlePackFile.create(bais, false, null);
           }
@@ -312,10 +451,10 @@ public class BundleProject implements IBundleProject {
     BundlePackDescription jar  = null;
     try {
       try {
-        IFile bundlePackFile = project.getProject().getFile(BUNDLE_PACK_FILE);
+        IFile bundlePackFile = javaProject.getProject().getFile(BUNDLE_PACK_FILE);
         if (bundlePackFile.exists()) {
           is = bundlePackFile.getContents(true);
-          jar = new BundlePackDescription(project.getProject(), is);
+          jar = new BundlePackDescription(javaProject.getProject(), is);
         }
       } finally {
         if (is != null) {
@@ -339,7 +478,7 @@ public class BundleProject implements IBundleProject {
         packDescription.save(baos);
         bais = new ByteArrayInputStream(baos.toByteArray());
       
-        IFile bundlePackFile = project.getProject().getFile(BUNDLE_PACK_FILE);
+        IFile bundlePackFile = javaProject.getProject().getFile(BUNDLE_PACK_FILE);
         if (!bundlePackFile.exists()) {
           bundlePackFile.create(bais, IResource.FORCE, null);
         } else {
@@ -362,7 +501,7 @@ public class BundleProject implements IBundleProject {
     try {
       try {
         // Get manifest
-        IFile manifestFile = project.getProject().getFile(MANIFEST_FILE);
+        IFile manifestFile = javaProject.getProject().getFile(MANIFEST_FILE);
         if (manifestFile.exists()) {
           is = manifestFile.getContents();
           manifest = new BundleManifest(is);
@@ -387,7 +526,7 @@ public class BundleProject implements IBundleProject {
         manifest.write(baos);
         baos.flush();
         bais = new ByteArrayInputStream(baos.toByteArray());
-        file = project.getProject().getFile(MANIFEST_FILE);
+        file = javaProject.getProject().getFile(MANIFEST_FILE);
         if (!file.exists()) {
           file.create(bais, IResource.FORCE, null);
         } else {
