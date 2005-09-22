@@ -36,9 +36,9 @@ package org.knopflerfish.eclipse.core.ui.launcher.main;
 
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -74,7 +74,7 @@ public class SystemPropertySorter extends ViewerSorter {
    * @see org.eclipse.jface.viewers.ViewerSorter#category(java.lang.Object)
    */
   public int category(Object o) {
-    if (o instanceof IOsgiInstall) {
+    if (o instanceof FrameworkDistribution) {
       return 0;
     } else if (o instanceof SystemPropertyGroup) {
       // Check if user defined group

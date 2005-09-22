@@ -39,8 +39,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.Attributes;
 
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IDocument;
@@ -64,7 +66,6 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
@@ -77,6 +78,9 @@ import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.ui.SharedImages;
+import org.knopflerfish.eclipse.core.ui.StatusLabel;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.PropertyDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.TypeSelectionDialog;
@@ -146,10 +150,14 @@ public class GeneralSection extends SectionPart {
   // SWT Widgets
   private Text wSymbolicNameText;
   private Text wVersionText;
+  private StatusLabel wNameStatusLabel;
   private Text wNameText;
   private Text wUpdateLocationText;
+  private StatusLabel wUpdateLocationStatusLabel;
   private Text wActivatorText;
+  private StatusLabel wActivatorStatusLabel;
   private Text wDescriptionText;
+  private StatusLabel wDocUrlStatusLabel;
   private Text wDocUrlText;
   private Text wVendorText;
   private Text wContactText;
@@ -177,13 +185,41 @@ public class GeneralSection extends SectionPart {
     section.setText(TITLE);
   }
   
-  public void setErrors(List errors) {
+  public void setErrors(Map errors) {
+    
+    IMarker marker = (IMarker) errors.get(BundleManifest.BUNDLE_ACTIVATOR);
+    updateStatus(marker, wActivatorStatusLabel, wActivatorText);
+    marker = (IMarker) errors.get(BundleManifest.BUNDLE_UPDATELOCATION);
+    updateStatus(marker, wUpdateLocationStatusLabel, wUpdateLocationText);
+    marker = (IMarker) errors.get(BundleManifest.BUNDLE_DOCURL);
+    updateStatus(marker, wDocUrlStatusLabel, wDocUrlText);
+    marker = (IMarker) errors.get(BundleManifest.BUNDLE_NAME);
+    updateStatus(marker, wNameStatusLabel, wNameText);
+  }
+  
+  private void updateStatus(IMarker marker, StatusLabel wLabel, Text wText) {
     Color c = null;
-    if (errors != null && errors.contains(BundleManifest.BUNDLE_ACTIVATOR)) {
-      c = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+    Image img = null;
+    
+    if (marker != null) {
+      int severity = marker.getAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+      img = OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_ERROR);
+      c = Display.getDefault().getSystemColor(SWT.COLOR_RED);
+      if (severity == IMarker.SEVERITY_WARNING) {
+        img = OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_WARNING);
+        c = null;
+      }
     }
-    if (wActivatorText != null) {
-      wActivatorText.setForeground(c);
+    
+    // Update label
+    if (wLabel != null) {
+      wLabel.setStatusImage(img, UiUtils.LEFT, UiUtils.BOTTOM);
+      wLabel.redraw();
+    }
+    
+    // Update text
+    if (wText != null) {
+      wText.setForeground(c);
     }
   }
   
@@ -269,7 +305,7 @@ public class GeneralSection extends SectionPart {
    ***************************************************************************/
   
   private void createClient(Section section, FormToolkit toolkit) {
-
+    
     // Set section layout
     GridData data = new GridData(SWT.FILL);
     data.grabExcessHorizontalSpace = true;
@@ -293,16 +329,19 @@ public class GeneralSection extends SectionPart {
     td.colspan = 3;
     basicText.setLayoutData(td);
     
-    wSymbolicNameText = 
-      createText(container, toolkit, 2, BUNDLE_SYMBOLIC_NAME_LABEL, BUNDLE_SYMBOLIC_NAME_TOOLTIP);
-    wVersionText = 
-      createText(container, toolkit, 2, BUNDLE_VERSION_LABEL, BUNDLE_VERSION_TOOLTIP);
-    wNameText =
-      createText(container, toolkit, 2, BUNDLE_NAME_LABEL, BUNDLE_NAME_TOOLTIP);
-    wUpdateLocationText =
-      createText(container, toolkit, 2, BUNDLE_UPDATELOCATION_LABEL, BUNDLE_UPDATELOCATION_TOOLTIP);
-    wActivatorText = 
-      createText(container, toolkit, 1, BUNDLE_ACTIVATOR_LABEL, BUNDLE_ACTIVATOR_TOOLTIP);
+    createLabel(container, toolkit, BUNDLE_SYMBOLIC_NAME_LABEL, BUNDLE_SYMBOLIC_NAME_TOOLTIP);
+    wSymbolicNameText = createText(container, toolkit, 2);
+    createLabel(container, toolkit, BUNDLE_VERSION_LABEL, BUNDLE_VERSION_TOOLTIP);
+    wVersionText = createText(container, toolkit, 2);
+    wNameStatusLabel = 
+      createLabel(container, toolkit, BUNDLE_NAME_LABEL, BUNDLE_NAME_TOOLTIP);
+    wNameText = createText(container, toolkit, 2);
+    wUpdateLocationStatusLabel =
+      createLabel(container, toolkit, BUNDLE_UPDATELOCATION_LABEL, BUNDLE_UPDATELOCATION_TOOLTIP);
+    wUpdateLocationText = createText(container, toolkit, 2);
+    wActivatorStatusLabel = 
+      createLabel(container, toolkit, BUNDLE_ACTIVATOR_LABEL, BUNDLE_ACTIVATOR_TOOLTIP);
+    wActivatorText = createText(container, toolkit, 1);
     
     Button wBrowseActivatorButton = toolkit.createButton(container, "Browse...", SWT.PUSH);
     wBrowseActivatorButton.addSelectionListener(new SelectionAdapter() {
@@ -336,10 +375,11 @@ public class GeneralSection extends SectionPart {
     td.colspan = 3;
     docText.setLayoutData(td);
     
-    wDescriptionText =
-      createText(container, toolkit, 2, BUNDLE_DESCRIPTION_LABEL, BUNDLE_DESCRIPTION_TOOLTIP);
-    wDocUrlText =
-      createText(container, toolkit, 2, BUNDLE_DOCURL_LABEL, BUNDLE_DOCURL_TOOLTIP);
+    createLabel(container, toolkit, BUNDLE_DESCRIPTION_LABEL, BUNDLE_DESCRIPTION_TOOLTIP);
+    wDescriptionText = createText(container, toolkit, 2);
+    wDocUrlStatusLabel = 
+      createLabel(container, toolkit, BUNDLE_DOCURL_LABEL, BUNDLE_DOCURL_TOOLTIP);
+    wDocUrlText = createText(container, toolkit, 2);
     
     // Vendor Information section
     FormText vendorText = toolkit.createFormText(container, false);
@@ -350,12 +390,12 @@ public class GeneralSection extends SectionPart {
     td.colspan = 3;
     vendorText.setLayoutData(td);
     
-    wVendorText =
-      createText(container, toolkit, 2, BUNDLE_VENDOR_LABEL, BUNDLE_VENDOR_TOOLTIP);
-    wContactText =
-      createText(container, toolkit, 2, BUNDLE_CONTACT_LABEL, BUNDLE_CONTACT_TOOLTIP);
-    wCopyrightText =
-      createText(container, toolkit, 2, BUNDLE_COPYRIGHT_LABEL, BUNDLE_COPYRIGHT_TOOLTIP);
+    createLabel(container, toolkit, BUNDLE_VENDOR_LABEL, BUNDLE_VENDOR_TOOLTIP);
+    wVendorText = createText(container, toolkit, 2);
+    createLabel(container, toolkit, BUNDLE_CONTACT_LABEL, BUNDLE_CONTACT_TOOLTIP);
+    wContactText = createText(container, toolkit, 2);
+    createLabel(container, toolkit, BUNDLE_COPYRIGHT_LABEL, BUNDLE_COPYRIGHT_TOOLTIP);
+    wCopyrightText = createText(container, toolkit, 2);
     
     // Categories section
     FormText catText = toolkit.createFormText(container, false);
@@ -589,10 +629,21 @@ public class GeneralSection extends SectionPart {
     section.setClient(container);
   }
   
-  private Text createText(Composite parent, FormToolkit toolkit, int colSpan, String label, String tooltip) {
+  private StatusLabel createLabel(Composite parent, FormToolkit toolkit, String label, String tooltip) {
     // Create label
-    Label wLabel = toolkit.createLabel(parent, label);
-    wLabel.setToolTipText(tooltip);
+    StatusLabel wStatusLabel = new StatusLabel(parent, SWT.NONE);
+    toolkit.adapt(wStatusLabel, false, false);
+    wStatusLabel.setText(label);
+    wStatusLabel.setToolTipText(tooltip);
+
+    TableWrapData td = new TableWrapData();
+    td.valign = TableWrapData.MIDDLE;
+    wStatusLabel.setLayoutData(td);
+    
+    return wStatusLabel;
+  }
+  
+  private Text createText(Composite parent, FormToolkit toolkit, int colSpan) {
     
     // Create text
     Text wText = toolkit.createText(parent, "");
@@ -663,22 +714,22 @@ public class GeneralSection extends SectionPart {
     
     public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
     }
-
+    
     public Image getColumnImage(Object element, int columnIndex) {
       return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
     }
-
+    
     public String getColumnText(Object element, int columnIndex) {
       return (String) element;
     }
-
+    
     public void addListener(ILabelProviderListener listener) {
     }
-
+    
     public boolean isLabelProperty(Object element, String property) {
       return false;
     }
-
+    
     public void removeListener(ILabelProviderListener listener) {
     }
   }

@@ -43,8 +43,8 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
@@ -88,7 +88,13 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
       String imagePath = Osgi.getFrameworkDefinitionImage(names[i]);
       String pluginId = Osgi.getFrameworkDefinitionId(names[i]);
       
-      id = OsgiUiPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
+      id = null;
+      if (imagePath != null) {
+        id = OsgiUiPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
+      } else {
+        id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
+        "icons/obj16/_knopflerfish_obj.gif");
+      }      
       if (id != null) {
         Image image = id.createImage();
         if (image != null) {
@@ -139,9 +145,9 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
         } else {
           return imageBundle;
         }
-      case IAvailableTreeElement.TYPE_OSGI_INSTALL:
-        IOsgiInstall osgiInstall = ((AvailableElementInstall) e).getOsgiInstall();
-        return (Image) images.get(osgiInstall.getType());
+      case IAvailableTreeElement.TYPE_DISTRIBUTION:
+        FrameworkDistribution distribution = ((AvailableElementDistribution) e).getFrameworkDistribution();
+        return (Image) images.get(distribution.getType());
       case IAvailableTreeElement.TYPE_PROJECT:
         return imageProject;
       case IAvailableTreeElement.TYPE_WORKSPACE:

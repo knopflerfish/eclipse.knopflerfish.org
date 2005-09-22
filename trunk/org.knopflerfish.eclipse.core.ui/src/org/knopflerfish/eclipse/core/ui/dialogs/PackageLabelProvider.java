@@ -54,7 +54,34 @@ public class PackageLabelProvider implements ILabelProvider {
   }
 
   public String getText(Object element) {
-    return ((PackageDescription) element).getPackageName();
+    PackageDescription pkgDescription = (PackageDescription) element;
+    return pkgDescription.getPackageName();
+    /*
+    if (element instanceof PackageDescription) {
+    } else if (element instanceof IPackage) {
+      IPackage pkg = (IPackage) element;
+      StringBuffer buf = new StringBuffer(pkg.getPackageDescription().getPackageName());
+      if (pkg instanceof FrameworkPackage) {
+        FrameworkPackage fwPkg = (FrameworkPackage) pkg;
+        buf.append(" [Framework ");
+        buf.append(fwPkg.getFramework().getType());
+        buf.append("]");
+      } else if (pkg instanceof BundlePackage) {
+        BundlePackage bundlePkg = (BundlePackage) pkg;
+        buf.append(" [Bundle ");
+        buf.append(bundlePkg.getBundle().getName());
+        buf.append("]");
+      } else if (pkg instanceof ProjectPackage) {
+        ProjectPackage projectPkg = (ProjectPackage) pkg;
+        buf.append(" [Project ");
+        buf.append(projectPkg.getProject().getJavaProject().getProject().getName());
+        buf.append("]");
+      }
+      return buf.toString();
+    } else {
+      return "";
+    }
+    */
   }
 
   public void addListener(ILabelProviderListener listener) {

@@ -37,6 +37,7 @@ package org.knopflerfish.eclipse.core.ui;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -48,6 +49,13 @@ import org.eclipse.swt.widgets.TreeColumn;
  * @see http://www.gatespacetelematics.com/
  */
 public class UiUtils {
+  // Positions
+  public static int LEFT   = 0;
+  public static int RIGHT  = 1;
+  public static int TOP    = 2;
+  public static int BOTTOM = 3;
+  
+
   /*
   private static final int MIN_COL_WIDTH    = 15;
   private static final int COL_MARGIN       = 15;
@@ -144,5 +152,29 @@ public class UiUtils {
     } finally {
       if (gc != null) gc.dispose();
     }
+  }
+
+  public static Image ovrImage(Image imgObj, Image imgOvr, int posX, int posY) {
+    if (imgOvr == null || imgObj == null)  return imgObj;
+    
+    Image img = new Image(null, imgObj.getBounds());
+    GC gc = null;
+    try {
+      gc = new GC(img);
+      gc.drawImage(imgObj, 0, 0);
+      int x = 0;
+      if (posX == RIGHT) {
+        x = img.getBounds().width-imgOvr.getBounds().width;
+      }
+      int y = 0;
+      if (posY == BOTTOM) {
+        y = img.getBounds().height-imgOvr.getBounds().height; 
+      }
+      gc.drawImage(imgOvr, x, y);
+    } finally {
+      if (gc != null) gc.dispose();
+    }
+    
+    return img;
   }
 }

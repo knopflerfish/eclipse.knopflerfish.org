@@ -32,14 +32,16 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.resources;
+package org.knopflerfish.eclipse.core.project;
 
 import java.io.File;
 import java.util.Map;
 
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -47,8 +49,6 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
-import org.knopflerfish.eclipse.core.project.BundlePackDescription;
-import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -64,7 +64,7 @@ public class BundleBuilder extends IncrementalProjectBuilder {
     // Get output directory
     IProject project = getProject();
     IJavaProject javaProject = JavaCore.create(project);
-    BundleProject bundleProject = new BundleProject(javaProject);
+    final BundleProject bundleProject = new BundleProject(javaProject);
     BundlePackDescription bundlePackDescription = bundleProject.getBundlePackDescription();
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
     IFolder folder = root.getFolder(javaProject.getOutputLocation());
@@ -75,7 +75,14 @@ public class BundleBuilder extends IncrementalProjectBuilder {
     case FULL_BUILD:
     case INCREMENTAL_BUILD:
       // Check if any errors
-      bundleProject.checkManifest();
+      try {
+        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+        workspace.run(new IWorkspaceRunnable() {
+          public void run(IProgressMonitor monitor) throws CoreException {
+            bundleProject.checkManifest();
+          }
+        }, null, IWorkspace.AVOID_UPDATE, null);
+      } catch (Throwable t) {}
       
       // Build bundle JAR
       File jarFile = new File(outDir, bundleProject.getFileName());

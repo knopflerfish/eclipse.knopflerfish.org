@@ -32,7 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.resources;
+package org.knopflerfish.eclipse.core.project;
 
 import java.util.ArrayList;
 

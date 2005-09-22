@@ -46,7 +46,7 @@ import java.util.*;
  * @see http://www.gatespacetelematics.com/
  */
 public class OsgiUiPlugin extends AbstractUIPlugin {
-  private static String IMAGE_BUNDLE_WIZ = "icons/wizban/bundle_wiz.gif";
+  private static final String IMAGE_BUNDLE_WIZ = "icons/wizban/bundle_wiz.gif";
   
   //The shared instance.
   private static OsgiUiPlugin plugin;
@@ -55,6 +55,8 @@ public class OsgiUiPlugin extends AbstractUIPlugin {
   
   // Image descriptors
   public static ImageDescriptor BUNDLE_WIZARD_BANNER = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_WIZ);
+  
+  private SharedImages sharedImages;
   
   
   /**
@@ -74,6 +76,8 @@ public class OsgiUiPlugin extends AbstractUIPlugin {
    * This method is called upon plug-in activation
    */
   public void start(BundleContext context) throws Exception {
+    sharedImages = new SharedImages();
+
     super.start(context);
   }
   
@@ -81,6 +85,8 @@ public class OsgiUiPlugin extends AbstractUIPlugin {
    * This method is called when the plug-in is stopped
    */
   public void stop(BundleContext context) throws Exception {
+    sharedImages.dispose();
+
     super.stop(context);
   }
   
@@ -109,5 +115,10 @@ public class OsgiUiPlugin extends AbstractUIPlugin {
    */
   public ResourceBundle getResourceBundle() {
     return resourceBundle;
+  }
+  
+  public static SharedImages getSharedImages() {
+    
+    return getDefault().sharedImages;
   }
 }

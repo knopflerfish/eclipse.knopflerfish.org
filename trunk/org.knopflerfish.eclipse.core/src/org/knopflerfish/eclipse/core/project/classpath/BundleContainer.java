@@ -32,72 +32,89 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.project;
+package org.knopflerfish.eclipse.core.project.classpath;
 
 import java.util.ArrayList;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.ClasspathContainerInitializer;
 import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
-import org.knopflerfish.eclipse.core.IOsgiLibrary;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class OsgiClasspathContainer implements IClasspathContainer {
-  private IOsgiInstall osgiInstall;
+public class BundleContainer extends ClasspathContainerInitializer  implements IClasspathContainer {
   
-  public OsgiClasspathContainer(IOsgiInstall osgiInstall) {
-    this.osgiInstall = osgiInstall;
+  public static final String CONTAINER_PATH = "org.knopflerfish.eclipse.core.BUNDLE_CONTAINER";
+  
+  private static final String DESCRIPTION = "Bundle";
+
+  private IPath containerPath;
+  
+  /****************************************************************************
+   * org.eclipse.jdt.core.ClasspathContainerInitializer methods
+   ***************************************************************************/
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jdt.core.ClasspathContainerInitializer#initialize(org.eclipse.core.runtime.IPath, org.eclipse.jdt.core.IJavaProject)
+   */
+  public void initialize(IPath containerPath, IJavaProject project) throws CoreException {
+    // TODO Auto-generated method stub
+    System.err.println("Initialize bundle dependencies for project "+project.getProject().getName()+", path="+containerPath);
+    this.containerPath = containerPath;
+
+    JavaCore.setClasspathContainer(
+        containerPath, 
+        new IJavaProject[] {project}, 
+        new IClasspathContainer[] {this},
+        null);        
   }
+
+  /****************************************************************************
+   * org.eclipse.jdt.core.IClasspathContainer methods
+   ***************************************************************************/
   
-  /* (non-Javadoc)
+  /*
+   *  (non-Javadoc)
    * @see org.eclipse.jdt.core.IClasspathContainer#getClasspathEntries()
    */
   public IClasspathEntry[] getClasspathEntries() {
     ArrayList classPath = new ArrayList();
-    // Get build libraries
-    IOsgiLibrary [] libraries = osgiInstall.getBuildLibraries();
-    for (int i=0; i<libraries.length; i++) {
-      Path path = new Path(libraries[i].getPath());
-      Path src = null;
-      if (libraries[i].getSource() != null) {
-        try {
-          src = new Path(libraries[i].getSource());
-        } catch (Exception e) {
-        }
-      }
-      IClasspathEntry entry = JavaCore.newLibraryEntry(path, src, null, false);
-      
-      classPath.add(entry);
-    }
-    
+    // TODO Auto-generated method stub
+    IClasspathEntry entry = JavaCore.newContainerEntry(new Path(ExecutionEnvironmentContainer.CONTAINER_PATH));
+    classPath.add(entry);
+
     return (IClasspathEntry[]) classPath.toArray(new IClasspathEntry[classPath.size()]); 
   }
 
-  /* (non-Javadoc)
+  /*
+   *  (non-Javadoc)
    * @see org.eclipse.jdt.core.IClasspathContainer#getDescription()
    */
   public String getDescription() {
-    return "OSGi Library ["+osgiInstall.getName()+"]";
+    return DESCRIPTION;
   }
 
-  /* (non-Javadoc)
+  /*
+   *  (non-Javadoc)
    * @see org.eclipse.jdt.core.IClasspathContainer#getKind()
    */
   public int getKind() {
     return IClasspathContainer.K_SYSTEM;
   }
 
-  /* (non-Javadoc)
+  /*
+   *  (non-Javadoc)
    * @see org.eclipse.jdt.core.IClasspathContainer#getPath()
    */
   public IPath getPath() {
-    return new Path(OsgiContainerInitializer.KF_CONTAINER+"/"+osgiInstall.getName());
+    return containerPath;
   }
-
 }

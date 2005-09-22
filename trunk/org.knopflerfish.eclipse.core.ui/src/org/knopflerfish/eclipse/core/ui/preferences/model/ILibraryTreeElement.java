@@ -42,10 +42,8 @@ public interface ILibraryTreeElement {
 
   public static int TYPE_ROOT         = 0;
   public static int TYPE_RUNTIME_ROOT = 1;
-  public static int TYPE_BUILD_ROOT   = 2;
   public static int TYPE_BUNDLE_ROOT  = 3;
   public static int TYPE_RUNTIME      = 4;
-  public static int TYPE_BUILD        = 5;
   public static int TYPE_BUNDLE       = 6;
 
   ILibraryTreeElement[] getChildren();

@@ -34,8 +34,6 @@
 
 package org.knopflerfish.eclipse.core.ui.wizards;
 
-import java.util.List;
-
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
@@ -62,9 +60,9 @@ import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
-import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.OsgiInstall;
+import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -89,9 +87,12 @@ public class ProjectWizardPage extends WizardPage {
   private Button  wProjectContentsBrowseButton;  
   private Text    wProjectSettingsSrcText;
   private Text    wProjectSettingsOutText;
-  private Label   wProjectLibrariesEnvLabel;
-  private Combo   wProjectLibrariesEnvCombo;
-  private Button  wProjectLibrariesDefaultButton;
+  private Label   wExecutionEnvironmentLabel;
+  private Combo   wExecutionEnvironmentCombo;
+  private Button  wExecutionEnvironmentDefaultButton;
+  private Label   wFrameworkLabel;
+  private Combo   wFrameworkCombo;
+  private Button  wFrameworkDefaultButton;
   
 
   public ProjectWizardPage(ISelection selection) {
@@ -218,59 +219,98 @@ public class ProjectWizardPage extends WizardPage {
     wProjectSettingsOutText.setLayoutData(gd);
     
     // Project Libraries
-    Group wProjectLibrariesGroup = new Group(composite, SWT.NULL);
+    Group wBuildPathGroup = new Group(composite, SWT.NULL);
     layout = new GridLayout();
     layout.marginHeight = MARGIN;
     layout.marginWidth = MARGIN;
     layout.numColumns = 2;
-    wProjectLibrariesGroup.setLayout(layout);
-    wProjectLibrariesGroup.setText("Project Libraries");
+    wBuildPathGroup.setLayout(layout);
+    wBuildPathGroup.setText("Build Path");
     gd = new GridData(GridData.FILL_HORIZONTAL);
     gd.horizontalSpan = 2;
-    wProjectLibrariesGroup.setLayoutData(gd);
+    wBuildPathGroup.setLayoutData(gd);
 
-    wProjectLibrariesDefaultButton = new Button(wProjectLibrariesGroup, SWT.CHECK);
-    wProjectLibrariesDefaultButton.setText("Use default");
-    wProjectLibrariesDefaultButton.setSelection(true);
+    // Execution environment build path
+    wExecutionEnvironmentDefaultButton = new Button(wBuildPathGroup, SWT.CHECK);
+    wExecutionEnvironmentDefaultButton.setSelection(true);
     
-    wProjectLibrariesDefaultButton.addSelectionListener(new SelectionAdapter(){
+    wExecutionEnvironmentDefaultButton.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
         boolean selection = ((Button) e.widget).getSelection();
         // Enable/disbale manual location widgets
-        wProjectLibrariesEnvLabel.setEnabled(!selection);
-        wProjectLibrariesEnvCombo.setEnabled(!selection);
+        wExecutionEnvironmentLabel.setEnabled(!selection);
+        wExecutionEnvironmentCombo.setEnabled(!selection);
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
     gd.horizontalSpan = 2;
-    wProjectLibrariesDefaultButton.setLayoutData(gd);
+    wExecutionEnvironmentDefaultButton.setLayoutData(gd);
     
-    wProjectLibrariesEnvLabel = new Label(wProjectLibrariesGroup, SWT.LEFT);
-    wProjectLibrariesEnvLabel.setText("OSGi Environment:");
-    wProjectLibrariesEnvLabel.setEnabled(false);
-    wProjectLibrariesEnvCombo = new Combo(wProjectLibrariesGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
-    List l = Osgi.getOsgiInstalls();
-    IOsgiInstall defaultInstall = null;
-    if (l != null && l.size() > 0) {
-      for(int i=0; i<l.size();i++) {
-        OsgiInstall osgiInstall = (OsgiInstall) l.get(i);
-        
-        wProjectLibrariesEnvCombo.add(osgiInstall.getName());
-        if (osgiInstall.isDefaultDefinition()) {
-          defaultInstall = osgiInstall;
+    wExecutionEnvironmentLabel = new Label(wBuildPathGroup, SWT.LEFT);
+    wExecutionEnvironmentLabel.setText("Execution Environment:");
+    wExecutionEnvironmentLabel.setEnabled(false);
+    wExecutionEnvironmentCombo = new Combo(wBuildPathGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
+    ExecutionEnvironment[] environments = OsgiPreferences.getExecutionEnvironments();
+    ExecutionEnvironment defaultEnvironment = null;
+    if (environments.length > 0) {
+      for(int i=0; i<environments.length;i++) {
+        wExecutionEnvironmentCombo.add(environments[i].getName());
+        if (environments[i].isDefaultEnvironment()) {
+          defaultEnvironment = environments[i];
         }
       } 
-      wProjectLibrariesEnvCombo.select(0);
+      wExecutionEnvironmentCombo.select(0);
     } else {
       // No OSGi enviroments installed
       //wProjectLibrariesEnvCombo.setData(ERROR, "No OSGi environments are installed.");
-      wProjectLibrariesDefaultButton.setEnabled(false);
+      wExecutionEnvironmentDefaultButton.setEnabled(false);
     }
-    wProjectLibrariesEnvCombo.setEnabled(false);
+    wExecutionEnvironmentCombo.setEnabled(false);
     
     gd = new GridData(GridData.FILL_HORIZONTAL);
-    wProjectLibrariesEnvCombo.setLayoutData(gd);
-    wProjectLibrariesDefaultButton.setText("Use default Knopflerfish"+(defaultInstall != null ? " ("+defaultInstall.getName()+")" : ""));
+    wExecutionEnvironmentCombo.setLayoutData(gd);
+    wExecutionEnvironmentDefaultButton.setText("Use default execution environment"+(defaultEnvironment != null ? " ("+defaultEnvironment.getName()+")" : ""));
+
+    // Framework build path
+    wFrameworkDefaultButton = new Button(wBuildPathGroup, SWT.CHECK);
+    wFrameworkDefaultButton.setSelection(true);
+    
+    wFrameworkDefaultButton.addSelectionListener(new SelectionAdapter(){
+      public void widgetSelected(SelectionEvent e) {
+        boolean selection = ((Button) e.widget).getSelection();
+        // Enable/disbale manual location widgets
+        wFrameworkLabel.setEnabled(!selection);
+        wFrameworkCombo.setEnabled(!selection);
+      }
+    });
+    gd = new GridData(GridData.FILL_HORIZONTAL);
+    gd.horizontalSpan = 2;
+    wFrameworkDefaultButton.setLayoutData(gd);
+    
+    wFrameworkLabel = new Label(wBuildPathGroup, SWT.LEFT);
+    wFrameworkLabel.setText("Framework:");
+    wFrameworkLabel.setEnabled(false);
+    wFrameworkCombo = new Combo(wBuildPathGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
+    FrameworkDistribution[] distribution = OsgiPreferences.getFrameworkDistributions();
+    FrameworkDistribution defaultDistribution = null;
+    if (distribution.length > 0) {
+      for(int i=0; i<distribution.length;i++) {
+        wFrameworkCombo.add(distribution[i].getName());
+        if (distribution[i].isDefaultDefinition()) {
+          defaultDistribution = distribution[i];
+        }
+      } 
+      wFrameworkCombo.select(0);
+    } else {
+      // No OSGi framework installed
+      //wProjectLibrariesEnvCombo.setData(ERROR, "No OSGi environments are installed.");
+      wFrameworkDefaultButton.setEnabled(false);
+    }
+    wFrameworkCombo.setEnabled(false);
+    
+    gd = new GridData(GridData.FILL_HORIZONTAL);
+    wFrameworkCombo.setLayoutData(gd);
+    wFrameworkDefaultButton.setText("Use default framework distribution"+(defaultDistribution != null ? " ("+defaultDistribution.getName()+")" : ""));
     
     // Update state
     wProjectNameText.setData(ERROR, verifyProjectName());
@@ -407,11 +447,19 @@ public class ProjectWizardPage extends WizardPage {
     return new Path(wProjectSettingsOutText.getText());
   }
 
-  public boolean isDefaultProjectLibrary() {
-    return wProjectLibrariesDefaultButton.getSelection();
+  public boolean isDefaultEnvironment() {
+    return wExecutionEnvironmentDefaultButton.getSelection();
   }
   
   public String getEnvironmentName() {
-    return wProjectLibrariesEnvCombo.getText();
+    return wExecutionEnvironmentCombo.getText();
+  }
+
+  public boolean isDefaultFramework() {
+    return wFrameworkDefaultButton.getSelection();
+  }
+  
+  public String getFrameworkName() {
+    return wFrameworkCombo.getText();
   }
 }

@@ -34,6 +34,7 @@
 
 package org.knopflerfish.eclipse.core;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
@@ -76,4 +77,8 @@ public interface IFrameworkConfiguration {
    * @param info bundle launch information
    */
   public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info);
+  
+  public File getWorkingDirectory();
+
 }
+

@@ -43,7 +43,7 @@ public interface IAvailableTreeElement {
   public static int TYPE_ROOT         = 0;
   public static int TYPE_WORKSPACE    = 1;
   public static int TYPE_PROJECT      = 2;
-  public static int TYPE_OSGI_INSTALL = 3;
+  public static int TYPE_DISTRIBUTION = 3;
   public static int TYPE_BUNDLE       = 4;
   
 

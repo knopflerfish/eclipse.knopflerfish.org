@@ -32,12 +32,53 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.pkg;
+
+import org.knopflerfish.eclipse.core.IOsgiBundle;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public interface IOsgiRuntime {
+public class BundlePackage implements IPackage {
+  
+  private final PackageDescription packageDescription;
+  private final FrameworkDistribution framework;
+  private final IOsgiBundle bundle;
+  
+  public BundlePackage(PackageDescription packageDescription, FrameworkDistribution framework, IOsgiBundle bundle) {
+    this.packageDescription = packageDescription;
+    this.framework = framework;
+    this.bundle = bundle;
+  }
+
+  public FrameworkDistribution getFramework() {
+    return framework;
+  }
+  
+  public IOsgiBundle getBundle() {
+    return bundle;
+  }
+  
+  /****************************************************************************
+   * org.knopflerfish.eclipse.core.pkg.IPackage methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.pkg.IPackage#getType()
+   */
+  public int getType() {
+    return BUNDLE;
+  }
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.pkg.IPackage#getPackageDescription()
+   */
+  public PackageDescription getPackageDescription() {
+    return packageDescription;
+  }
 
 }

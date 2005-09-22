@@ -42,9 +42,9 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -83,9 +83,9 @@ public class SystemPropertyLabelProvider implements ITableLabelProvider, IFontPr
   public String getColumnText(Object o, int columnIndex) {
     
     if (columnIndex == 0) {
-      if (o instanceof IOsgiInstall) {
-        IOsgiInstall osgiInstall = (IOsgiInstall) o;
-        return osgiInstall.getName();
+      if (o instanceof FrameworkDistribution) {
+        FrameworkDistribution distribution = (FrameworkDistribution) o;
+        return distribution.getName();
       } else if (o instanceof SystemPropertyGroup) {
         SystemPropertyGroup group = (SystemPropertyGroup) o;
         return group.getName();
@@ -96,7 +96,7 @@ public class SystemPropertyLabelProvider implements ITableLabelProvider, IFontPr
         return "";
       }
     } else if (columnIndex == 1) {
-      if (o instanceof IOsgiInstall) {
+      if (o instanceof FrameworkDistribution) {
         return "";
       } else if (o instanceof SystemPropertyGroup) {
         return "";

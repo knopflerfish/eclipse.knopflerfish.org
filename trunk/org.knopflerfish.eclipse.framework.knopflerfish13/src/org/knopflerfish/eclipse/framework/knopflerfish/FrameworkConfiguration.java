@@ -68,8 +68,12 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
   }
   
   /****************************************************************************
-   * org.knopflerfish.eclipse.core.IFrameworkDefinition methods
+   * org.knopflerfish.eclipse.core.IFrameworkConfiguration methods
    ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#create()
+   */
   public Arguments create() throws IOException {
     Arguments args = new Arguments();
     ArrayList programArgs = new ArrayList();
@@ -144,7 +148,15 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
     args.setProgramArguments((String[]) programArgs.toArray(new String[programArgs.size()]));
     return args;
   }
-  
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#getWorkingDirectory()
+   */
+  public File getWorkingDirectory() {
+    return workDir;
+  }
+
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#addBundle(org.knopflerfish.eclipse.core.IOsgiBundle, org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo)

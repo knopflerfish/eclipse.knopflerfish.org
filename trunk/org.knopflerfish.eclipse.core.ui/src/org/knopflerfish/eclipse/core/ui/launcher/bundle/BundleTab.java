@@ -81,13 +81,14 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
@@ -131,7 +132,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
 
   // Models
   private SelectedBundlesModel selectedBundlesModel = new SelectedBundlesModel();
-  private IOsgiInstall osgiInstall;
+  private FrameworkDistribution distribution;
 
   // Images, fonts
   private Image imageTab = null;
@@ -449,9 +450,9 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     try {
       String name = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
       if (name != null) {
-        osgiInstall = Osgi.getOsgiInstall(name);
+        distribution = OsgiPreferences.getFrameworkDistribution(name);
       } else {
-        osgiInstall = Osgi.getDefaultOsgiInstall();
+        distribution = OsgiPreferences.getDefaultFrameworkDistribution();
       }
     } catch (CoreException e) {
       e.printStackTrace();
@@ -614,9 +615,9 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
 
     // Get exported packages by runtime
     // TODO: Fix this better, should check the property exported packages as well
-    if (osgiInstall == null) return;
-    IFrameworkDefinition framework = Osgi.getFrameworkDefinition(osgiInstall.getType());
-    IOsgiLibrary [] libraries = osgiInstall.getRuntimeLibraries();
+    if (distribution == null) return;
+    IFrameworkDefinition framework = Osgi.getFrameworkDefinition(distribution.getType());
+    IOsgiLibrary [] libraries = distribution.getRuntimeLibraries();
     PackageDescription [] frameworkPackages = framework.getExportedPackages(libraries);
     if (frameworkPackages != null) {
       for (int j=0; j<frameworkPackages.length; j++) {
@@ -819,7 +820,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
             return 0;
           case IAvailableTreeElement.TYPE_WORKSPACE:
             return 1;
-          case IAvailableTreeElement.TYPE_OSGI_INSTALL:
+          case IAvailableTreeElement.TYPE_DISTRIBUTION:
             return 2;
           case IAvailableTreeElement.TYPE_BUNDLE:
             return 3;

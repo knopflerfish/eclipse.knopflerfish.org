@@ -83,14 +83,19 @@
  <extension
        point="org.eclipse.ui.preferencePages">
     <page
-          class="org.knopflerfish.eclipse.core.ui.preferences.OsgiPreferencePage"
+          class="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"
           name="OSGi"
-          id="org.knopflerfish.eclipse.core.ui.preferences.OsgiPreferencePage"/>
+          id="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"/>
     <page
-          class="org.knopflerfish.eclipse.core.ui.preferences.FrameworkPreferencePage"
-          category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPreferencePage"
+          class="org.knopflerfish.eclipse.core.ui.preferences.EnvironmentPage"
+          category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"
+          name="Environments"
+          id="org.knopflerfish.eclipse.core.ui.preferences.EnvironmentPage"/>
+    <page
+          class="org.knopflerfish.eclipse.core.ui.preferences.FrameworkPage"
+          category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"
           name="Frameworks"
-          id="org.knopflerfish.eclipse.core.ui.preferences.FrameworkPreferencePage"/>
+          id="org.knopflerfish.eclipse.core.ui.preferences.FrameworkPage"/>
  </extension>
  <extension
        point="org.eclipse.jdt.ui.quickFixProcessors">

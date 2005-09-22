@@ -36,6 +36,8 @@ package org.knopflerfish.eclipse.core;
 
 import java.util.ArrayList;
 
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
@@ -43,7 +45,7 @@ import java.util.ArrayList;
 public class SystemPropertyGroup {
 
   private final String name;
-  private IOsgiInstall osgiInstall;
+  private FrameworkDistribution distribution;
   private ArrayList properties = new ArrayList();
   
   public SystemPropertyGroup(String name) {
@@ -54,12 +56,12 @@ public class SystemPropertyGroup {
     return name;
   }
 
-  public IOsgiInstall getOsgiInstall() {
-    return osgiInstall;
+  public FrameworkDistribution getFrameworkDistribution() {
+    return distribution;
   }
 
-  public void setOsgiInstall(IOsgiInstall osgiInstall) {
-    this.osgiInstall = osgiInstall;
+  public void setFrameworkDistribution(FrameworkDistribution distribution) {
+    this.distribution = distribution;
   }
   
   public SystemProperty[] getProperties() {

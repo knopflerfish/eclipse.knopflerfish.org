@@ -137,14 +137,6 @@ public class LibraryTreeLabelProvider extends LabelProvider implements IFontProv
       } else {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR);
       }
-    case ILibraryTreeElement.TYPE_BUILD_ROOT:
-      return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
-    case ILibraryTreeElement.TYPE_BUILD:
-      if (((LibraryElementBuild) e).getLibrary().getSource() != null) {
-        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_EXTERNAL_ARCHIVE_WITH_SOURCE);
-      } else {
-        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_EXTERNAL_ARCHIVE);
-      }
     case ILibraryTreeElement.TYPE_BUNDLE_ROOT:
       return PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ISharedImages.IMG_OBJ_FOLDER);
     case ILibraryTreeElement.TYPE_BUNDLE:
@@ -174,10 +166,6 @@ public class LibraryTreeLabelProvider extends LabelProvider implements IFontProv
       return "Runtime Libraries";
     case ILibraryTreeElement.TYPE_RUNTIME:
       return ((LibraryElementRuntime) e).getLibrary().getName();
-    case ILibraryTreeElement.TYPE_BUILD_ROOT:
-      return "Build Libraries";
-    case ILibraryTreeElement.TYPE_BUILD:
-      return ((LibraryElementBuild) e).getLibrary().getName();
     case ILibraryTreeElement.TYPE_BUNDLE_ROOT:
       return "Bundles";
     case ILibraryTreeElement.TYPE_BUNDLE:
@@ -206,14 +194,6 @@ public class LibraryTreeLabelProvider extends LabelProvider implements IFontProv
       return null;
     case ILibraryTreeElement.TYPE_RUNTIME:
       if (((LibraryElementRuntime) e).getLibrary().isUserDefined()) {
-        return fontUser;
-      } else {
-        return null;
-      }
-    case ILibraryTreeElement.TYPE_BUILD_ROOT:
-      return null;
-    case ILibraryTreeElement.TYPE_BUILD:
-      if (((LibraryElementBuild) e).getLibrary().isUserDefined()) {
         return fontUser;
       } else {
         return null;

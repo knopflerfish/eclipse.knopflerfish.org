@@ -32,58 +32,46 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.preferences;
+package org.knopflerfish.eclipse.core.pkg;
 
-import org.eclipse.jface.preference.PreferencePage;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.FormLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.ui.IWorkbench;
-import org.eclipse.ui.IWorkbenchPreferencePage;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class OsgiPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
-  private static String DESCRIPTION = 
-    "General settings for OSGi environments.";
+public class ProjectPackage implements IPackage {
+  
+  private final PackageDescription packageDescription;
+  private final IBundleProject project;
+  
+  public ProjectPackage(PackageDescription packageDescription, IBundleProject project) {
+    this.packageDescription = packageDescription;
+    this.project = project;
+  }
 
-  /****************************************************************************
-   * org.eclipse.ui.IWorkbenchPreferencePage methods
-   ***************************************************************************/
-
-  /* (non-Javadoc)
-   * @see org.eclipse.ui.IWorkbenchPreferencePage#init(org.eclipse.ui.IWorkbench)
-   */
-  public void init(IWorkbench workbench) {
+  public IBundleProject getProject() {
+    return project;
   }
   
   /****************************************************************************
-   * org.eclipse.jface.preference.PreferencePage methods
+   * org.knopflerfish.eclipse.core.pkg.IPackage methods
    ***************************************************************************/
-
-  /* (non-Javadoc)
-   * @see org.eclipse.jface.preference.PreferencePage#createContents(org.eclipse.swt.widgets.Composite)
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.pkg.IPackage#getType()
    */
-  protected Control createContents(Composite parent) {
-    Composite page = new Composite(parent, 0);
-    FormLayout layout = new FormLayout();
-    page.setLayout(layout);
-    
-    // Description
-    Label wDescriptionLabel = new Label(page, SWT.LEFT | SWT.WRAP);
-    wDescriptionLabel.setText(DESCRIPTION);
-    FormData data = new FormData();
-    data.left = new FormAttachment(0,0);
-    data.top = new FormAttachment(0,0);
-    data.right = new FormAttachment(100,0);
-    wDescriptionLabel.setLayoutData(data);
-    
-    return page;
+  public int getType() {
+    return PROJECT;
   }
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.pkg.IPackage#getPackageDescription()
+   */
+  public PackageDescription getPackageDescription() {
+    return packageDescription;
+  }
+
 }

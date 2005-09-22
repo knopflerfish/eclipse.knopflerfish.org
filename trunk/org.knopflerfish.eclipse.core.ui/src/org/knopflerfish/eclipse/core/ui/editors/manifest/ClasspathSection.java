@@ -47,12 +47,12 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ITableColorProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
@@ -61,7 +61,7 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
@@ -69,7 +69,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
@@ -81,6 +80,7 @@ import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.BundleResource;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.ui.SharedImages;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.FileTreeSelectionDialog;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
@@ -89,7 +89,7 @@ import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class ClasspathSection extends SectionPart implements IStructuredContentProvider, ITableLabelProvider {
+public class ClasspathSection extends SectionPart {
   
   // Widget properties
   public static final String PROP_DIRTY = "dirty";
@@ -114,17 +114,12 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
   // Model objects
   private BundleManifest manifest = null;
   private final BundleProject project;
+  private BundlePackDescription bundlePackDescription = null;
+  private Map bundleContents;
   
   // Images
-  private String IMAGE_BUNDLE = "icons/obj16/jar_b_obj.gif";
-  private String IMAGE_LINK = "icons/obj16/link_obj.gif";
-  private String IMAGE_BUNDLE_OVR  = "icons/ovr16/bundle_ovr.gif";
-  
-  private Image imageBundle = null;
-  private Image imageLink = null;
-  private Image imageJar  = JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_JAR);
-  private Image imageClass = JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_CLASS);
-  private Image imageProject = null;
+  private Image imgJarWarning;
+  private Image imgJarError;
   
   public ClasspathSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
     super(parent, toolkit, style);
@@ -132,30 +127,25 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
     this.project = project;
     
     // Create images
-    ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
-    if (id != null) {
-      imageBundle = id.createImage();
-    }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_LINK);
-    if (id != null) {
-      imageLink = id.createImage();
-    }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_OVR);
-    if (id != null) {
-      Image bundleOvrImage = id.createImage();
-      Image imageWorkspace  = PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT );
-      imageProject = new Image(null, imageWorkspace.getBounds());
-      GC gc = new GC(imageProject);
-      gc.drawImage(imageWorkspace, 0, 0);
-      gc.drawImage(bundleOvrImage, imageProject.getBounds().width-bundleOvrImage.getBounds().width, 0);
-      gc.dispose();      
-      bundleOvrImage.dispose();
-    }
+    imgJarWarning = UiUtils.ovrImage(
+        JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR),
+        OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_WARNING),
+        UiUtils.LEFT, UiUtils.BOTTOM
+        );
+    imgJarError = UiUtils.ovrImage(
+        JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR),
+        OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_ERROR),
+        UiUtils.LEFT, UiUtils.BOTTOM
+        );
     
     Section section = getSection();
     createClient(section, toolkit);
     section.setDescription(DESCRIPTION);
     section.setText(TITLE);
+  }
+  
+  public void setErrors(List errors) {
+    wClassPathTableViewer.refresh();
   }
   
   /****************************************************************************
@@ -167,17 +157,14 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
    * @see org.eclipse.ui.forms.IFormPart#dispose()
    */
   public void dispose() {
-    if (imageBundle != null) {
-      imageBundle.dispose();
-      imageBundle = null;
+    if (imgJarWarning != null) {
+      imgJarWarning.dispose();
+      imgJarWarning = null;
     }
-    if (imageLink != null) {
-      imageLink.dispose();
-      imageLink = null;
-    }
-    if (imageProject != null) {
-      imageProject.dispose();
-      imageProject = null;
+    
+    if (imgJarError != null) {
+      imgJarError.dispose();
+      imgJarError = null;
     }
   }
   
@@ -198,6 +185,8 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
   public void refresh() {
     // Refresh values from document
     manifest = getManifest();
+    bundlePackDescription = getBundlePackDescription();
+    bundleContents = bundlePackDescription.getContentsMap(false);
     
     // Refresh viewer
     if (wClassPathTableViewer != null) {
@@ -237,8 +226,9 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
     wClassPathTable.setData(PROP_NAME, BundleManifest.BUNDLE_CLASSPATH);
     
     wClassPathTableViewer = new TableViewer(wClassPathTable);
-    wClassPathTableViewer.setContentProvider(this);
-    wClassPathTableViewer.setLabelProvider(this);
+    ClasspathViewerProvider provider = new ClasspathViewerProvider();
+    wClassPathTableViewer.setContentProvider(provider);
+    wClassPathTableViewer.setLabelProvider(provider);
     wClassPathTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
       public void selectionChanged(SelectionChangedEvent event) {
         updateButtons();
@@ -360,7 +350,6 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
           BundleResource resource = dialog.getResource();
           // Add resource to pack description
           addClasspathResource(resource.getSource());
-          BundlePackDescription bundlePackDescription = getBundlePackDescription();
           Map contents = bundlePackDescription.getContentsMap(true);
           String path = (String) contents.get(resource.getSource()); 
           
@@ -418,109 +407,6 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
   }
   
   /****************************************************************************
-   * org.eclipse.jface.viewers.IStructuredContentProvider methods
-   ***************************************************************************/
-  
-  /* (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
-   */
-  public Object[] getElements(Object inputElement) {
-    if ( !(inputElement instanceof BundleManifest)) return null;
-    
-    BundleManifest manifest = (BundleManifest) inputElement; 
-    
-    String [] classPath = manifest.getBundleClassPath();
-    if (classPath.length == 0) {
-      return new String[] {"."};
-    } else {
-      return manifest.getBundleClassPath();
-    }
-  }
-  
-  
-  /* (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-   */
-  public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-  }
-  
-  /****************************************************************************
-   * org.eclipse.jface.viewers.ITableLabelProvider methods
-   ***************************************************************************/
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.Object, int)
-   */
-  public Image getColumnImage(Object element, int columnIndex) {
-    String path = (String) element;
-    
-    switch(columnIndex) {
-    case 0:
-      if (".".equals(path)) {
-        return imageClass;
-      } else  {
-        return imageJar;
-      }
-    case 1:
-      if (!".".equals(path)) {
-        return imageProject;
-      }
-      break;
-    }
-    
-    return null;
-  }
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object, int)
-   */
-  public String getColumnText(Object element, int columnIndex) {
-    String path = (String) element;
-    
-    switch(columnIndex) {
-    case 0:
-      if (".".equals(path)) {
-        return "Bundle´s classes"; 
-      } else  {
-        return element.toString();
-      }
-    case 1:
-      if (!".".equals(path)) {
-        return "huh";
-      }
-    }
-    return null;
-  }
-  
-  /****************************************************************************
-   * org.eclipse.jface.viewers.IBaseLabelProvider methods
-   ***************************************************************************/
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
-   */
-  public void addListener(ILabelProviderListener listener) {
-  }
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
-   */
-  public boolean isLabelProperty(Object element, String property) {
-    return false;
-  }
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
-   */
-  public void removeListener(ILabelProviderListener listener) {
-  }
-  
-  /****************************************************************************
    * Private utility methods
    ***************************************************************************/
 
@@ -569,15 +455,14 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
   
   private void removeClasspathResource(String name) {
     // Refresh values from document
-    BundlePackDescription bundlePackDescription = getBundlePackDescription();
     Map contents = bundlePackDescription.getContentsMap(false);
     bundlePackDescription.removeResource((IPath) contents.get(name));
+    bundleContents = bundlePackDescription.getContentsMap(false);
     setBundlePackDescription(bundlePackDescription);
   }
   
   private void addClasspathResource(IPath path) {
     if (path == null) return;
-    BundlePackDescription bundlePackDescription = getBundlePackDescription();
     bundlePackDescription.removeResource(path);
     BundleResource resource = new BundleResource(
         BundleResource.TYPE_CLASSPATH,
@@ -585,6 +470,7 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
         path.removeFirstSegments(1).toString(),
         null);
     bundlePackDescription.addResource(resource);
+    bundleContents = bundlePackDescription.getContentsMap(false);
     setBundlePackDescription(bundlePackDescription);
   }
   
@@ -595,19 +481,113 @@ public class ClasspathSection extends SectionPart implements IStructuredContentP
       fileMap.put(files[i].getFullPath(), files[i]);
     }
     
-    BundlePackDescription packDescription = getBundlePackDescription();
-    Map map = packDescription.getContentsMap(false);
     String[] classPaths = manifest.getBundleClassPath();
     for (int i=0; i<classPaths.length; i++) {
       String path = classPaths[i];
       if (path.startsWith("/")) path = path.substring(1);
       
-      if (map.containsKey(path)) {
-        IPath location = (IPath) map.get(path);
+      if (bundleContents.containsKey(path)) {
+        IPath location = (IPath) bundleContents.get(path);
         fileMap.remove(location);
       }
     }
     
     return (IFile []) fileMap.values().toArray(new IFile[fileMap.size()]);
+  }
+  
+  /****************************************************************************
+   * ClasspathViewerProvider Inner classes
+   ***************************************************************************/
+  class ClasspathViewerProvider implements IStructuredContentProvider, ITableLabelProvider, ITableColorProvider {
+
+    /* (non-Javadoc)
+     * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
+     */
+    public Object[] getElements(Object inputElement) {
+      if ( !(inputElement instanceof BundleManifest)) return null;
+      
+      BundleManifest manifest = (BundleManifest) inputElement; 
+      
+      String [] classPath = manifest.getBundleClassPath();
+      if (classPath.length == 0) {
+        return new String[] {"."};
+      } else {
+        return manifest.getBundleClassPath();
+      }
+    }
+
+    public void dispose() {
+    }
+    
+    /* (non-Javadoc)
+     * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+     */
+    public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+    }
+    
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.Object, int)
+     */
+    public Image getColumnImage(Object element, int columnIndex) {
+      String path = (String) element;
+      
+      if (".".equals(path)) {
+        return JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_CLASS);
+      } else  {
+        if (path.startsWith("/")) path = path.substring(1);
+          
+        if (bundleContents.containsKey(path)) {
+          return JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_JAR);
+        } else {
+          return imgJarError;
+        }
+      }
+    }
+    
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object, int)
+     */
+    public String getColumnText(Object element, int columnIndex) {
+      String path = (String) element;
+      
+      if (".".equals(path)) {
+        return "Bundle´s classes"; 
+      } else  {
+        return element.toString();
+      }
+    }
+    
+
+    public void addListener(ILabelProviderListener listener) {
+    }
+
+    public boolean isLabelProperty(Object element, String property) {
+      return false;
+    }
+
+    public void removeListener(ILabelProviderListener listener) {
+    }
+
+    public Color getForeground(Object element, int columnIndex) {
+      String path = (String) element;
+      
+      if (".".equals(path)) {
+        return null;
+      } else  {
+        if (path.startsWith("/")) path = path.substring(1);
+          
+        if (bundleContents.containsKey(path)) {
+          return null;
+        } else {
+          return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+        }
+      }
+    }
+
+    public Color getBackground(Object element, int columnIndex) {
+      return null;
+    }
   }
 }

@@ -35,7 +35,6 @@
 package org.knopflerfish.eclipse.core;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.TreeSet;
 
 import org.eclipse.core.runtime.CoreException;
@@ -44,10 +43,8 @@ import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jdt.core.IJavaProject;
-import org.osgi.service.prefs.BackingStoreException;
-import org.osgi.service.prefs.Preferences;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -59,11 +56,6 @@ public class Osgi {
   
   private static String EXTENSION_POINT_FRAMEWORKDEFINITION = "org.knopflerfish.eclipse.core.frameworkDefinition";
   
-  // Preference nodes
-  public static String PREFERENCE_ROOT_NODE = "org.knopflerfish.eclipse.core.osgi";
-  public static String PREFERENCE_FRAMEWORKS_NODE = "frameworks";
-  public static String PREFERENCE_BUNDLESETS_NODE = "bundlesets";
-                        
   /****************************************************************************
    * Framework Definition Methods
    ***************************************************************************/
@@ -190,73 +182,26 @@ public class Osgi {
   }
   
   /****************************************************************************
-   * Framework Methods
+   * Package methods
    ***************************************************************************/
-  public static List getOsgiInstalls() {
-    // Load all osgi install definitions from preferences
-    Preferences node = new InstanceScope().getNode(Osgi.PREFERENCE_ROOT_NODE).node(Osgi.PREFERENCE_FRAMEWORKS_NODE);
-    ArrayList osgiInstalls = new ArrayList();
+  public static PackageDescription[] getExportedFrameworkPackages(IFrameworkDefinition framework) {
+    if (framework == null) return null;
     
-    try {
-      String [] children = node.childrenNames();
-      for (int i=0; i<children.length; i++) {
-        osgiInstalls.add(new OsgiInstall(node.node(children[i])));
-      }
-    } catch (BackingStoreException e) {
-      e.printStackTrace();
-    }
-    
-    return osgiInstalls;
+    return null;
   }
+  
+  public static PackageDescription[] getExportedBundlePackages(IFrameworkDefinition framework) {
+    if (framework == null) return null;
 
-  public static IOsgiInstall getOsgiInstall(String name) {
-    if (name == null || name.length() == 0) return null;
-    
-    Preferences node = new InstanceScope().getNode(Osgi.PREFERENCE_ROOT_NODE).node(Osgi.PREFERENCE_FRAMEWORKS_NODE);
-    IOsgiInstall osgiInstall = null;
-    try  {
-      if (node.nodeExists(name)) {
-        osgiInstall = new OsgiInstall(node.node(name));
-      }
-    } catch (BackingStoreException e) {
-      e.printStackTrace();
-    }
-    
-    return osgiInstall;
+    return null;
   }
+  
+  public static PackageDescription[] findExportedPackage(String packageName, IFrameworkDefinition framework) {
+    if (packageName == null || framework == null) return null;
 
-  public static IOsgiInstall getDefaultOsgiInstall() {
-    List l = getOsgiInstalls();
-    IOsgiInstall defaultInstall = null;
-    for (int i=0; i<l.size(); i++) {
-      OsgiInstall osgiInstall = (OsgiInstall) l.get(i);
-      if (osgiInstall.isDefaultDefinition()) {
-        defaultInstall = osgiInstall;
-      }
-    }
-    
-    return defaultInstall;
+    return null;
   }
-
-  public static void setOsgiInstalls(List osgiInstalls) throws BackingStoreException {
-    // Remove previous definitions
-    Preferences node = new InstanceScope().getNode(Osgi.PREFERENCE_ROOT_NODE).node(Osgi.PREFERENCE_FRAMEWORKS_NODE);
-    String [] names = node.childrenNames();
-    if (names != null) {
-      for(int i=0; i<names.length; i++) {
-        node.node(names[i]).removeNode();
-      }
-    }
-    
-    // Save framework definitions
-    if (osgiInstalls == null) return;
-    for(int i=0; i<osgiInstalls.size();i++) {
-      OsgiInstall osgiInstall = (OsgiInstall) osgiInstalls.get(i);
-      osgiInstall.save(node);
-    }
-
-    node.flush();
-  }
+  
   
   /****************************************************************************
    * Project methods

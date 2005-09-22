@@ -67,9 +67,15 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
     IResource res = delta.getResource();
  
     if (delta.getKind() == IResourceDelta.REMOVED) return false;
-    
+
     switch(res.getType()) {
     case IResource.FILE:
+      // Do not do anything on marker changes
+      int flags = delta.getFlags();
+      if ( (flags ^ IResourceDelta.MARKERS) == 0) {
+        return false;
+      }
+
       IFile file = (IFile) res;
       IProject project = file.getProject();
       if (BundleProject.CLASSPATH_FILE.equals(file.getName())) {

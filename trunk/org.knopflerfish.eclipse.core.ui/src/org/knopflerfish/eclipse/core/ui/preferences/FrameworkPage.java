@@ -40,14 +40,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Path;
-import org.eclipse.jdt.core.IClasspathContainer;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.window.Window;
@@ -69,9 +61,9 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.OsgiInstall;
-import org.knopflerfish.eclipse.core.project.OsgiClasspathContainer;
-import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
@@ -79,14 +71,14 @@ import org.knopflerfish.eclipse.core.ui.UiUtils;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class FrameworkPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
-  private static String DESCRIPTION = 
+public class FrameworkPage extends PreferencePage implements IWorkbenchPreferencePage {
+  private static final String DESCRIPTION = 
     "Add, remove or edit OSGi frameworks.\n"+
-    "The checked framework will be used by default to build and run OSGi bundles.";
-  private static String TABLE_TITLE =
+    "The checked framework will be used by default to run OSGi bundles.";
+  private static final String TABLE_TITLE =
     "Installed OSGi frameworks:";
   
-  private List osgiInstalls;
+  private List distributions;
   private HashMap images = new HashMap();
   
   // Widgets
@@ -94,7 +86,7 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
   private Button    wEditDefinitionButton;
   private Button    wRemoveDefinitionButton;
   
-  public FrameworkPreferencePage() {
+  public FrameworkPage() {
     noDefaultAndApplyButton();
     
     String[] names = Osgi.getFrameworkDefinitionNames();
@@ -102,7 +94,13 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
       String imagePath = Osgi.getFrameworkDefinitionImage(names[i]);
       String pluginId = Osgi.getFrameworkDefinitionId(names[i]);
       
-      ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
+      ImageDescriptor id = null;
+      if (imagePath != null) {
+        id = OsgiUiPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
+      } else {
+        id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
+        "icons/obj16/_knopflerfish_obj.gif");
+      }      
       if (id != null) {
         Image image = id.createImage();
         if (image != null) {
@@ -112,7 +110,7 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
     }
     
     // Load preferences
-    osgiInstalls = Osgi.getOsgiInstalls();
+    distributions = new ArrayList(Arrays.asList(OsgiPreferences.getFrameworkDistributions()));
   }
   
   /****************************************************************************
@@ -180,15 +178,15 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
     wAddDefinitionButton.setLayoutData(data);
     wAddDefinitionButton.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
-        FrameworkDefinitionDialog dialog = 
-          new FrameworkDefinitionDialog(((Button) e.widget).getShell(), getOsgiInstallNames(), null); 
+        FrameworkDialog dialog = 
+          new FrameworkDialog(((Button) e.widget).getShell(), getFrameworkNames(), null); 
         if (dialog.open() == Window.OK) {
-          OsgiInstall osgiInstall = dialog.getOsgiInstall();
-          if (osgiInstalls.size() == 0) {
-            osgiInstall.setDefaultDefinition(true);
+          FrameworkDistribution distriution = dialog.getFrameworkDistribution();
+          if (distributions.size() == 0) {
+            distriution.setDefaultDefinition(true);
           }
-          osgiInstalls.add(osgiInstall);
-          addOsgiInstall(osgiInstall);
+          distributions.add(distriution);
+          addFrameworkDistribution(distriution);
           UiUtils.packTableColumns(wDefinitionsTable);
         }
       }
@@ -205,13 +203,13 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
       public void widgetSelected(SelectionEvent e) {
         int idx = wDefinitionsTable.getSelectionIndex();
         if (idx != -1) {
-          OsgiInstall osgiInstall = (OsgiInstall) osgiInstalls.get(idx);
+          FrameworkDistribution distribution = (FrameworkDistribution) distributions.get(idx);
           
-          FrameworkDefinitionDialog dialog = 
-            new FrameworkDefinitionDialog(((Button) e.widget).getShell(), getOsgiInstallNames(), osgiInstall); 
+          FrameworkDialog dialog = 
+            new FrameworkDialog(((Button) e.widget).getShell(), getFrameworkNames(), distribution); 
           if (dialog.open() == Window.OK) {
-            osgiInstalls.set(idx, dialog.getOsgiInstall());
-            updateOsgiInstall(idx);
+            distributions.set(idx, dialog.getFrameworkDistribution());
+            updateFrameworkDistribution(idx);
             UiUtils.packTableColumns(wDefinitionsTable);
           }
         }
@@ -229,11 +227,11 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
       public void widgetSelected(SelectionEvent e) {
         int idx = wDefinitionsTable.getSelectionIndex();
         if (idx != -1) {
-          OsgiInstall osgiInstall = (OsgiInstall) osgiInstalls.remove(idx);
+          FrameworkDistribution distribution = (FrameworkDistribution) distributions.remove(idx);
           wDefinitionsTable.remove(idx);
-          if (osgiInstall.isDefaultDefinition() && osgiInstalls.size()>0) {
-            ((OsgiInstall) osgiInstalls.get(0)).setDefaultDefinition(true);
-            updateOsgiInstall(0);
+          if (distribution.isDefaultDefinition() && distributions.size()>0) {
+            ((FrameworkDistribution) distributions.get(0)).setDefaultDefinition(true);
+            updateFrameworkDistribution(0);
           }
           updateButtons();
           UiUtils.packTableColumns(wDefinitionsTable);
@@ -258,14 +256,14 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
         if ( (e.detail & SWT.CHECK) != 0 ) {
           TableItem item = (TableItem) e.item;
           int idx = table.indexOf(item);
-          ((OsgiInstall) item.getData()).setDefaultDefinition(true);
+          ((FrameworkDistribution) item.getData()).setDefaultDefinition(true);
           if (item.getChecked()) {
             // Uncheck all others
             TableItem [] items = table.getItems();
             for(int i=0; i<items.length; i++) {
               if(i != idx) {
                 items[i].setChecked(false);
-                ((OsgiInstall) items[i].getData()).setDefaultDefinition(false);
+                ((FrameworkDistribution) items[i].getData()).setDefaultDefinition(false);
               }
             }
           } else {
@@ -279,12 +277,12 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
       public void widgetDefaultSelected(SelectionEvent e) {
         int idx = wDefinitionsTable.getSelectionIndex();
         if (idx != -1) {
-          OsgiInstall osgiInstall = (OsgiInstall) osgiInstalls.get(idx);
-          FrameworkDefinitionDialog dialog = 
-            new FrameworkDefinitionDialog(((Table) e.widget).getShell(), getOsgiInstallNames(), osgiInstall); 
+          FrameworkDistribution distribution = (FrameworkDistribution) distributions.get(idx);
+          FrameworkDialog dialog = 
+            new FrameworkDialog(((Table) e.widget).getShell(), getFrameworkNames(), distribution); 
           if (dialog.open() == Window.OK) {
-            osgiInstalls.set(idx, dialog.getOsgiInstall());
-            updateOsgiInstall(idx);
+            distributions.set(idx, dialog.getFrameworkDistribution());
+            updateFrameworkDistribution(idx);
           }
         }
       }
@@ -299,9 +297,9 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
     wLocationTableColumn.setText("Location");
     
     // Add framework definitions
-    if (osgiInstalls != null) {
-      for (int i=0; i<osgiInstalls.size(); i++) {
-        addOsgiInstall( (OsgiInstall) osgiInstalls.get(i));
+    if (distributions != null) {
+      for (int i=0; i<distributions.size(); i++) {
+        addFrameworkDistribution( (FrameworkDistribution) distributions.get(i));
       }
     }
     
@@ -319,36 +317,12 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
    * @see org.eclipse.jface.preference.IPreferencePage#performOk()
    */
   public boolean performOk() {
-    // Save Knopflerfish instances to preference store
+    // Save framework distributions to preference store
     try {
-      Osgi.setOsgiInstalls(osgiInstalls);
+      OsgiPreferences.setFrameworkDistributions(
+          (FrameworkDistribution[]) distributions.toArray(new FrameworkDistribution[distributions.size()]));
       
-      // Get java projects
-      IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-      IProject [] projects = root.getProjects();
-      ArrayList javaProjectList = new ArrayList();
-      for(int i=0; projects != null && i<projects.length; i++) {
-        if (projects[i].hasNature(Osgi.NATURE_ID)) {
-          javaProjectList.add(JavaCore.create(projects[i]));
-        }
-      }
-      
-      IJavaProject [] javaProjects = (IJavaProject[]) javaProjectList.toArray(new IJavaProject[javaProjectList.size()]);
-      IClasspathContainer [] containers = new IClasspathContainer[javaProjectList.size()];
-      
-      // Update containers
-      for (int i=0; osgiInstalls != null && i<osgiInstalls.size(); i++) {
-        OsgiInstall osgiInstall = (OsgiInstall) osgiInstalls.get(i);
-        IClasspathContainer container = new OsgiClasspathContainer(osgiInstall);
-        Arrays.fill(containers, container);
-        IPath path = new Path(OsgiContainerInitializer.KF_CONTAINER);
-        if (osgiInstall.isDefaultDefinition()) {
-          JavaCore.setClasspathContainer(path,javaProjects,containers,null);
-        }
-        path = path.append(osgiInstall.getName());
-        JavaCore.setClasspathContainer(path,javaProjects,containers,null);
-      }
-      
+      ClasspathUtil.updateFrameworkContainers();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -366,27 +340,27 @@ public class FrameworkPreferencePage extends PreferencePage implements IWorkbenc
     wRemoveDefinitionButton.setEnabled(enabled);
   }
   
-  private void addOsgiInstall(OsgiInstall osgiInstall) {
+  private void addFrameworkDistribution(FrameworkDistribution distribution) {
     TableItem item = new TableItem(wDefinitionsTable, 0);
-    item.setData(osgiInstall);
-    item.setChecked(osgiInstall.isDefaultDefinition());
-    item.setText(0, osgiInstall.getName());
-    item.setImage(0, (Image) images.get(osgiInstall.getType()));
-    item.setText(1, osgiInstall.getLocation());
+    item.setData(distribution);
+    item.setChecked(distribution.isDefaultDefinition());
+    item.setText(0, distribution.getName());
+    item.setImage(0, (Image) images.get(distribution.getType()));
+    item.setText(1, distribution.getLocation());
   }
   
-  private void updateOsgiInstall(int idx) {
-    OsgiInstall osgiInstall = (OsgiInstall) osgiInstalls.get(idx);
+  private void updateFrameworkDistribution(int idx) {
+    FrameworkDistribution distribution = (FrameworkDistribution) distributions.get(idx);
     
     TableItem item = wDefinitionsTable.getItem(idx);
-    item.setData(osgiInstall);
-    item.setChecked(osgiInstall.isDefaultDefinition());
-    item.setText(0, osgiInstall.getName());
-    item.setImage(0, (Image) images.get(osgiInstall.getType()));
-    item.setText(1, osgiInstall.getLocation());
+    item.setData(distribution);
+    item.setChecked(distribution.isDefaultDefinition());
+    item.setText(0, distribution.getName());
+    item.setImage(0, (Image) images.get(distribution.getType()));
+    item.setText(1, distribution.getLocation());
   }
   
-  private ArrayList getOsgiInstallNames() {
+  private ArrayList getFrameworkNames() {
     ArrayList names = new ArrayList();
     
     for (int i=0; i<wDefinitionsTable.getItemCount(); i++) {

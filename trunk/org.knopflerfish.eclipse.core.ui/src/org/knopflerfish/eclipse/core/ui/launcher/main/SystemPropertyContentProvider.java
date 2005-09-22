@@ -36,9 +36,9 @@ package org.knopflerfish.eclipse.core.ui.launcher.main;
 
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -50,9 +50,9 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
    * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
    */
   public Object[] getChildren(Object parentElement) {
-    if (parentElement instanceof IOsgiInstall) {
-      IOsgiInstall osgiInstall = (IOsgiInstall) parentElement;
-      return osgiInstall.getSystemPropertyGroups();
+    if (parentElement instanceof FrameworkDistribution) {
+      FrameworkDistribution distribution = (FrameworkDistribution) parentElement;
+      return distribution.getSystemPropertyGroups();
     } else if (parentElement instanceof SystemPropertyGroup) {
       SystemPropertyGroup group = (SystemPropertyGroup) parentElement;
       return group.getProperties();
@@ -65,11 +65,11 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
    * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
    */
   public Object getParent(Object element) {
-    if (element instanceof IOsgiInstall) {
+    if (element instanceof FrameworkDistribution) {
       return null;
     } else if (element instanceof SystemPropertyGroup) {
       SystemPropertyGroup group = (SystemPropertyGroup) element;
-      return group.getOsgiInstall();
+      return group.getFrameworkDistribution();
     } else if (element instanceof SystemProperty) {
       SystemProperty property = (SystemProperty) element;
       return property.getSystemPropertyGroup();
@@ -82,9 +82,9 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
    * @see org.eclipse.jface.viewers.ITreeContentProvider#hasChildren(java.lang.Object)
    */
   public boolean hasChildren(Object element) {
-    if (element instanceof IOsgiInstall) {
-      IOsgiInstall osgiInstall = (IOsgiInstall) element;
-      return osgiInstall.getSystemPropertyGroups().length > 0;
+    if (element instanceof FrameworkDistribution) {
+      FrameworkDistribution distribution = (FrameworkDistribution) element;
+      return distribution.getSystemPropertyGroups().length > 0;
     } else if (element instanceof SystemPropertyGroup) {
       SystemPropertyGroup group = (SystemPropertyGroup) element;
       return group.getProperties().length > 0;
@@ -99,9 +99,9 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
    * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
    */
   public Object[] getElements(Object inputElement) {
-    if (inputElement instanceof IOsgiInstall) {
-      IOsgiInstall osgiInstall = (IOsgiInstall) inputElement;
-      return osgiInstall.getSystemPropertyGroups();
+    if (inputElement instanceof FrameworkDistribution) {
+      FrameworkDistribution distribution = (FrameworkDistribution) inputElement;
+      return distribution.getSystemPropertyGroups();
     } else if (inputElement instanceof SystemPropertyGroup) {
       SystemPropertyGroup group = (SystemPropertyGroup) inputElement;
       return group.getProperties();

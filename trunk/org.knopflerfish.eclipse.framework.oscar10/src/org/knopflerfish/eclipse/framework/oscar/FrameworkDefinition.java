@@ -74,10 +74,6 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     "lib/moduleloader.jar"
   };
   
-  private static String[] PATH_BUILD_LIBRARIES = new String[] {
-    "lib/osgi.jar"
-  };
-
   private static String PATH_BUNDLE_DIR = "bundle";
   
   private static String[] EXPORTED_PACKAGES = new String[] {
@@ -132,35 +128,6 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     
     for (int i=0; i<PATH_RUNTIME_LIBRARIES.length; i++) {
       File libFile = new File(root, PATH_RUNTIME_LIBRARIES[i]);
-      if ( libFile.exists() && libFile.isFile()) {
-        try {
-          OsgiLibrary library = new OsgiLibrary(libFile);
-          File src = new File(root, PATH_MAINLIB_SRC);
-          if (src.exists()) {
-            library.setSource(src.getAbsolutePath());
-          }
-          libraries.add(library);
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-    }
-
-    return (IOsgiLibrary[]) libraries.toArray(new IOsgiLibrary[libraries.size()]);
-  }
-
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getBuildLibraries(java.io.File)
-   */
-  public IOsgiLibrary[] getBuildLibraries(File dir) {
-    ArrayList libraries = new ArrayList();
-    
-    File root = getRootDir(dir);
-    if (root == null) return null;
-    
-    for (int i=0; i<PATH_BUILD_LIBRARIES.length; i++) {
-      File libFile = new File(root, PATH_BUILD_LIBRARIES[i]);
       if ( libFile.exists() && libFile.isFile()) {
         try {
           OsgiLibrary library = new OsgiLibrary(libFile);
@@ -272,10 +239,10 @@ public class FrameworkDefinition implements IFrameworkDefinition {
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#createConfiguration()
    */
-  public IFrameworkConfiguration createConfiguration(String path) {
-    if (path == null) return null;
+  public IFrameworkConfiguration createConfiguration(String installDir, String workDir) {
+    if (workDir == null) return null;
     
-    File dir = new File(path);
+    File dir = new File(workDir);
     if (!dir.exists() || !dir.isDirectory()) return null;
     
     return new FrameworkConfiguration(dir);
