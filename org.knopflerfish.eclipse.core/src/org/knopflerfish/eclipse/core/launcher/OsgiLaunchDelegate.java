@@ -60,10 +60,11 @@ import org.knopflerfish.eclipse.core.Arguments;
 import org.knopflerfish.eclipse.core.IFrameworkConfiguration;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
@@ -80,8 +81,8 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
   public void launch(ILaunchConfiguration configuration, String mode,
       ILaunch launch, IProgressMonitor monitor) throws CoreException {
 
-    // Verify OSGi installation
-    IOsgiInstall osgiInstall = verifyOsgiInstall(configuration);
+    // Verify framework distribution
+    FrameworkDistribution distribution = verifyFrameworkDistribution(configuration);
     
     // Verify directory used for this OSGi configuration
     File instanceDir =  verifyInstanceDirectory(configuration);
@@ -91,7 +92,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     Map projectMap = verifyProjects(configuration);
     
     // Create configuration
-    IOsgiLibrary[] osgiLibraries = osgiInstall.getRuntimeLibraries();
+    IOsgiLibrary[] osgiLibraries = distribution.getRuntimeLibraries();
     ArrayList libraries = new ArrayList();
     if (osgiLibraries != null) {
       for (int i=0; i<osgiLibraries.length; i++) {
@@ -99,13 +100,12 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
       }
     }
     VMRunnerConfiguration runConfig = new VMRunnerConfiguration(
-        osgiInstall.getMainClass(), 
+        distribution.getMainClass(), 
         (String []) libraries.toArray(new String[libraries.size()]));
-    runConfig.setWorkingDirectory(instanceDir.getAbsolutePath());
     
     // Create framework configuration
-    IFrameworkDefinition framework = Osgi.getFrameworkDefinition(osgiInstall.getType());
-    IFrameworkConfiguration conf = framework.createConfiguration(instanceDir.getAbsolutePath());
+    IFrameworkDefinition framework = Osgi.getFrameworkDefinition(distribution.getType());
+    IFrameworkConfiguration conf = framework.createConfiguration(distribution.getLocation(), instanceDir.getAbsolutePath());
     
     // Set system properties
     conf.setSystemProperties(getSystemProperties(configuration));
@@ -150,6 +150,8 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
       abort("Failed to create framework configuration.", e,
         IOsgiLaunchConfigurationConstants.ERR_CREATE_CONFIGURATION);
     }
+    runConfig.setWorkingDirectory(conf.getWorkingDirectory().getAbsolutePath());
+    
     if (args.getProgramArguments() != null) {
       runConfig.setProgramArguments(args.getProgramArguments());
     }
@@ -173,55 +175,19 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     runner.run(runConfig, launch, monitor);
   }
 
-  /**
-   * Verifies a OSGi vendor is specified by the given launch configuration,
-   * and returns the OSGi vendor.
-   * 
-   * @param configuration launch configuration
-   * @return the OSGi vendor specified by the given launch configuration
-   * @exception CoreException if unable to retrieve the attribute or the 
-   * attribute is unspecified
-   */
-  /*
-  public IOsgiVendor verifyOsgiVendor(ILaunchConfiguration configuration) throws CoreException {
-    String name = getOsgiVendorName(configuration);
+  public FrameworkDistribution verifyFrameworkDistribution(ILaunchConfiguration configuration) throws CoreException {
+    String name = getFrameworkDistributionName(configuration);
     if (name == null) {
-      abort("OSGi vendor name not specified.", null,
-          IOsgiLaunchConfigurationConstants.ERR_UNSPECIFIED_VENDOR_NAME);
-    }
-    
-    IOsgiVendor vendor = Osgi.getVendor(name);
-    if (name == null) {
-      abort("Could not find extension for OSGi vendor '"+name+"'", null,
-          IOsgiLaunchConfigurationConstants.ERR_VENDOR_EXTENSION_NOT_FOUND);
-    }
-    return vendor;
-  }
-  */
-
-  /**
-   * Verifies a OSGi install is specified by the given launch configuration,
-   * and returns the OSGi install.
-   * 
-   * @param configuration launch configuration
-   * 
-   * @return the OSGi install specified by the given launch configuration and vendor
-   * @exception CoreException if unable to retrieve the attribute or the 
-   * attribute is unspecified
-   */
-  public IOsgiInstall verifyOsgiInstall(ILaunchConfiguration configuration) throws CoreException {
-    String name = getOsgiInstallName(configuration);
-    if (name == null) {
-      abort("OSGi installation name not specified.", null,
+      abort("Framework name not specified.", null,
           IOsgiLaunchConfigurationConstants.ERR_UNSPECIFIED_INSTALL_NAME);
     }
     
-    IOsgiInstall osgiInstall = Osgi.getOsgiInstall(name);
-    if (osgiInstall == null) {
-      abort("Could not find OSGi installation '"+name+"'", null,
+    FrameworkDistribution distribution = OsgiPreferences.getFrameworkDistribution(name);
+    if (distribution == null) {
+      abort("Could not find framework '"+name+"'", null,
           IOsgiLaunchConfigurationConstants.ERR_INSTALL_NOT_FOUND);
     }
-    return osgiInstall;
+    return distribution;
   }
   
   /**
@@ -302,10 +268,6 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
         IProject project = root.getProject(name);
         if (!project.exists()) {
           continue;
-          /*
-          abort("Bundle project '"+name+"' does not exist.", null,
-              IOsgiLaunchConfigurationConstants.ERR_PROJECT_NOT_EXIST);
-              */
         }
         
         if (!project.hasNature(Osgi.NATURE_ID)) {
@@ -324,71 +286,24 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     return projects;
   }
   
-  /**
-   * Returns the OSGi vendor name specified by the given launch configuration,
-   * or <code>null</code> if none.
-   * 
-   * @param configuration launch configuration
-   * @return the OSGi vendor name specified by the given launch configuration, 
-   * or <code>null</code> if none
-   * @exception CoreException if unable to retrieve the attribute
-   */
-  /*
-  public static String getOsgiVendorName(ILaunchConfiguration configuration) throws CoreException {
-    String vendorName = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_OSGI_VENDOR_NAME, (String) null);
-    
-    return vendorName;
-  }
-  */
-  
-  /**
-   * Returns the OSGi install name specified by the given launch configuration,
-   * or <code>null</code> if none.
-   * 
-   * @param configuration launch configuration
-   * @return the OSGi installr name specified by the given launch configuration, 
-   * or <code>null</code> if none
-   * @exception CoreException if unable to retrieve the attribute
-   */
-  public static String getOsgiInstallName(ILaunchConfiguration configuration) throws CoreException {
+  public static String getFrameworkDistributionName(ILaunchConfiguration configuration) throws CoreException {
     String installName = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
     
     return installName;
   }
   
-  /**
-   * Returns the instance direcory specified by the given launch configuration.
-   * 
-   * @param configuration launch configuration
-   * @return the instance directory specified by the given launch configuration. 
-   * @exception CoreException if unable to retrieve the attribute
-   */
   public static String getInstanceDirectory(ILaunchConfiguration configuration) throws CoreException {
     String location = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, (String) null);
     
     return location;
   }
 
-  /**
-   * Returns the bundles specified by the given launch configuration.
-   * 
-   * @param configuration launch configuration
-   * @return the bundles specified by the given launch configuration. 
-   * @exception CoreException if unable to retrieve the attribute
-   */
   public static Map getBundles(ILaunchConfiguration configuration) throws CoreException {
     Map bundles = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_BUNDLES, (Map) null);
     
     return bundles;
   }
 
-  /**
-   * Returns the bundle projects specified by the given launch configuration.
-   * 
-   * @param configuration launch configuration
-   * @return the bundle projects specified by the given launch configuration. 
-   * @exception CoreException if unable to retrieve the attribute
-   */
   public static Map getProjects(ILaunchConfiguration configuration) throws CoreException {
     Map projects = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_BUNDLE_PROJECTS, (Map) null);
     

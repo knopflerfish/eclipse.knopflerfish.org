@@ -47,7 +47,7 @@ import java.util.jar.Manifest;
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleManifest extends Manifest {
-
+  
   // OSGi specified attributes
   public static final String BUNDLE_SYMBOLIC_NAME   = "Bundle-SymbolicName";
   public static final String BUNDLE_NAME            = "Bundle-Name";
@@ -66,7 +66,7 @@ public class BundleManifest extends Manifest {
   public static final String EXPORT_PACKAGE         = "Export-Package";
   public static final String IMPORT_PACKAGE         = "Import-Package";
   public static final String DYNAMIC_IMPORT_PACKAGE = "DynamicImport-Package";
-
+  
   // Build information attributes
   public static final String BUILT_FROM            = "Built-From";
   public static final String BUILD_DATE            = "Build-Date";
@@ -77,7 +77,7 @@ public class BundleManifest extends Manifest {
       getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
     }
   }
-
+  
   public BundleManifest(Manifest manifest) {
     super(manifest);
   }
@@ -88,7 +88,7 @@ public class BundleManifest extends Manifest {
       getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
     }
   }
-
+  
   /****************************************************************************
    * Setters and getters for OSGi attributes
    ***************************************************************************/
@@ -104,7 +104,7 @@ public class BundleManifest extends Manifest {
   public String getName() {
     return getAttribute(BUNDLE_NAME);
   }
-
+  
   public void setName(String value) {
     setAttribute(BUNDLE_NAME, value);
   }
@@ -112,7 +112,7 @@ public class BundleManifest extends Manifest {
   public String getVersion() {
     return getAttribute(BUNDLE_VERSION);
   }
-
+  
   public void setVersion(String value) {
     setAttribute(BUNDLE_VERSION, value);
   }
@@ -120,7 +120,7 @@ public class BundleManifest extends Manifest {
   public String getVendor() {
     return getAttribute(BUNDLE_VENDOR);
   }
-
+  
   public void setVendor(String value) {
     setAttribute(BUNDLE_VENDOR, value);
   }
@@ -128,7 +128,7 @@ public class BundleManifest extends Manifest {
   public String getDescription() {
     return getAttribute(BUNDLE_DESCRIPTION);
   }
-
+  
   public void setDescription(String value) {
     setAttribute(BUNDLE_DESCRIPTION, value);
   }
@@ -136,15 +136,24 @@ public class BundleManifest extends Manifest {
   public String getActivator() {
     return getAttribute(BUNDLE_ACTIVATOR);
   }
-
+  
   public void setActivator(String value) {
     setAttribute(BUNDLE_ACTIVATOR, value);
   }
-
+  
+  public String getDocumentationUrl() {
+    return getAttribute(BUNDLE_DOCURL);
+  }
+  
+  public void setDocumentationUrl(String value) {
+    setAttribute(BUNDLE_DOCURL, value);
+  }
+  
+  
   public String getUpdateLocation() {
     return getAttribute(BUNDLE_UPDATELOCATION);
   }
-
+  
   public void setUpdateLocation(String value) {
     setAttribute(BUNDLE_UPDATELOCATION, value);
   }
@@ -162,7 +171,7 @@ public class BundleManifest extends Manifest {
     
     return (String[]) categories.toArray(new String[categories.size()]);
   }
-
+  
   public void setCategories(String[]  value) {
     if (value == null) {
       setAttribute(BUNDLE_CATEGORY, null);
@@ -190,7 +199,7 @@ public class BundleManifest extends Manifest {
     
     return (String[]) classPath.toArray(new String[classPath.size()]);
   }
-
+  
   public void setBundleClassPath(String[] value) {
     if (value == null) {
       setAttribute(BUNDLE_CLASSPATH, null);
@@ -220,7 +229,22 @@ public class BundleManifest extends Manifest {
     
     return (PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]);
   }
-
+  
+  public void setImportedPackages(PackageDescription[] value) {
+    if (value == null) {
+      setAttribute(IMPORT_PACKAGE, null);
+    } else {
+      StringBuffer buf = new StringBuffer("");
+      for(int i=0; i<value.length;i++) {
+        if (i != 0) {
+          buf.append(", ");
+        }
+        buf.append(value[i].toString());
+      }
+      setAttribute(IMPORT_PACKAGE, buf.toString());
+    }
+  }
+  
   public String[] getDynamicImportedPakages() {
     String attr = getAttribute(DYNAMIC_IMPORT_PACKAGE);
     ArrayList packages = new ArrayList();
@@ -233,7 +257,7 @@ public class BundleManifest extends Manifest {
     
     return (String[]) packages.toArray(new String[packages.size()]);
   }
-
+  
   public void setDynamicImportedPakages(String[] value) {
     if (value == null) {
       setAttribute(DYNAMIC_IMPORT_PACKAGE, null);
@@ -249,21 +273,58 @@ public class BundleManifest extends Manifest {
     }
   }
   
+  // TODO : Move 
+  private final static int IN_ELEMENT = 0;
+  private final static int IN_ATTRIBUTE_NAME = 1;
+  private final static int IN_ATTRIBUTE_VALUE = 2;
+  private final static int IN_QUOTED_ATTRIBUTE_VALUE = 3;
+  
   public PackageDescription[] getExportedPackages() {
     String attr = getAttribute(EXPORT_PACKAGE);
     if (attr == null) return new PackageDescription[0];
     
     ArrayList exportedPackages = new ArrayList();
-    StringTokenizer st = new StringTokenizer(attr, ",");
+    
+    int state = IN_ELEMENT;
+    StringBuffer packageString = new StringBuffer();
+    StringTokenizer st = new StringTokenizer(attr, " ;=,\"", true);
     while(st.hasMoreTokens()) {
+      String token = null;
+      if (state == IN_QUOTED_ATTRIBUTE_VALUE) {
+        token = st.nextToken("\"");
+      } else {
+        token = st.nextToken(" ;=,\"");
+      }
+      
+      if (token.equals(",")) {
+        try {
+          exportedPackages.add(new PackageDescription(packageString.toString()));
+        } catch(Exception e) {}
+        packageString.setLength(0);
+        state = IN_ELEMENT;
+      } else {
+        packageString.append(token);
+        if (token.equals(";")) {
+          state = IN_ATTRIBUTE_NAME;
+        } else if (token.equals("=")) {
+          state = IN_ATTRIBUTE_VALUE;
+        } else if (token.equals("\"") && state == IN_ATTRIBUTE_VALUE) {
+          state = IN_QUOTED_ATTRIBUTE_VALUE;
+        } else if (token.equals("\"") && state == IN_QUOTED_ATTRIBUTE_VALUE) {
+          state = IN_ATTRIBUTE_VALUE;
+        }
+      }
+    }
+    
+    if (packageString.length() > 0) {
       try {
-        exportedPackages.add(new PackageDescription(st.nextToken()));
+        exportedPackages.add(new PackageDescription(packageString.toString()));
       } catch(Exception e) {}
     }
     
     return (PackageDescription[]) exportedPackages.toArray(new PackageDescription[exportedPackages.size()]);
   }
-
+  
   public void setExportedPackages(PackageDescription[] value) {
     if (value == null) {
       setAttribute(EXPORT_PACKAGE, null);
@@ -293,7 +354,7 @@ public class BundleManifest extends Manifest {
     
     return (NativeCodeClause[]) nativeCodeClauses.toArray(new NativeCodeClause[nativeCodeClauses.size()]);
   }
-
+  
   public String[] getExecutionEnvironments() {
     String attr = getAttribute(BUNDLE_EXEC_ENV);
     ArrayList environments = new ArrayList();
@@ -306,7 +367,7 @@ public class BundleManifest extends Manifest {
     
     return (String[]) environments.toArray(new String[environments.size()]);
   }
-
+  
   public void setExecutionEnvironments(String[] value) {
     if (value == null) {
       setAttribute(BUNDLE_EXEC_ENV, null);

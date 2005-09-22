@@ -46,25 +46,18 @@ import org.knopflerfish.eclipse.core.IOsgiLibrary;
 public class LibraryElementRoot implements ILibraryTreeElement {
   
   private final LibraryElementRuntimeRoot runtimeElement;
-  private final LibraryElementBuildRoot buildElement;
   private final LibraryElementBundleRoot bundleElement;
   
   public LibraryElementRoot() {
     runtimeElement = new LibraryElementRuntimeRoot(this);
-    buildElement = new LibraryElementBuildRoot(this);
     bundleElement = new LibraryElementBundleRoot(this);
   }
   
   public void clear() {
     runtimeElement.clear();
     bundleElement.clear();
-    buildElement.clear();
   }
   
-  public LibraryElementBuildRoot getBuildRoot() {
-   return buildElement; 
-  }
-
   public LibraryElementBundleRoot getBundleRoot() {
     return bundleElement; 
    }
@@ -78,15 +71,6 @@ public class LibraryElementRoot implements ILibraryTreeElement {
     ILibraryTreeElement [] children = runtimeElement.getChildren();
     for (int i=0; i<children.length; i++) {
       libs.add( ((LibraryElementRuntime) children[i]).getLibrary());
-    }
-    return (IOsgiLibrary[]) libs.toArray(new IOsgiLibrary[libs.size()]);
-  }
-  
-  public IOsgiLibrary[] getBuildLibraries() {
-    ArrayList libs = new ArrayList();
-    ILibraryTreeElement [] children = buildElement.getChildren();
-    for (int i=0; i<children.length; i++) {
-      libs.add( ((LibraryElementBuild) children[i]).getLibrary());
     }
     return (IOsgiLibrary[]) libs.toArray(new IOsgiLibrary[libs.size()]);
   }
@@ -110,7 +94,6 @@ public class LibraryElementRoot implements ILibraryTreeElement {
   public ILibraryTreeElement[] getChildren() {
     return new ILibraryTreeElement[] {
         runtimeElement,
-        buildElement,
         bundleElement};
   }
 

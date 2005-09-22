@@ -36,7 +36,6 @@ package org.knopflerfish.eclipse.core.ui.launcher.main;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -78,12 +77,12 @@ import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
-import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.launcher.SourcePathComputer;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
@@ -431,9 +430,9 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     // New configuration created, set default values
 
     // Set default framework
-    IOsgiInstall osgiInstall = Osgi.getDefaultOsgiInstall();
-    if (osgiInstall != null) {
-      configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, osgiInstall.getName());
+    FrameworkDistribution distribution = OsgiPreferences.getDefaultFrameworkDistribution();
+    if (distribution != null) {
+      configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, distribution.getName());
     }
     
     // Set default instance directory 
@@ -546,7 +545,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     } catch (CoreException e) {
       e.printStackTrace();
     }
-    if(Osgi.getOsgiInstall(name) == null) {
+    if(OsgiPreferences.getFrameworkDistribution(name) == null) {
       setErrorMessage("No framework selected.");
       return false;
     }
@@ -563,24 +562,22 @@ public class MainTab extends AbstractLaunchConfigurationTab {
    ***************************************************************************/
   private void updateOsgiInstalls() {
     wOsgiInstallCombo.removeAll();
-    List l = Osgi.getOsgiInstalls();
+    FrameworkDistribution[] distributions = OsgiPreferences.getFrameworkDistributions();
     
-    if (l != null) {
-      for(int i=0; i<l.size();i++) {
-        wOsgiInstallCombo.add( ((IOsgiInstall) l.get(i)).getName());
-      }
+    for(int i=0; i<distributions.length;i++) {
+      wOsgiInstallCombo.add(distributions[i].getName());
     }
   }
   
   private void initializeSystemProperties(Map properties) {
-    IOsgiInstall osgiInstall = Osgi.getOsgiInstall(wOsgiInstallCombo.getText());
-    if (osgiInstall == null) return;
-    osgiInstall.addSystemPropertyGroup(userGroup);
+    FrameworkDistribution distribution = OsgiPreferences.getFrameworkDistribution(wOsgiInstallCombo.getText());
+    if (distribution == null) return;
+    distribution.addSystemPropertyGroup(userGroup);
     userGroup.clear();
     if (properties != null) {
       for(Iterator i=properties.entrySet().iterator(); i.hasNext();) {
         Map.Entry entry = (Map.Entry) i.next();
-        SystemProperty property = osgiInstall.findSystemProperty((String) entry.getKey());
+        SystemProperty property = distribution.findSystemProperty((String) entry.getKey());
         if (property != null) {
           property.setValue((String) entry.getValue());
         } else {
@@ -590,14 +587,14 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         }
       }
     }
-    wPropertyTreeViewer.setInput(osgiInstall);
+    wPropertyTreeViewer.setInput(distribution);
   }
 
   private Map getSystemProperties() {
-    IOsgiInstall osgiInstall = (IOsgiInstall) wPropertyTreeViewer.getInput();
-    if (osgiInstall == null) return null;
+    FrameworkDistribution distribution = (FrameworkDistribution) wPropertyTreeViewer.getInput();
+    if (distribution == null) return null;
     
-    SystemPropertyGroup[] groups = osgiInstall.getSystemPropertyGroups();
+    SystemPropertyGroup[] groups = distribution.getSystemPropertyGroups();
     if (groups == null) return null;
     
     HashMap map = new HashMap();

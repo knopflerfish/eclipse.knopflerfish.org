@@ -128,7 +128,7 @@ public class SynchManifestRunnable implements IWorkspaceRunnable, Runnable {
     
     bundleProject.saveBundlePackDescription(packDescription);
     manifest.setBundleClassPath((String[]) bundleClasspath.toArray(new String[bundleClasspath.size()]));
-    bundleProject.saveManifest(manifest);
+    bundleProject.setBundleManifest(manifest);
   }
 
 }

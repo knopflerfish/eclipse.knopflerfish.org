@@ -35,12 +35,11 @@
 package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
-import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -56,11 +55,9 @@ public class AvailableElementRoot implements IAvailableTreeElement {
     children.add(new AvailableElementWorkspace(this, root));
 
     // Add knopflerfish roots
-    List installList = Osgi.getOsgiInstalls();
-    if (installList != null) {
-      for(int i=0; i<installList.size(); i++) {
-        children.add(new AvailableElementInstall(this, (IOsgiInstall) installList.get(i)));
-      }
+    FrameworkDistribution[] distributions = OsgiPreferences.getFrameworkDistributions();
+    for(int i=0; i<distributions.length; i++) {
+      children.add(new AvailableElementDistribution(this, distributions[i]));
     }
   }
 

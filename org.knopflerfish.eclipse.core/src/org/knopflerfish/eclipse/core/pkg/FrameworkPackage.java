@@ -32,71 +32,46 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.pkg;
+
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public interface IOsgiInstall {
-
-  /** 
-   * Returns the OSGi install name. The install names must be unique
-   * within one vendor.
-   * 
-   * @return install name
-   */
-  String getName();
+public class FrameworkPackage implements IPackage {
   
-  String getType();
-
-  /** 
-   * Returns the class name of the main class used to launch the framework.
-   * 
-   * @return class name
-   */
-  String getMainClass();
+  private final PackageDescription packageDescription;
+  private final FrameworkDistribution framework;
   
-  /** 
-   * Returns the libraries needed to launch the framework.
-   * 
-   * @return libraries
-   */
-  IOsgiLibrary[] getRuntimeLibraries();
+  public FrameworkPackage(PackageDescription packageDescription, FrameworkDistribution framework) {
+    this.packageDescription = packageDescription;
+    this.framework = framework;
+  }
 
-  /** 
-   * Returns the libraries needed to launch the framework.
-   * 
-   * @return libraries
-   */
-  IOsgiLibrary[] getBuildLibraries();
-
-  /** 
-   * Returns the bundles defined by this distribution.
-   * 
-   * @return bundles
-   */
-  IOsgiBundle[] getBundles();
+  public FrameworkDistribution getFramework() {
+    return framework;
+  }
   
-  
-  /** 
-   * Returns a list of system property groups understood by this 
-   * framework.
-   * 
-   * @return properties
+  /****************************************************************************
+   * org.knopflerfish.eclipse.core.pkg.IPackage methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.pkg.IPackage#getType()
    */
-  SystemPropertyGroup [] getSystemPropertyGroups();
-
-  /** 
-   * Add a property group to the list of group understood by this
-   * framework. 
-   * framework.
-   * 
-   * @param group property group to add
-   */
-  void addSystemPropertyGroup(SystemPropertyGroup group);
-
-  void clearSystemPropertyGroups();
+  public int getType() {
+    return FRAMEWORK;
+  }
   
-  SystemProperty findSystemProperty(String name);
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.pkg.IPackage#getPackageDescription()
+   */
+  public PackageDescription getPackageDescription() {
+    return packageDescription;
+  }
+
 }

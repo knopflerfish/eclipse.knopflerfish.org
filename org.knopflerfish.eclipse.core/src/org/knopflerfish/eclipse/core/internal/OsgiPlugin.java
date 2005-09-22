@@ -34,16 +34,33 @@
 
 package org.knopflerfish.eclipse.core.internal;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Plugin;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.launching.IVMInstall;
+import org.eclipse.jdt.launching.IVMInstallChangedListener;
+import org.eclipse.jdt.launching.JavaRuntime;
+import org.eclipse.jdt.launching.PropertyChangeEvent;
+import org.knopflerfish.eclipse.core.OsgiLibrary;
+import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
 import org.osgi.framework.BundleContext;
-import java.util.*;
 
 /**
  * The main plugin class to be used in the desktop.
@@ -51,11 +68,15 @@ import java.util.*;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class OsgiPlugin extends Plugin implements IResourceChangeListener {
+public class OsgiPlugin extends Plugin implements IResourceChangeListener, IVMInstallChangedListener {
   //The shared instance.
   private static OsgiPlugin plugin;
   //Resource bundle.
   private ResourceBundle resourceBundle;
+  
+  private final static String JRE_ENVIRONMENT            = "Default JRE";
+  private final static String CDC_FOUNDATION_ENVIRONMENT = "CDC-1.0 Foundation-1.0";
+  private final static String OSGI_MINIMUM_ENVIRONMENT   = "OSGi Minimum-1.0";
   
   /**
    * The constructor.
@@ -76,6 +97,80 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener {
   public void start(BundleContext context) throws Exception {
     super.start(context);
     
+    // Check if execution environments shall be added
+    ExecutionEnvironment defaultEnvironment = OsgiPreferences.getDefaultExecutionEnvironment();
+    ArrayList environments = new ArrayList(Arrays.asList(OsgiPreferences.getExecutionEnvironments()));
+    boolean changed = false;
+    // Default JRE environment
+    if (OsgiPreferences.getExecutionEnvironment(JRE_ENVIRONMENT) == null) {
+      ExecutionEnvironment environment = new ExecutionEnvironment();
+      environment.setName(JRE_ENVIRONMENT);
+      environment.setType(ExecutionEnvironment.TYPE_JRE);
+      if (defaultEnvironment == null) {
+        environment.setDefaultEnvironment(true);
+        defaultEnvironment = environment;
+      }
+      environments.add(environment);
+      changed = true;
+    }
+    // CDC Foundation environment
+    if (OsgiPreferences.getExecutionEnvironment(CDC_FOUNDATION_ENVIRONMENT) == null) {
+      ExecutionEnvironment environment = new ExecutionEnvironment();
+      environment.setName(CDC_FOUNDATION_ENVIRONMENT);
+      environment.setType(ExecutionEnvironment.TYPE_OSGI);
+      // Copy libraries to state location
+      File file = new File(getStateLocation().toFile(), "ee.foundation.jar");
+      if (!file.exists()) {
+        copyFile(new Path("resources/ee.foundation.jar"), file);
+      }
+      OsgiLibrary lib = new OsgiLibrary(file);
+      lib.setSource(file.getAbsolutePath());
+      environment.setLibraries(new OsgiLibrary[] {lib});
+      if (defaultEnvironment == null) {
+        environment.setDefaultEnvironment(true);
+        defaultEnvironment = environment;
+      }
+      environments.add(environment);
+      changed = true;
+    }
+    // OSGi Minimum environment
+    if (OsgiPreferences.getExecutionEnvironment(OSGI_MINIMUM_ENVIRONMENT) == null) {
+      ExecutionEnvironment environment = new ExecutionEnvironment();
+      environment.setName(OSGI_MINIMUM_ENVIRONMENT);
+      environment.setType(ExecutionEnvironment.TYPE_OSGI);
+      // Copy libraries to state location
+      File file = new File(getStateLocation().toFile(), "ee.minimum.jar");
+      if (!file.exists()) {
+        copyFile(new Path("resources/ee.minimum.jar"), file);
+      }
+      OsgiLibrary lib = new OsgiLibrary(file);
+      lib.setSource(file.getAbsolutePath());
+      environment.setLibraries(new OsgiLibrary[] {lib});
+      if (defaultEnvironment == null) {
+        environment.setDefaultEnvironment(true);
+        defaultEnvironment = environment;
+      }
+      environments.add(environment);
+      changed = true;
+    }
+    /*
+    String bundleLocation = getBundle().getLocation();
+    System.err.println("Bundle location :"+bundleLocation);
+    System.err.println("Configuration location :"+Platform.getConfigurationLocation().getURL());
+    System.err.println("Install location :"+Platform.getInstallLocation().getURL());
+    System.err.println("Instance location :"+Platform.getInstanceLocation().getURL());
+    System.err.println("User location :"+Platform.getUserLocation().getURL());
+    System.err.println("State location :"+getStateLocation().toString());
+    */
+    
+    if (changed) {
+      OsgiPreferences.setExecutionEnvironment((ExecutionEnvironment[]) environments.toArray(new ExecutionEnvironment[environments.size()]));
+    }
+
+    // Register vm change listener
+    ClasspathUtil.updateEnvironmentContainers();
+    JavaRuntime.addVMInstallChangedListener(this);
+    
     // Register resoure listener
     IWorkspace workspace = ResourcesPlugin.getWorkspace();
     workspace.addResourceChangeListener(this, IResourceChangeEvent.POST_CHANGE);
@@ -86,6 +181,9 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener {
    */
   public void stop(BundleContext context) throws Exception {
     super.stop(context);
+    
+    // Unregister vm change listener
+    JavaRuntime.removeVMInstallChangedListener(this);
     
     // Unregister resoure listener
     IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -122,7 +220,6 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener {
   /****************************************************************************
    * org.eclipse.core.resources.IResourceChangeListener methods
    ***************************************************************************/
-  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.core.resources.IResourceChangeListener#resourceChanged(org.eclipse.core.resources.IResourceChangeEvent)
@@ -137,6 +234,44 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener {
   }
 
   /****************************************************************************
+   * org.eclipse.jdt.launching.IVMInstallChangedListener methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jdt.launching.IVMInstallChangedListener#defaultVMInstallChanged(org.eclipse.jdt.launching.IVMInstall, org.eclipse.jdt.launching.IVMInstall)
+   */
+  public void defaultVMInstallChanged(IVMInstall previous, IVMInstall current) {
+    // Update execution environment container
+    ClasspathUtil.updateEnvironmentContainers();
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jdt.launching.IVMInstallChangedListener#vmChanged(org.eclipse.jdt.launching.PropertyChangeEvent)
+   */
+  public void vmChanged(PropertyChangeEvent event) {
+    // Update execution environment container
+    ClasspathUtil.updateEnvironmentContainers();
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jdt.launching.IVMInstallChangedListener#vmAdded(org.eclipse.jdt.launching.IVMInstall)
+   */
+  public void vmAdded(IVMInstall vm) {
+    ClasspathUtil.updateEnvironmentContainers();
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jdt.launching.IVMInstallChangedListener#vmRemoved(org.eclipse.jdt.launching.IVMInstall)
+   */
+  public void vmRemoved(IVMInstall vm) {
+    // Update execution environment container
+    ClasspathUtil.updateEnvironmentContainers();
+  }
+  
+  /****************************************************************************
    * Public utility methods
    ***************************************************************************/
   
@@ -146,4 +281,26 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener {
     throw new CoreException(status);
   }
 
+  private void copyFile(IPath src, File dst) {
+    // Read bundle activator template
+    try {
+      InputStream is = null;
+      FileOutputStream fos = new FileOutputStream(dst);
+      try {
+        is = getDefault().openStream(src);
+        
+        byte [] buf = new byte[256];
+        int numRead = 0;
+        while( (numRead = is.read(buf)) != -1) {
+          fos.write(buf, 0, numRead);
+        }
+      } finally {
+        if (is != null) is.close();
+        fos.flush();
+        fos.close();
+      }
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
+  }
 }

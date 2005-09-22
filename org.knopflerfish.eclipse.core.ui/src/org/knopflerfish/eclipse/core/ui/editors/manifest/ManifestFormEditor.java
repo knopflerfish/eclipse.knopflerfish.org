@@ -35,6 +35,7 @@
 package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
@@ -216,20 +217,42 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
   }
   
   public void setErrors(IMarker[] markers) {
-    if (generalSection != null) {
-      ArrayList errorsGeneralSection = new ArrayList();
+      HashMap errorsGeneralSection = new HashMap();
+      ArrayList errorsPackageSection = new ArrayList();
+      ArrayList errorsClasspathSection = new ArrayList();
       for (int i=0; i<markers.length; i++) {
         try {
-          if (markers[i].getType().equals(BundleProject.MARKER_BUNDLE_ACTIVATOR)) {
-            errorsGeneralSection.add(BundleManifest.BUNDLE_ACTIVATOR);
+          String type = markers[i].getType(); 
+          if (type.equals(BundleProject.MARKER_BUNDLE_ACTIVATOR)) {
+            errorsGeneralSection.put(BundleManifest.BUNDLE_ACTIVATOR, markers[i]); 
+          } else if (type.equals(BundleProject.MARKER_BUNDLE_UPDATELOCATION)) {
+            errorsGeneralSection.put(BundleManifest.BUNDLE_UPDATELOCATION, markers[i]); 
+          } else if (type.equals(BundleProject.MARKER_BUNDLE_DOCURL)) {
+            errorsGeneralSection.put(BundleManifest.BUNDLE_DOCURL, markers[i]); 
+          } else if (type.equals(BundleProject.MARKER_BUNDLE_NAME)) {
+            errorsGeneralSection.put(BundleManifest.BUNDLE_NAME, markers[i]); 
+          } else if (type.equals(BundleProject.MARKER_BUNDLE_UPDATELOCATION)) {
+            errorsGeneralSection.put(BundleManifest.BUNDLE_UPDATELOCATION, markers[i]); 
+          } else if (type.equals(BundleProject.MARKER_BUNDLE_CLASSPATH)) {
+            errorsClasspathSection.add(BundleManifest.BUNDLE_CLASSPATH);
+          } else if (type.equals(BundleProject.MARKER_EXPORT_PACKAGES)) {
+            errorsPackageSection.add(BundleManifest.EXPORT_PACKAGE);
+          } else if (type.equals(BundleProject.MARKER_DYNAMIC_IMPORT_PACKAGES)) {
+            errorsPackageSection.add(BundleManifest.DYNAMIC_IMPORT_PACKAGE);
           }
         } catch (CoreException e) {
           e.printStackTrace();
         }
       }
       
+    if (generalSection != null) {
       generalSection.setErrors(errorsGeneralSection);
     }
-    
+    if (classPathSection != null) {
+      classPathSection.setErrors(errorsClasspathSection);
+    }
+    if (packageSection != null) {
+      packageSection.setErrors(errorsPackageSection);
+    }
   }
 }

@@ -53,9 +53,9 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.sourcelookup.containers.JavaProjectSourceContainer;
 import org.eclipse.jdt.launching.sourcelookup.containers.JavaSourcePathComputer;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
-import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -118,9 +118,9 @@ public class SourcePathComputer extends JavaSourcePathComputer implements ISourc
     }
     
     // Add framework libraries source code
-    String installName = OsgiLaunchDelegate.getOsgiInstallName(configuration);
-    IOsgiInstall osgiInstall = Osgi.getOsgiInstall(installName);
-    IOsgiLibrary [] libraries = osgiInstall.getRuntimeLibraries();
+    String distributionName = OsgiLaunchDelegate.getFrameworkDistributionName(configuration);
+    FrameworkDistribution distribution = OsgiPreferences.getFrameworkDistribution(distributionName);
+    IOsgiLibrary [] libraries = distribution.getRuntimeLibraries();
     if (libraries != null) {
       for (int i=0; i<libraries.length;i++) {
         String src = libraries[i].getSource();

@@ -123,54 +123,6 @@ public class FrameworkDefinition implements IFrameworkDefinition {
 
   /*
    *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getBuildLibraries(java.io.File)
-   */
-  public IOsgiLibrary[] getBuildLibraries(File dir) {
-    ArrayList libraries = new ArrayList();
-    
-    IOsgiLibrary mainLib = getMainLibrary(dir);
-    if (mainLib != null) {
-      libraries.add(mainLib);
-    }
-    
-    // Add API bundles
-    File root = getRootDir(dir);
-    if (root != null) {
-      File jarDir = new File(root, PATH_JAR_DIR);
-      ArrayList jars = getJars(jarDir);
-      for (int i=0 ; i<jars.size(); i++) {
-        try {
-          OsgiBundle bundle = new OsgiBundle((File) jars.get(i));
-          // Find source
-          String builtFrom = null;
-          if (bundle.getBundleManifest() != null) {
-            builtFrom = bundle.getBundleManifest().getAttribute(BundleManifest.BUILT_FROM);
-          }
-          if (builtFrom != null) {
-            int idx = builtFrom.lastIndexOf(PATH_BUNDLE_DIR);
-            if (idx != -1) {
-              File bundleDir = new File(root, builtFrom.substring(idx));
-              File srcDir = new File(bundleDir, "src");
-              if (srcDir.exists() && srcDir.isDirectory()) {
-                bundle.setSource(srcDir.getAbsolutePath());
-              }
-            }
-          }
-          
-          if (bundle.hasCategory("api") || bundle.hasCategory("API")) {
-            libraries.add(bundle);
-          }
-        } catch(IOException e) {
-          // Failed to create bundle from file
-        }
-      }
-    }
-    
-    return (IOsgiLibrary[]) libraries.toArray(new IOsgiLibrary[libraries.size()]);
-  }
-
-  /*
-   *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getBundles(java.io.File)
    */
   public IOsgiBundle[] getBundles(File dir) {
@@ -279,10 +231,10 @@ public class FrameworkDefinition implements IFrameworkDefinition {
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#createConfiguration()
    */
-  public IFrameworkConfiguration createConfiguration(String path) {
-    if (path == null) return null;
+  public IFrameworkConfiguration createConfiguration(String installDir, String workDir) {
+    if (workDir == null) return null;
     
-    File dir = new File(path);
+    File dir = new File(workDir);
     if (!dir.exists() || !dir.isDirectory()) return null;
     
     return new FrameworkConfiguration(dir);

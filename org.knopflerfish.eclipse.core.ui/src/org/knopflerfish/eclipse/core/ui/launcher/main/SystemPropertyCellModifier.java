@@ -36,9 +36,9 @@ package org.knopflerfish.eclipse.core.ui.launcher.main;
 
 import org.eclipse.jface.viewers.ICellModifier;
 import org.eclipse.swt.widgets.Item;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -52,7 +52,7 @@ public class SystemPropertyCellModifier implements ICellModifier {
     this.mainTab = mainTab;
   }
   public boolean canModify(Object element, String cellProperty) {
-    if (element instanceof IOsgiInstall) {
+    if (element instanceof FrameworkDistribution) {
       return false;
     } else if (element instanceof SystemPropertyGroup) {
       return false;

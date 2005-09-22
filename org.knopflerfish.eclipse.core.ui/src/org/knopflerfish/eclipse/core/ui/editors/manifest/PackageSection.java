@@ -41,6 +41,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.jdt.core.JavaConventions;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.CellEditor;
@@ -49,8 +51,10 @@ import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ITableColorProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
@@ -59,6 +63,7 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
@@ -76,7 +81,11 @@ import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.pkg.IPackage;
+import org.knopflerfish.eclipse.core.pkg.PackageUtil;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.ui.SharedImages;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.PackageListSelectionDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.PropertyDialog;
@@ -124,8 +133,24 @@ public class PackageSection extends SectionPart {
   private BundleManifest manifest = null;
   private final BundleProject project;
   
+  // Images 
+  private Image imgPackageWarning;
+  private Image imgPackageError;
+  
   public PackageSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
     super(parent, toolkit, style);
+    
+    // Create images
+    imgPackageWarning = UiUtils.ovrImage(
+        JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE),
+        OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_WARNING),
+        UiUtils.LEFT, UiUtils.BOTTOM
+        );
+    imgPackageError = UiUtils.ovrImage(
+        JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE),
+        OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_ERROR),
+        UiUtils.LEFT, UiUtils.BOTTOM
+        );
 
     this.project = project;
     Section section = getSection();
@@ -134,9 +159,31 @@ public class PackageSection extends SectionPart {
     section.setText(TITLE);
   }
   
+  public void setErrors(List errors) {
+    wExportPackageTableViewer.refresh();
+    wDynamicImportPackageTableViewer.refresh();
+  }
+  
   /****************************************************************************
    * org.eclipse.ui.forms.IFormPart methods
    ***************************************************************************/
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.ui.forms.IFormPart#dispose()
+   */
+  public void dispose() {
+    if (imgPackageWarning != null) {
+      imgPackageWarning.dispose();
+      imgPackageWarning = null;
+    }
+    
+    if (imgPackageError != null) {
+      imgPackageError.dispose();
+      imgPackageError = null;
+    }
+  }
+  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.ui.forms.IFormPart#commit(boolean)
@@ -377,6 +424,8 @@ public class PackageSection extends SectionPart {
     new TableColumn(wImportPackageTable, SWT.LEFT);
     // Version
     new TableColumn(wImportPackageTable, SWT.LEFT);
+    // Bundle
+    new TableColumn(wImportPackageTable, SWT.LEFT);
     
     wd = new TableWrapData();
     wd.rowspan = 2;
@@ -396,6 +445,15 @@ public class PackageSection extends SectionPart {
         
         if (selection == null || selection.isEmpty()) return;
 
+        List packages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+        for (Iterator i = selection.iterator(); i.hasNext(); ) {
+          PackageDescription pd = (PackageDescription) i.next();
+          packages.remove(pd);
+        }
+        manifest.setImportedPackages((PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]));
+        
+        UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
+        
         wImportPackageTableViewer.refresh();
         markDirty();
       }
@@ -407,6 +465,44 @@ public class PackageSection extends SectionPart {
     wImportPackageAddButton = toolkit.createButton(wImportComposite, "Add...", SWT.PUSH);
     wImportPackageAddButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
+        IPackage[] importablePackages = PackageUtil.getPackages(IPackage.ALL);
+        ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+        
+        // Remove already imported packages from list of importable
+        TreeMap map = new TreeMap();
+        for (int i=0; i<importablePackages.length; i++) {
+          PackageDescription packageDescription = importablePackages[i].getPackageDescription();
+          packageDescription.setSpecificationVersion(null);
+          map.put(packageDescription.getPackageName(), packageDescription);
+        }
+        for (Iterator i=importedPackages.iterator(); i.hasNext();) {
+          PackageDescription pd = (PackageDescription) i.next();
+          map.remove(pd.getPackageName());
+        }
+        
+        
+        PackageListSelectionDialog dialog = new PackageListSelectionDialog(
+            Display.getCurrent().getActiveShell());
+        dialog.setElements(map.values().toArray(new PackageDescription[map.size()]));
+        dialog.setMultipleSelection(true);
+        dialog.setTitle("Select package");
+        dialog.setImage(JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE));
+        dialog.setMessage("Select package to import.");
+        if (dialog.open() == Window.OK) {
+          Object[] packages = (Object[]) dialog.getResult();
+          for(int i=0; i<packages.length;i++) {
+            if (packages[i] instanceof PackageDescription) {
+              PackageDescription pd = (PackageDescription) packages[i];
+              if (!importedPackages.contains(pd)) {
+                importedPackages.add(pd);
+              }
+            }
+          }
+          manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+          wImportPackageTableViewer.refresh();
+          UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
+          markDirty();
+        }
       }
     });
     wd = new TableWrapData();
@@ -440,6 +536,7 @@ public class PackageSection extends SectionPart {
     DynamicImportProvider dynamicImportProvider = new DynamicImportProvider();
     wDynamicImportPackageTableViewer.setContentProvider(dynamicImportProvider);
     wDynamicImportPackageTableViewer.setLabelProvider(dynamicImportProvider);
+    wDynamicImportPackageTableViewer.setSorter(dynamicImportProvider);
     wDynamicImportPackageTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
       public void selectionChanged(SelectionChangedEvent event) {
         IStructuredSelection selection = 
@@ -511,11 +608,14 @@ public class PackageSection extends SectionPart {
           map = dialog.getValues();
           p = (PropertyDialog.Property) map.get(key);
           List packages = new ArrayList(Arrays.asList(manifest.getDynamicImportedPakages()));
-          if (p.getValue() != null && !packages.contains(p.getValue())) {
-            packages.add(p.getValue());
+          String packageName = p.getValue();
+          if (packageName != null && !packages.contains(p.getValue())) {
+            packages.add(packageName);
             manifest.setDynamicImportedPakages((String[]) packages.toArray(new String[packages.size()]));
             wDynamicImportPackageTableViewer.refresh();
             UiUtils.packTableColumns(wDynamicImportPackageTableViewer.getTable());
+            
+            wDynamicImportPackageTableViewer.setSelection(new StructuredSelection(packageName), true);
             markDirty();
           }
         }
@@ -537,7 +637,7 @@ public class PackageSection extends SectionPart {
   /****************************************************************************
    * ExportProvider Inner classes
    ***************************************************************************/
-  class ExportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider, ICellModifier {
+  class ExportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider, ITableColorProvider, ICellModifier {
     
     public int compare(Viewer viewer, Object o1, Object o2) {
       PackageDescription pd1 = (PackageDescription) o1;
@@ -562,7 +662,13 @@ public class PackageSection extends SectionPart {
     
     public Image getColumnImage(Object element, int columnIndex) {
       if (columnIndex == 0) {
-        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
+        PackageDescription desc = (PackageDescription) element;
+        List packages = Arrays.asList(project.getExportablePackages());
+        if (packages.contains(desc)) {
+          return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
+        } else {
+          return imgPackageError;
+        }
       } else {
         return null;
       }
@@ -639,6 +745,20 @@ public class PackageSection extends SectionPart {
         }
       }
     }
+
+    public Color getForeground(Object element, int columnIndex) {
+      PackageDescription desc = (PackageDescription) element;
+      List packages = Arrays.asList(project.getExportablePackages());
+      if (packages.contains(desc)) {
+        return null;
+      } else {
+        return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+      }
+    }
+
+    public Color getBackground(Object element, int columnIndex) {
+      return null;
+    }
   }
   
   /****************************************************************************
@@ -680,6 +800,8 @@ public class PackageSection extends SectionPart {
           version = "";
         }
         return version;
+      case 2:
+        return "Framework [Oscar 1.0]";
       }
       return "";
     }
@@ -698,7 +820,14 @@ public class PackageSection extends SectionPart {
   /****************************************************************************
    * DynamicImportProvider Inner classes
    ***************************************************************************/
-  class DynamicImportProvider implements IStructuredContentProvider, ITableLabelProvider {
+  class DynamicImportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider, ITableColorProvider {
+    
+    public int compare(Viewer viewer, Object o1, Object o2) {
+      String s1 = (String) o1;
+      String s2 = (String) o2;
+      
+      return s1.compareTo(s2);
+    }
     
     public Object[] getElements(Object inputElement) {
       if ( !(inputElement instanceof BundleManifest)) return null;
@@ -715,7 +844,12 @@ public class PackageSection extends SectionPart {
     }
 
     public Image getColumnImage(Object element, int columnIndex) {
-      return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
+      String name = (String) element;
+      if (checkPackageName(name)) {
+        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
+      } else {
+        return imgPackageError;
+      }
     }
 
     public String getColumnText(Object element, int columnIndex) {
@@ -730,6 +864,31 @@ public class PackageSection extends SectionPart {
     }
 
     public void removeListener(ILabelProviderListener listener) {
+    }
+
+    public Color getForeground(Object element, int columnIndex) {
+      String name = (String) element;
+      if (checkPackageName(name)) {
+        return null;
+      } else {
+        return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+      }
+    }
+
+    public Color getBackground(Object element, int columnIndex) {
+      return null;
+    }
+    
+    private boolean checkPackageName(String name) {
+      if (name == null) return false;
+      
+      if ("*".equals(name)) return true;
+      
+      if (name.endsWith(".*")) {
+        name = name.substring(0, name.length()-2);
+      }
+      IStatus status = JavaConventions.validatePackageName(name);
+      return (status.getCode() == IStatus.OK);
     }
   }
 }

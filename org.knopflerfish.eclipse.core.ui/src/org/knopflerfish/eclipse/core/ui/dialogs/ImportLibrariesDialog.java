@@ -62,14 +62,12 @@ public class ImportLibrariesDialog extends Dialog {
 
   private String name;
   private boolean importRuntimeLibraries;
-  private boolean importBuildPathLibraries;
   private boolean importBundles;
   private boolean onlyUserDefined;
   
   // Widgets
   private Combo  wFrameworkCombo;
   private Button wImportRuntimeButton;
-  private Button wImportBuildButton;
   private Button wImportBundleButton;
   private Button wImportUserButton;
 
@@ -115,7 +113,6 @@ public class ImportLibrariesDialog extends Dialog {
 
     name = wFrameworkCombo.getItem(wFrameworkCombo.getSelectionIndex());
     importRuntimeLibraries = wImportRuntimeButton.getSelection();
-    importBuildPathLibraries = wImportBuildButton.getSelection();
     importBundles = wImportBundleButton.getSelection();
     onlyUserDefined = wImportUserButton.getSelection();
 
@@ -157,9 +154,6 @@ public class ImportLibrariesDialog extends Dialog {
     wImportRuntimeButton = new Button(wImportGroup, SWT.CHECK);
     wImportRuntimeButton.setText("Import runtime libraries.");
 
-    wImportBuildButton = new Button(wImportGroup, SWT.CHECK);
-    wImportBuildButton.setText("Import build path libraries.");
-
     wImportBundleButton = new Button(wImportGroup, SWT.CHECK);
     wImportBundleButton.setText("Import bundles.");
     
@@ -187,7 +181,6 @@ public class ImportLibrariesDialog extends Dialog {
     wFrameworkCombo.select(0);
     
     wImportRuntimeButton.setSelection(true);
-    wImportBuildButton.setSelection(true);
     wImportBundleButton.setSelection(true);
     wImportUserButton.setSelection(true);
   }
@@ -196,10 +189,6 @@ public class ImportLibrariesDialog extends Dialog {
     return name;
   }
   
-  public boolean isImportBuildPathLibraries() {
-    return importBuildPathLibraries;
-  }
-
   public boolean isImportBundles() {
     return importBundles;
   }

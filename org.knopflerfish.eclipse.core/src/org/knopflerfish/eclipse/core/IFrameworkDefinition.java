@@ -56,8 +56,6 @@ public interface IFrameworkDefinition {
   
   public IOsgiLibrary[] getRuntimeLibraries(File dir);
   
-  public IOsgiLibrary[] getBuildLibraries(File dir);
-  
   public IOsgiBundle[] getBundles(File dir);
   
   public SystemPropertyGroup[] getSystemPropertyGroups();
@@ -68,10 +66,12 @@ public interface IFrameworkDefinition {
   /** 
    * Create a runtime framework configuration.
    * 
-   * @param path working directory for this configuration
+   * @param installDir directory where framework is installed
+   * @param workDir directory where instance data for this configuration
+   * shall be stored
    * 
    * @return framework configuration
    */
-  public IFrameworkConfiguration createConfiguration(String path);
+  public IFrameworkConfiguration createConfiguration(String installDir, String workDir);
   
 }

@@ -37,24 +37,24 @@ package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 import java.util.ArrayList;
 
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class AvailableElementInstall implements IAvailableTreeElement {
+public class AvailableElementDistribution implements IAvailableTreeElement {
 
   private final IAvailableTreeElement parent;
   private final ArrayList children = new ArrayList();
-  private final IOsgiInstall osgiInstall;
+  private final FrameworkDistribution distribution;
 
-  AvailableElementInstall(IAvailableTreeElement parent, IOsgiInstall osgiInstall) {
+  AvailableElementDistribution(IAvailableTreeElement parent, FrameworkDistribution distribution) {
     this.parent = parent;
-    this.osgiInstall = osgiInstall;
+    this.distribution = distribution;
 
     // Add knopflerfish bundles
-    IOsgiBundle[] bundles = osgiInstall.getBundles();
+    IOsgiBundle[] bundles = distribution.getBundles();
     if (bundles != null) {
       for(int i=0; i<bundles.length; i++) {
         children.add(new AvailableElementBundle(this, bundles[i]));
@@ -62,8 +62,8 @@ public class AvailableElementInstall implements IAvailableTreeElement {
     }
   }
   
-  public IOsgiInstall getOsgiInstall() {
-    return osgiInstall;
+  public FrameworkDistribution getFrameworkDistribution() {
+    return distribution;
   }
   
 
@@ -99,7 +99,7 @@ public class AvailableElementInstall implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getType()
    */
   public int getType() {
-    return TYPE_OSGI_INSTALL;
+    return TYPE_DISTRIBUTION;
   }
   
   /*
@@ -107,7 +107,7 @@ public class AvailableElementInstall implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getName()
    */
   public String getName() {
-    return osgiInstall.getName();
+    return distribution.getName();
   }
   
   /*
@@ -131,7 +131,7 @@ public class AvailableElementInstall implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getData()
    */
   public Object getData() {
-    return osgiInstall;
+    return distribution;
   }
 
   /****************************************************************************

@@ -32,53 +32,22 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.project;
+package org.knopflerfish.eclipse.core.pkg;
 
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.jdt.core.ClasspathContainerInitializer;
-import org.eclipse.jdt.core.IClasspathContainer;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.JavaCore;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
-import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class OsgiContainerInitializer extends
-    ClasspathContainerInitializer {
+public interface IPackage {
+  public static final int FRAMEWORK = 0x01;
+  public static final int BUNDLE    = 0x02;
+  public static final int PROJECT   = 0x04;
 
-  public static final String KF_CONTAINER = "org.knopflerfish.eclipse.core.KF_CONTAINER";
+  public static final int ALL       = 0x07;
   
-  public OsgiContainerInitializer() {
-  }
+  public int getType();
   
-  /* (non-Javadoc)
-   * @see org.eclipse.jdt.core.ClasspathContainerInitializer#initialize(org.eclipse.core.runtime.IPath, org.eclipse.jdt.core.IJavaProject)
-   */
-  public void initialize(IPath containerPath, IJavaProject project)
-      throws CoreException {
-    
-    // Get hinted Knopflerfish installation
-    String hint = containerPath.lastSegment();
-    IOsgiInstall osgiInstall = null;
-    if (hint != null) {
-      osgiInstall = Osgi.getOsgiInstall(hint);
-    }
-    if (osgiInstall == null) {
-      osgiInstall = Osgi.getDefaultOsgiInstall();
-    }
-    if (osgiInstall == null) return;
-    
-    // Create classpath container
-    OsgiClasspathContainer container = new OsgiClasspathContainer(osgiInstall);
-    JavaCore.setClasspathContainer(
-        containerPath, 
-        new IJavaProject[] {project}, 
-        new IClasspathContainer[] {container},
-        null);        
-  }
+  public PackageDescription getPackageDescription();
 }
-

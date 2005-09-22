@@ -50,12 +50,13 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.IAccessRule;
+import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -65,8 +66,14 @@ import org.eclipse.ui.IWorkbench;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.knopflerfish.eclipse.core.pkg.IPackage;
+import org.knopflerfish.eclipse.core.pkg.PackageUtil;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.project.OsgiContainerInitializer;
+import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
+import org.knopflerfish.eclipse.core.project.classpath.ExecutionEnvironmentContainer;
+import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
@@ -174,6 +181,26 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
     
     // Create java project and set classpath and output location
     IJavaProject javaProject = JavaCore.create(project);
+
+    // Create bundle project and add manifest and activator
+    BundleProject bundleProject = new BundleProject(javaProject);
+
+    // Set manifest attributes
+    BundleManifest manifest = bundleProject.getBundleManifest();
+    manifest.setSymbolicName(bundlePage.getBundleSymbolicName());
+    manifest.setName(bundlePage.getBundleName());
+    manifest.setVersion(bundlePage.getBundleVersion());
+    manifest.setVendor(bundlePage.getBundleVendor());
+    manifest.setDescription(bundlePage.getBundleDescription());
+    if (bundlePage.isCreateBundleActivator()) {
+      String activator = bundlePage.getActivatorClassName();
+      String packageName = bundlePage.getActivatorPackageName();
+      if (packageName != null) {
+        activator = packageName+"."+activator;
+      }
+      manifest.setActivator(activator);
+    }
+    bundleProject.setBundleManifest(manifest);
     
     // Create classpath
     ArrayList classPath = new ArrayList();
@@ -197,41 +224,32 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
         null);
     classPath.add(sourceEntry);
     
-    // JRE container
-    classPath.add(JavaRuntime.getDefaultJREContainerEntry());
-    
-    // Knopflerfish container
-    IPath containerPath = new Path(OsgiContainerInitializer.KF_CONTAINER);
-    if (!projectPage.isDefaultProjectLibrary()) {
+    // Execution environment container
+    IPath containerPath = new Path(ExecutionEnvironmentContainer.CONTAINER_PATH);
+    if (!projectPage.isDefaultEnvironment()) {
       containerPath = containerPath.append(projectPage.getEnvironmentName());
     }
     classPath.add(JavaCore.newContainerEntry(containerPath));
+    
+    // Framework container
+    containerPath = new Path(FrameworkContainer.CONTAINER_PATH);
+    if (!projectPage.isDefaultFramework()) {
+      containerPath = containerPath.append(projectPage.getFrameworkName());
+    }
+    IAccessRule rule = JavaCore.newAccessRule(new Path("**/*"), IAccessRule.K_NON_ACCESSIBLE);
+    IClasspathEntry frameworkContainer = JavaCore.newContainerEntry(
+        containerPath,
+        new IAccessRule[] {rule},
+        new IClasspathAttribute[] {JavaCore.newClasspathAttribute(ClasspathUtil.TYPE, ClasspathUtil.FRAMEWORK)},
+        false
+        );
+    classPath.add(frameworkContainer);
     
     // Set classpath and output location
     javaProject.setRawClasspath(
         (IClasspathEntry []) classPath.toArray(new IClasspathEntry[classPath.size()]),
         projectFolder.append(projectPage.getOutputFolder()),
         null);
-    
-    // Create bundle project and add manifest and activator
-    BundleProject bundleProject = new BundleProject(javaProject);
-    
-    // Set manifest attributes
-    BundleManifest manifest = bundleProject.getBundleManifest();
-    manifest.setSymbolicName(bundlePage.getBundleSymbolicName());
-    manifest.setName(bundlePage.getBundleName());
-    manifest.setVersion(bundlePage.getBundleVersion());
-    manifest.setVendor(bundlePage.getBundleVendor());
-    manifest.setDescription(bundlePage.getBundleDescription());
-    if (bundlePage.isCreateBundleActivator()) {
-      String activator = bundlePage.getActivatorClassName();
-      String packageName = bundlePage.getActivatorPackageName();
-      if (packageName != null) {
-        activator = packageName+"."+activator;
-      }
-      manifest.setActivator(activator);
-    }
-    bundleProject.saveManifest(manifest);
     
     // Check if bundle activator shall be created
     if (bundlePage.isCreateBundleActivator()) {
@@ -242,6 +260,12 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
           bundleProject.getJavaProject().getProject().getFolder(projectPage.getSourceFolder()),
           packageName, 
           className);
+      
+      FrameworkDistribution distribution = OsgiPreferences.getFrameworkDistribution(projectPage.getFrameworkName());
+      IPackage[] pkgs = PackageUtil.findPackage("org.osgi.framework", distribution, IPackage.FRAMEWORK);
+      if (pkgs != null && pkgs.length > 0) {
+        bundleProject.importPackage(pkgs[0], true);
+      }
     }
   }
   

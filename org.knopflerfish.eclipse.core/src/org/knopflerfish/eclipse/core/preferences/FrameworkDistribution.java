@@ -32,13 +32,19 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.preferences;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import org.knopflerfish.eclipse.core.IOsgiBundle;
+import org.knopflerfish.eclipse.core.IOsgiLibrary;
+import org.knopflerfish.eclipse.core.OsgiBundle;
+import org.knopflerfish.eclipse.core.OsgiLibrary;
+import org.knopflerfish.eclipse.core.SystemProperty;
+import org.knopflerfish.eclipse.core.SystemPropertyGroup;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
@@ -49,22 +55,13 @@ import org.osgi.service.prefs.Preferences;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class OsgiInstall implements IOsgiInstall {
-
-  /*
-  public static String TYPE_OSGI_R2 = "OSGi R2";
-  public static String TYPE_OSGI_R3 = "OSGi R3";
-  public static String TYPE_OSGI_R4 = "OSGi R4";
-  
-  public static String [] TYPES = {TYPE_OSGI_R2, TYPE_OSGI_R3, TYPE_OSGI_R4};
-  */
+public class FrameworkDistribution {
 
   private static String PREF_LOCATION               = "Location";
   private static String PREF_SPECIFICATION_VERISION = "SpecificationVersion";
   private static String PREF_TYPE                   = "Type";
   private static String PREF_MAINCLASS              = "MainClass";
   private static String PREF_RUNTIME_LIBRARIES      = "Libraries";
-  private static String PREF_BUILD_LIBRARIES        = "BuildLibraries";
   private static String PREF_BUNDLES                = "Bundles";
   private static String PREF_JAR                    = "Jar";
   private static String PREF_SOURCE                 = "Source";
@@ -84,14 +81,13 @@ public class OsgiInstall implements IOsgiInstall {
   private boolean defaultSettings;
   private String mainClass;
   private ArrayList runtimeLibs = new ArrayList();  
-  private ArrayList buildLibs = new ArrayList();  
   private ArrayList bundles = new ArrayList();
   private ArrayList propertyGroups = new ArrayList();
   
-  public OsgiInstall() {
+  public FrameworkDistribution() {
   }
   
-  public OsgiInstall(Preferences node) throws BackingStoreException {
+  public FrameworkDistribution(Preferences node) throws BackingStoreException {
     load(node);
   }
   
@@ -127,21 +123,6 @@ public class OsgiInstall implements IOsgiInstall {
       idx++;
     }
 
-    // Build Libraries
-    Preferences buildLibNode = node.node(PREF_BUILD_LIBRARIES);
-    buildLibs.clear();
-    idx = 0;
-    while (buildLibNode.nodeExists("Library "+idx)) {
-      Preferences libraryNode = buildLibNode.node("Library "+idx);
-      try {
-        OsgiLibrary library = new OsgiLibrary(new File(libraryNode.get(PREF_JAR, "")));
-        library.setSource(libraryNode.get(PREF_SOURCE, null));
-        library.setUserDefined("true".equalsIgnoreCase(libraryNode.get(PREF_USER_DEFINED, "false")));
-        buildLibs.add(library);
-      } catch (Exception e) {}
-      idx++;
-    }
-    
     // Default definition
     defaultDefinition = "true".equalsIgnoreCase(node.get(PREF_DEFAULT_DEFINITION, "false"));
 
@@ -244,19 +225,6 @@ public class OsgiInstall implements IOsgiInstall {
     for (int i=0; i<runtimeLibs.size(); i++) {
       OsgiLibrary library = (OsgiLibrary) runtimeLibs.get(i);
       Preferences libraryNode = librariesNode.node("Library "+i);
-      libraryNode.put(PREF_JAR, library.getPath());
-      if (library.getSource() != null) {
-        libraryNode.put(PREF_SOURCE, library.getSource());
-      }
-      libraryNode.putBoolean(PREF_USER_DEFINED, library.isUserDefined());
-    }
-    
-    // Build Libraries
-    subNode.node(PREF_BUILD_LIBRARIES).removeNode();
-    Preferences buildLibNode = subNode.node(PREF_BUILD_LIBRARIES);
-    for (int i=0; i<buildLibs.size(); i++) {
-      OsgiLibrary library = (OsgiLibrary) buildLibs.get(i);
-      Preferences libraryNode = buildLibNode.node("Library "+i);
       libraryNode.put(PREF_JAR, library.getPath());
       if (library.getSource() != null) {
         libraryNode.put(PREF_SOURCE, library.getSource());
@@ -420,21 +388,6 @@ public class OsgiInstall implements IOsgiInstall {
     }
   }
 
-  /* (non-Javadoc)
-   * @see org.gstproject.eclipse.osgi.IOsgiInstall#getLibraries()
-   */
-  public IOsgiLibrary[] getBuildLibraries() {
-    return (OsgiLibrary[]) buildLibs.toArray(new OsgiLibrary[buildLibs.size()]);
-  }
-
-  public void setBuildLibraries(IOsgiLibrary[] libraries) {
-    buildLibs.clear();
-    if (libraries == null) return;
-    for(int i=0; i<libraries.length; i++) {
-      buildLibs.add(libraries[i]);
-    }
-  }
-  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IOsgiInstall#getBundles()

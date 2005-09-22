@@ -32,76 +32,58 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.preferences.model;
+package org.knopflerfish.eclipse.core.ui.preferences;
 
-import org.knopflerfish.eclipse.core.IOsgiLibrary;
+import org.eclipse.jface.preference.PreferencePage;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.FormAttachment;
+import org.eclipse.swt.layout.FormData;
+import org.eclipse.swt.layout.FormLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchPreferencePage;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class LibraryElementBuild implements ILibraryTreeElement {
+public class OsgiPage extends PreferencePage implements IWorkbenchPreferencePage {
+  private static String DESCRIPTION = 
+    "General settings for OSGi environments.";
 
-  private final ILibraryTreeElement parent;
-  private IOsgiLibrary lib;
-  
-  public LibraryElementBuild(ILibraryTreeElement parent, IOsgiLibrary lib) {
-    this.parent = parent;
-    this.lib = lib;
-  }
-  
-  public IOsgiLibrary getLibrary() {
-    return lib;
-  }
+  /****************************************************************************
+   * org.eclipse.ui.IWorkbenchPreferencePage methods
+   ***************************************************************************/
 
-  public void setLibrary(IOsgiLibrary lib) {
-    this.lib = lib;
+  /* (non-Javadoc)
+   * @see org.eclipse.ui.IWorkbenchPreferencePage#init(org.eclipse.ui.IWorkbench)
+   */
+  public void init(IWorkbench workbench) {
   }
   
   /****************************************************************************
-   * org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement methods
+   * org.eclipse.jface.preference.PreferencePage methods
    ***************************************************************************/
-  
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getChildren()
-   */
-  public ILibraryTreeElement[] getChildren() {
-    return null;
-  }
 
   /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getParent()
+   * @see org.eclipse.jface.preference.PreferencePage#createContents(org.eclipse.swt.widgets.Composite)
    */
-  public ILibraryTreeElement getParent() {
-    return parent;
-  }
-
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#hasChildren()
-   */
-  public boolean hasChildren() {
-    return false;
-  }
-
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getType()
-   */
-  public int getType() {
-    return TYPE_BUILD;
-  }
-
-  /****************************************************************************
-   * java.lang.Object methods
-   ***************************************************************************/
-  
-  /*
-   *  (non-Javadoc)
-   * @see java.lang.Object#equals(java.lang.Object)
-   */
-  public boolean equals(Object obj) {
-    if (obj == null || !(obj instanceof LibraryElementBuild)) return false;
+  protected Control createContents(Composite parent) {
+    Composite page = new Composite(parent, 0);
+    FormLayout layout = new FormLayout();
+    page.setLayout(layout);
     
-    return ((LibraryElementBuild) obj).getLibrary().getPath().equals(getLibrary().getPath()); 
+    // Description
+    Label wDescriptionLabel = new Label(page, SWT.LEFT | SWT.WRAP);
+    wDescriptionLabel.setText(DESCRIPTION);
+    FormData data = new FormData();
+    data.left = new FormAttachment(0,0);
+    data.top = new FormAttachment(0,0);
+    data.right = new FormAttachment(100,0);
+    wDescriptionLabel.setLayoutData(data);
+    
+    return page;
   }
-
 }

@@ -129,4 +129,18 @@ public class OsgiLibrary implements IOsgiLibrary {
   public int hashCode() {
     return file.getAbsolutePath().hashCode();
   }
+  
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  public boolean equals(Object o) {
+    if (o == null || !(o instanceof OsgiLibrary)) {
+      return false;
+    }
+    
+    OsgiLibrary lib = (OsgiLibrary) o;
+
+    return file.getAbsolutePath().equals(lib.file.getAbsolutePath());
+}
 }

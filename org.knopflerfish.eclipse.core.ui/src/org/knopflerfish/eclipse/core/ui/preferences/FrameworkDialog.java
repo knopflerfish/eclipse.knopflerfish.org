@@ -73,17 +73,15 @@ import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.IOsgiInstall;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
-import org.knopflerfish.eclipse.core.OsgiInstall;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.ui.dialogs.ImportLibrariesDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
 import org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement;
-import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementBuild;
-import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementBuildRoot;
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementBundle;
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementBundleRoot;
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementRoot;
@@ -96,7 +94,7 @@ import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryTreeLabelProvid
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class FrameworkDefinitionDialog extends Dialog {
+public class FrameworkDialog extends Dialog {
   
   private static String TITLE_ADD = "Add framework definition";
   private static String TITLE_EDIT = "Edit framework definition";
@@ -125,7 +123,6 @@ public class FrameworkDefinitionDialog extends Dialog {
   private Button  wLibraryRemoveButton;
   private Button  wLibraryAttachButton;
   private Button  wLibraryAddRuntimeButton;
-  private Button  wLibraryAddBuildButton;
   private Button  wLibraryAddBundleButton;
   private Button  wLibraryImportButton;
   private Label   wErrorMsgLabel;
@@ -137,22 +134,22 @@ public class FrameworkDefinitionDialog extends Dialog {
   // Model
   private LibraryElementRoot frameworkLibraryModel = new LibraryElementRoot();;
   private ArrayList usedNames;
-  private OsgiInstall osgiInstall;
-  private TreeMap definitions = new TreeMap();
+  private FrameworkDistribution distribution;
+  private TreeMap distributions = new TreeMap();
   
   /**
    * @param parentShell
    */
-  protected FrameworkDefinitionDialog(Shell parentShell, ArrayList usedNames, OsgiInstall osgiInstall) {
+  protected FrameworkDialog(Shell parentShell, ArrayList usedNames, FrameworkDistribution distribution) {
     super(parentShell);
     this.usedNames = usedNames;
-    this.osgiInstall = osgiInstall;
-    if (osgiInstall != null && usedNames != null) {
-      usedNames.remove(osgiInstall.getName());
+    this.distribution = distribution;
+    if (distribution != null && usedNames != null) {
+      usedNames.remove(distribution.getName());
     }
     String[] names = Osgi.getFrameworkDefinitionNames();
     for (int i=0;i<names.length; i++) {
-      definitions.put(names[i], Osgi.getFrameworkDefinition(names[i]));
+      distributions.put(names[i], Osgi.getFrameworkDefinition(names[i]));
     }
   }
   
@@ -175,7 +172,7 @@ public class FrameworkDefinitionDialog extends Dialog {
    */
   protected void configureShell(Shell newShell) {
     super.configureShell(newShell);
-    if (osgiInstall != null) {
+    if (distribution != null) {
       newShell.setText(TITLE_EDIT);
     } else {
       newShell.setText(TITLE_ADD);
@@ -189,7 +186,7 @@ public class FrameworkDefinitionDialog extends Dialog {
   protected Control createContents(Composite parent) {
     Control c = super.createContents(parent);
     
-    setValues(osgiInstall);
+    setValues(distribution);
     
     return c;
   }
@@ -202,28 +199,27 @@ public class FrameworkDefinitionDialog extends Dialog {
    * @see org.eclipse.jface.dialogs.Dialog#okPressed()
    */
   protected void okPressed() {
-    if (osgiInstall == null) {
+    if (distribution == null) {
       // Create definition
-      osgiInstall = new OsgiInstall();
+      distribution = new FrameworkDistribution();
     }
 
-    osgiInstall.setName(wNameText.getText());
-    osgiInstall.setType(wTypeCombo.getText());
-    osgiInstall.setLocation(wLocationText.getText());
-    osgiInstall.setDefaultSettings(wDefaultButton.getSelection());
-    osgiInstall.setMainClass(wMainClassText.getText());
-    osgiInstall.setSpecificationVersion(wSpecificationVersionText.getText());
-    osgiInstall.setRuntimeLibraries(frameworkLibraryModel.getRuntimeLibraries());
-    osgiInstall.setBuildLibraries(frameworkLibraryModel.getBuildLibraries());
-    osgiInstall.setBundles(frameworkLibraryModel.getBundles());
-    osgiInstall.clearSystemPropertyGroups();
+    distribution.setName(wNameText.getText());
+    distribution.setType(wTypeCombo.getText());
+    distribution.setLocation(wLocationText.getText());
+    distribution.setDefaultSettings(wDefaultButton.getSelection());
+    distribution.setMainClass(wMainClassText.getText());
+    distribution.setSpecificationVersion(wSpecificationVersionText.getText());
+    distribution.setRuntimeLibraries(frameworkLibraryModel.getRuntimeLibraries());
+    distribution.setBundles(frameworkLibraryModel.getBundles());
+    distribution.clearSystemPropertyGroups();
     String type = wTypeCombo.getText();
-    IFrameworkDefinition def = (IFrameworkDefinition) definitions.get(type);
+    IFrameworkDefinition def = (IFrameworkDefinition) distributions.get(type);
     SystemPropertyGroup[] groups = def.getSystemPropertyGroups();
     if(groups != null) {
       for (int i=0; i<groups.length; i++) {
-        osgiInstall.addSystemPropertyGroup(groups[i]);
-        groups[i].setOsgiInstall(osgiInstall);
+        distribution.addSystemPropertyGroup(groups[i]);
+        groups[i].setFrameworkDistribution(distribution);
       }
     }
     
@@ -377,10 +373,7 @@ public class FrameworkDefinitionDialog extends Dialog {
         ILibraryTreeElement element = (ILibraryTreeElement) selection.getFirstElement();
         int type = element.getType();
 
-        if (type == ILibraryTreeElement.TYPE_BUILD) {
-          LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
-          buildRoot.moveUp(element);
-        } else if (type == ILibraryTreeElement.TYPE_RUNTIME) {
+        if (type == ILibraryTreeElement.TYPE_RUNTIME) {
           LibraryElementRuntimeRoot runtimeRoot = frameworkLibraryModel.getRuntimeRoot();
           runtimeRoot.moveUp(element);
         }
@@ -399,10 +392,7 @@ public class FrameworkDefinitionDialog extends Dialog {
         ILibraryTreeElement element = (ILibraryTreeElement) selection.getFirstElement();
         int type = element.getType();
 
-        if (type == ILibraryTreeElement.TYPE_BUILD) {
-          LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
-          buildRoot.moveDown(element);
-        } else if (type == ILibraryTreeElement.TYPE_RUNTIME) {
+        if (type == ILibraryTreeElement.TYPE_RUNTIME) {
           LibraryElementRuntimeRoot runtimeRoot = frameworkLibraryModel.getRuntimeRoot();
           runtimeRoot.moveDown(element);
         }
@@ -422,10 +412,7 @@ public class FrameworkDefinitionDialog extends Dialog {
           ILibraryTreeElement element = (ILibraryTreeElement) i.next();
           int type = element.getType();
           
-          if (type == ILibraryTreeElement.TYPE_BUILD) {
-            LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
-            buildRoot.remove(element);
-          } else if (type == ILibraryTreeElement.TYPE_RUNTIME) {
+          if (type == ILibraryTreeElement.TYPE_RUNTIME) {
             LibraryElementRuntimeRoot runtimeRoot = frameworkLibraryModel.getRuntimeRoot();
             runtimeRoot.remove(element);
           } else if (type == ILibraryTreeElement.TYPE_BUNDLE) {
@@ -451,9 +438,7 @@ public class FrameworkDefinitionDialog extends Dialog {
 
         IOsgiLibrary lib = null;
         String title = TITLE_EDIT_LIBRARY;;
-        if (type == ILibraryTreeElement.TYPE_BUILD) {
-          lib = ((LibraryElementBuild) element).getLibrary();
-        } else if (type == ILibraryTreeElement.TYPE_RUNTIME) {
+        if (type == ILibraryTreeElement.TYPE_RUNTIME) {
           lib = ((LibraryElementRuntime) element).getLibrary();
         } else if (type == ILibraryTreeElement.TYPE_BUNDLE) {
           lib = ((LibraryElementBundle) element).getBundle();
@@ -466,9 +451,7 @@ public class FrameworkDefinitionDialog extends Dialog {
             OsgiBundle bundle = new OsgiBundle(new File(dialog.getLibrary().getPath()));
             bundle.setUserDefined(true);
             bundle.setSource(dialog.getLibrary().getSource());
-            if (type == ILibraryTreeElement.TYPE_BUILD) {
-              ((LibraryElementBuild) element).setLibrary(bundle);
-            } else if (type == ILibraryTreeElement.TYPE_RUNTIME) {
+            if (type == ILibraryTreeElement.TYPE_RUNTIME) {
               ((LibraryElementRuntime) element).setLibrary(bundle);
             } else if (type == ILibraryTreeElement.TYPE_BUNDLE) {
               ((LibraryElementBundle) element).setBundle(bundle);
@@ -520,22 +503,6 @@ public class FrameworkDefinitionDialog extends Dialog {
         }
       }
     });
-    wLibraryAddBuildButton = new Button(wLibraryComposite, SWT.NONE);
-    wLibraryAddBuildButton.setText("Add Build Library...");
-    wLibraryAddBuildButton.addSelectionListener(new SelectionAdapter(){
-      public void widgetSelected(SelectionEvent e) {
-        LibraryDialog dialog = 
-          new LibraryDialog(((Button) e.widget).getShell(), null, TITLE_ADD_LIBRARY);
-        
-        if (dialog.open() == Window.OK) {
-          LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
-          buildRoot.addChild(new LibraryElementBuild(buildRoot, dialog.getLibrary()));
-          
-          wLibraryTreeViewer.refresh();
-          updateButtons();
-        }
-      }
-    });
 
     wLibraryImportButton = new Button(wLibraryComposite, SWT.NONE);
     wLibraryImportButton.setText("Import Libraries...");
@@ -546,7 +513,7 @@ public class FrameworkDefinitionDialog extends Dialog {
         
         if (dialog.open() == Window.OK) {
           String name = dialog.getFrameworkName();
-          IOsgiInstall framework = Osgi.getOsgiInstall(name);
+          FrameworkDistribution framework = OsgiPreferences.getFrameworkDistribution(name);
           boolean onlyUserDefined = dialog.isOnlyUserDefined();
           
           // Import runtime libraries
@@ -556,17 +523,6 @@ public class FrameworkDefinitionDialog extends Dialog {
             for (int i=0; i<libraries.length; i++) {
               if (!onlyUserDefined || libraries[i].isUserDefined()) {
                 runtimeRoot.addChild(new LibraryElementRuntime(runtimeRoot, libraries[i]));
-              }
-            }
-          }
-          
-          // Import build path libraries
-          if (dialog.isImportBuildPathLibraries()) {
-            LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
-            IOsgiLibrary[] libraries = framework.getBuildLibraries();
-            for (int i=0; i<libraries.length; i++) {
-              if (!onlyUserDefined || libraries[i].isUserDefined()) {
-                buildRoot.addChild(new LibraryElementBuild(buildRoot, libraries[i]));
               }
             }
           }
@@ -636,12 +592,6 @@ public class FrameworkDefinitionDialog extends Dialog {
     fd.left = new FormAttachment(wLibraryAddRuntimeButton, 0, SWT.LEFT);
     fd.top = new FormAttachment(wLibraryAddRuntimeButton, 5, SWT.BOTTOM);
     fd.right = new FormAttachment(100, 0);
-    wLibraryAddBuildButton.setLayoutData(fd);
-
-    fd = new FormData();
-    fd.left = new FormAttachment(wLibraryAddRuntimeButton, 0, SWT.LEFT);
-    fd.top = new FormAttachment(wLibraryAddBuildButton, 5, SWT.BOTTOM);
-    fd.right = new FormAttachment(100, 0);
     wLibraryAddBundleButton.setLayoutData(fd);
 
     fd = new FormData();
@@ -670,8 +620,8 @@ public class FrameworkDefinitionDialog extends Dialog {
   /**
    * @return
    */
-  public OsgiInstall getOsgiInstall() {
-    return osgiInstall;
+  public FrameworkDistribution getFrameworkDistribution() {
+    return distribution;
   }
 
   /****************************************************************************
@@ -734,7 +684,7 @@ public class FrameworkDefinitionDialog extends Dialog {
     
     // Check if location is a valid directory for this definition
     String type = wTypeCombo.getText();
-    IFrameworkDefinition def = (IFrameworkDefinition) definitions.get(type);
+    IFrameworkDefinition def = (IFrameworkDefinition) distributions.get(type);
     if (def == null) {
       setState("No framework plugin found for '"+type+"'.", STATE_ERROR);
       return false;
@@ -768,7 +718,6 @@ public class FrameworkDefinitionDialog extends Dialog {
         int type = element.getType();
         enableRemove |= 
           type == ILibraryTreeElement.TYPE_BUNDLE || 
-          type == ILibraryTreeElement.TYPE_BUILD ||
           type == ILibraryTreeElement.TYPE_RUNTIME;
       }
       
@@ -777,16 +726,10 @@ public class FrameworkDefinitionDialog extends Dialog {
         ILibraryTreeElement element = (ILibraryTreeElement) selection.getFirstElement();
         int type = element.getType();
         if (type == ILibraryTreeElement.TYPE_BUNDLE || 
-            type == ILibraryTreeElement.TYPE_BUILD ||
             type == ILibraryTreeElement.TYPE_RUNTIME) {
           enableAttach = true;
         }
-        if (type == ILibraryTreeElement.TYPE_BUILD) {
-          LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
-          int idx = buildRoot.indexOf(element);
-          enableUp = (idx > 0);
-          enableDown = (idx < buildRoot.size()-1);
-        } else if (type == ILibraryTreeElement.TYPE_RUNTIME) {
+        if (type == ILibraryTreeElement.TYPE_RUNTIME) {
           LibraryElementRuntimeRoot runtimeRoot = frameworkLibraryModel.getRuntimeRoot();
           int idx = runtimeRoot.indexOf(element);
           enableUp = (idx > 0); 
@@ -798,7 +741,6 @@ public class FrameworkDefinitionDialog extends Dialog {
     wLibraryUpButton.setEnabled(enableUp && !wDefaultButton.getSelection());
     wLibraryDownButton.setEnabled(enableDown && !wDefaultButton.getSelection());
     wLibraryAttachButton.setEnabled(enableAttach && !wDefaultButton.getSelection());
-    wLibraryAddBuildButton.setEnabled(!wDefaultButton.getSelection());
     wLibraryAddBundleButton.setEnabled(!wDefaultButton.getSelection());
     wLibraryAddRuntimeButton.setEnabled(!wDefaultButton.getSelection());
     wLibraryImportButton.setEnabled(!wDefaultButton.getSelection() && 
@@ -817,7 +759,7 @@ public class FrameworkDefinitionDialog extends Dialog {
     
     if (verifyLocation()) {
       String type = wTypeCombo.getText();
-      IFrameworkDefinition def = (IFrameworkDefinition) definitions.get(type);
+      IFrameworkDefinition def = (IFrameworkDefinition) distributions.get(type);
       
       String location = wLocationText.getText();
       File dir = new File(location);
@@ -844,15 +786,6 @@ public class FrameworkDefinitionDialog extends Dialog {
         }
       }
       
-      // Set build path libraries
-      LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
-      IOsgiLibrary[] buildLibraries = def.getBuildLibraries(dir);
-      if (buildLibraries != null) {
-        for(int i=0; i<buildLibraries.length; i++) {
-          buildRoot.addChild(new LibraryElementBuild(buildRoot, buildLibraries[i]));
-        }
-      }
-      
       // Set bundles
       LibraryElementBundleRoot bundleRoot = frameworkLibraryModel.getBundleRoot();
       IOsgiBundle[] bundles = def.getBundles(dir);
@@ -870,7 +803,7 @@ public class FrameworkDefinitionDialog extends Dialog {
     wLibraryTreeViewer.refresh();
   }
   
-  private void setValues(OsgiInstall settings) {
+  private void setValues(FrameworkDistribution settings) {
     
     // Name
     if (settings != null) { 
@@ -881,7 +814,7 @@ public class FrameworkDefinitionDialog extends Dialog {
     
     // Type
     wTypeCombo.removeAll();
-    for(Iterator i=definitions.keySet().iterator(); i.hasNext();) {
+    for(Iterator i=distributions.keySet().iterator(); i.hasNext();) {
       wTypeCombo.add((String)i.next());
     }
     if (settings != null && settings.getType() != null && settings.getType().trim().length() > 0) {
@@ -926,16 +859,6 @@ public class FrameworkDefinitionDialog extends Dialog {
       IOsgiLibrary [] osgiLibraries = settings.getRuntimeLibraries();
       for (int i=0; i<osgiLibraries.length; i++) {
         runtimeRoot.addChild(new LibraryElementRuntime(runtimeRoot, osgiLibraries[i]));
-      }
-    }
-    
-    // Build libraries
-    LibraryElementBuildRoot buildRoot = frameworkLibraryModel.getBuildRoot();
-    buildRoot.clear();
-    if (settings != null) {
-      IOsgiLibrary [] osgiLibraries = settings.getBuildLibraries();
-      for (int i=0; i<osgiLibraries.length; i++) {
-        buildRoot.addChild(new LibraryElementBuild(buildRoot, osgiLibraries[i]));
       }
     }
     
