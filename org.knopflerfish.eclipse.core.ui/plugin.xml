@@ -73,12 +73,11 @@
  <extension
        point="org.eclipse.ui.editors">
     <editor
+          class="org.knopflerfish.eclipse.core.ui.editors.BundleEditor"
           filenames="bundle.manifest"
           icon="icons/obj16/file_b_obj.gif"
-          class="org.knopflerfish.eclipse.core.ui.editors.BundleEditor"
-          name="Bundle Editor"
           id="org.knopflerfish.eclipse.core.ui.editors.BundleEditor"
-          />
+          name="Bundle Editor"/>
  </extension>
  <extension
        point="org.eclipse.ui.preferencePages">

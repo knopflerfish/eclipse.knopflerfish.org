@@ -234,6 +234,13 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
         new BundleFilesVisitor(project.getJavaProject().getProject());
       delta.accept(visitor);
       
+      // Check if project is closed or removed or manifest file was  deleted
+      if (visitor.isManifestRemoved()) {
+        // Close editor
+        close(false); 
+        return;
+      }
+      
       // Check if manifest or pack description has changed
       if (!visitor.isManifestChanged() && !visitor.isPackDescriptionChanged()) {
         // Nothing changed

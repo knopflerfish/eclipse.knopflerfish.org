@@ -13,6 +13,8 @@ public class BundleFilesVisitor implements IResourceDeltaVisitor {
   private final IProject project;
   private boolean manifestChanged = false;
   private boolean packDescriptionChanged = false;
+  private boolean manifestRemoved = false;
+  private boolean packDescriptionRemoved = false;
   private IFile manifestFile = null;
   private IFile packDescriptionFile = null;
 
@@ -29,14 +31,17 @@ public class BundleFilesVisitor implements IResourceDeltaVisitor {
    */
   public boolean visit(IResourceDelta delta) throws CoreException {
     IResource res = delta.getResource();
+
     switch(res.getType()) {
     case IResource.FILE:
       IFile file = (IFile) res;
       if (BundleProject.MANIFEST_FILE.equals(file.getName())) {
+        manifestRemoved = delta.getKind() == IResourceDelta.REMOVED;
         manifestChanged = true;
         manifestFile = file;
         return true;
       } else if (BundleProject.BUNDLE_PACK_FILE.equals(file.getName())) {
+        packDescriptionRemoved = delta.getKind() == IResourceDelta.REMOVED;
         packDescriptionChanged = true;
         packDescriptionFile = file;
         return true;
@@ -62,6 +67,14 @@ public class BundleFilesVisitor implements IResourceDeltaVisitor {
   /****************************************************************************
    * Public getters
    ***************************************************************************/
+  public boolean isManifestRemoved() {
+    return manifestRemoved;
+  }
+
+  public boolean isPackDescriptionRemoved() {
+    return packDescriptionRemoved;
+  }
+
   public boolean isManifestChanged() {
     return manifestChanged;
   }
