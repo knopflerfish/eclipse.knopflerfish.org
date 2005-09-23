@@ -73,6 +73,8 @@ import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.pkg.IPackage;
+import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
 
 /**
@@ -86,6 +88,7 @@ public class BundleProject implements IBundleProject {
   public static final String MARKER_BUNDLE_NAME = "org.knopflerfish.eclipse.core.name";
   public static final String MARKER_BUNDLE_UPDATELOCATION = "org.knopflerfish.eclipse.core.updateLocation";
   public static final String MARKER_BUNDLE_DOCURL = "org.knopflerfish.eclipse.core.docUrl";
+  public static final String MARKER_BUNDLE_EXEC_ENV = "org.knopflerfish.eclipse.core.execEnv";
   public static final String MARKER_BUNDLE_CLASSPATH = "org.knopflerfish.eclipse.core.classpath";
   public static final String MARKER_EXPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageExports";
   public static final String MARKER_DYNAMIC_IMPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageDynamicImports";
@@ -510,6 +513,13 @@ public class BundleProject implements IBundleProject {
         IMarker.SEVERITY_WARNING,
         manifestFile);
     
+    // Check Execution Environment
+    updateMarker(MARKER_BUNDLE_EXEC_ENV, 
+        ManifestUtil.findAttributeLine(manifestContents, BundleManifest.BUNDLE_EXEC_ENV), 
+        checkManifestExecutionEnvironment(manifest), 
+        IMarker.SEVERITY_WARNING,
+        manifestFile);
+    
     // Check Bundle classpath
     updateMarker(MARKER_BUNDLE_CLASSPATH, 
         ManifestUtil.findAttributeLine(manifestContents, BundleManifest.BUNDLE_CLASSPATH), 
@@ -574,6 +584,22 @@ public class BundleProject implements IBundleProject {
     } else {
       return null;
     }
+  }
+  
+  public String checkManifestExecutionEnvironment(BundleManifest manifest) {
+    // Check that execution environments are valid
+    String[] environments = manifest.getExecutionEnvironments();
+    ExecutionEnvironment[] prefEnv = OsgiPreferences.getExecutionEnvironments();
+    ArrayList list = new ArrayList();
+    for(int i=0; i<prefEnv.length; i++) {
+      list.add(prefEnv[i].getName());
+    }
+    for(int i=0; i<environments.length; i++) {
+      if (!list.contains(environments[i])) {
+        return "Bundle uses unknown execution environments.";
+      }
+    }
+    return null;
   }
   
   public String checkManifestUpdateLocation(BundleManifest manifest) {

@@ -55,6 +55,7 @@ public class ExecutionEnvironment {
   private static final String PREF_LIBRARIES           = "Libraries";
   private static final String PREF_JAR                 = "Jar";
   private static final String PREF_SOURCE              = "Source";
+  private static final String PREF_NAME                = "Name";
   
   
   // Environment types
@@ -76,7 +77,10 @@ public class ExecutionEnvironment {
   
   private void load(Preferences node) throws BackingStoreException {
     // Load preferences
-    name = node.name();
+    //name = node.name();
+    
+    // Name
+    name = node.get(PREF_NAME, "");
     
     // Type
     type = node.getInt(PREF_TYPE, TYPE_USER);
@@ -101,7 +105,10 @@ public class ExecutionEnvironment {
 
   protected void save(Preferences node) throws BackingStoreException {
     // Save preferences in node
-    Preferences subNode = node.node(name);
+    Preferences subNode = node.node(name.replace('/','_'));
+    
+    // Name
+    subNode.put(PREF_NAME, name);
     
     // Type
     subNode.putInt(PREF_TYPE, type);
@@ -164,6 +171,9 @@ public class ExecutionEnvironment {
     }
   }
   
+  /****************************************************************************
+   * java.lang.Object methods
+   ***************************************************************************/
   /*
    *  (non-Javadoc)
    * @see java.lang.Object#equals(java.lang.Object)
