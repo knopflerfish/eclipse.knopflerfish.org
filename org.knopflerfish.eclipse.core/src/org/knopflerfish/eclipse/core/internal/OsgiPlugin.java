@@ -75,8 +75,8 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener, IVMIn
   private ResourceBundle resourceBundle;
   
   private final static String JRE_ENVIRONMENT            = "Default JRE";
-  private final static String CDC_FOUNDATION_ENVIRONMENT = "CDC-1.0 Foundation-1.0";
-  private final static String OSGI_MINIMUM_ENVIRONMENT   = "OSGi Minimum-1.0";
+  private final static String CDC_FOUNDATION_ENVIRONMENT = "CDC-1.0/Foundation-1.0";
+  private final static String OSGI_MINIMUM_ENVIRONMENT   = "OSGi/Minimum-1.0";
   
   /**
    * The constructor.

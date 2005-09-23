@@ -137,6 +137,8 @@ public class OsgiPreferences {
   public static ExecutionEnvironment getExecutionEnvironment(String name) {
     if (name == null || name.length() == 0) return null;
     
+    name = name.replace('/','_');
+    
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_ENVIRONMENTS_NODE);
     try  {
       if (node.nodeExists(name)) {
