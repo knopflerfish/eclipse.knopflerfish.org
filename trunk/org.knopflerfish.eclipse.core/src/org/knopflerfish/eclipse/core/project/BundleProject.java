@@ -94,6 +94,7 @@ public class BundleProject implements IBundleProject {
   public static final String MARKER_DYNAMIC_IMPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageDynamicImports";
   
   public static final String CLASSPATH_FILE = ".classpath";
+  //public static final String MANIFEST_FILE  = "MANIFEST.MF";
   public static final String MANIFEST_FILE  = "bundle.manifest";
   public static final String BUNDLE_PACK_FILE = ".bundle-pack";
   
