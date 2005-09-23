@@ -40,17 +40,18 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.jar.Attributes;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
@@ -69,6 +70,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.widgets.FormText;
 import org.eclipse.ui.forms.widgets.FormToolkit;
@@ -77,6 +79,8 @@ import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
+import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.SharedImages;
@@ -174,9 +178,19 @@ public class GeneralSection extends SectionPart {
   // Model
   private final BundleProject project;
   private BundleManifest manifest = null;
+
+  // Images 
+  private Image imgLibraryWarning;
   
   public GeneralSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
     super(parent, toolkit, style);
+    
+    // Create images
+    imgLibraryWarning = UiUtils.ovrImage(
+        JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY),
+        OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_WARNING),
+        UiUtils.LEFT, UiUtils.BOTTOM
+        );
     
     this.project = project;
     Section section = getSection();
@@ -195,6 +209,8 @@ public class GeneralSection extends SectionPart {
     updateStatus(marker, wDocUrlStatusLabel, wDocUrlText);
     marker = (IMarker) errors.get(BundleManifest.BUNDLE_NAME);
     updateStatus(marker, wNameStatusLabel, wNameText);
+    
+    wEnvironmentTableViewer.refresh();
   }
   
   private void updateStatus(IMarker marker, StatusLabel wLabel, Text wText) {
@@ -226,6 +242,17 @@ public class GeneralSection extends SectionPart {
   /****************************************************************************
    * org.eclipse.ui.forms.IFormPart methods
    ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.ui.forms.IFormPart#dispose()
+   */
+  public void dispose() {
+    if (imgLibraryWarning != null) {
+      imgLibraryWarning.dispose();
+      imgLibraryWarning = null;
+    }
+  }
+  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.ui.forms.IFormPart#commit(boolean)
@@ -587,28 +614,33 @@ public class GeneralSection extends SectionPart {
     wEnvironmentAddButton = toolkit.createButton(wEnvironmentComposite, "Add...", SWT.PUSH);
     wEnvironmentAddButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        HashMap map = new HashMap();
-        String key = "environment";
-        PropertyDialog.Property p = new PropertyDialog.Property(key) {
-          public boolean isValid(String value) {
-            if (value.indexOf(",")!= -1) {
-              return false;
-            } else {
-              return true;
-            }
+        ExecutionEnvironment[] prefEnvironments = OsgiPreferences.getExecutionEnvironments();
+        TreeSet dialogEnvironments = new TreeSet();
+        for (int i=0; i<prefEnvironments.length;i++){
+          if (prefEnvironments[i].getType() != ExecutionEnvironment.TYPE_JRE) {
+            dialogEnvironments.add(prefEnvironments[i].getName());
           }
-        };
-        p.setLabel("Execution Environment:");
-        map.put(key, p);
-        PropertyDialog dialog = 
-          new PropertyDialog(((Button) e.widget).getShell(), map, TITLE_ADD_ENVIRONMENT);
+        }
+        // Remove already selected environments
+        ArrayList environments = new ArrayList(Arrays.asList(manifest.getExecutionEnvironments()));
+        dialogEnvironments.removeAll(environments);
+        
+        EnvironmentContentProvider environmentProvider = new EnvironmentContentProvider();
+        ElementListSelectionDialog dialog = new ElementListSelectionDialog(
+            Display.getDefault().getActiveShell(),
+            environmentProvider);
+        dialog.setElements(dialogEnvironments.toArray());
+        dialog.setMultipleSelection(true);
+        dialog.setTitle(TITLE_ADD_ENVIRONMENT);
+        dialog.setImage(JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY));
+        dialog.setMessage("Select the execution environments to add.");
         
         if (dialog.open() == Window.OK) {
-          map = dialog.getValues();
-          p = (PropertyDialog.Property) map.get(key);
-          List environments = new ArrayList(Arrays.asList(manifest.getExecutionEnvironments()));
-          if (p.getValue() != null && !environments.contains(p.getValue())) {
-            environments.add(p.getValue());
+          Object [] result = dialog.getResult();
+          for (int i=0; i<result.length;i++) {
+            environments.add((String) result[i]);
+          }
+          if (result.length > 0) {
             manifest.setExecutionEnvironments((String[]) environments.toArray(new String[environments.size()]));
             wEnvironmentTableViewer.refresh();
             UiUtils.packTableColumns(wEnvironmentTableViewer.getTable());
@@ -699,37 +731,83 @@ public class GeneralSection extends SectionPart {
   /****************************************************************************
    * EnvironmentContentProvider Inner classes
    ***************************************************************************/
-  class EnvironmentContentProvider implements IStructuredContentProvider, ITableLabelProvider {
+  class EnvironmentContentProvider implements IStructuredContentProvider, ILabelProvider {
     
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
+     */
     public Object[] getElements(Object inputElement) {
-      if ( !(inputElement instanceof BundleManifest)) return null;
-      
-      BundleManifest manifest = (BundleManifest) inputElement; 
-      
-      return manifest.getExecutionEnvironments();
+      if (inputElement instanceof BundleManifest) {
+        BundleManifest manifest = (BundleManifest) inputElement; 
+        return manifest.getExecutionEnvironments();
+      } else if (inputElement instanceof TreeSet) {
+        TreeSet set = (TreeSet) inputElement;
+        return set.toArray(new String[set.size()]);
+      } else {
+        return null;
+      }
     }
     
-    public void dispose() {
-    }
-    
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+     */
     public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
     }
-    
-    public Image getColumnImage(Object element, int columnIndex) {
-      return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
+
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.ILabelProvider#getImage(java.lang.Object)
+     */
+    public Image getImage(Object element) {
+      ExecutionEnvironment[] prefEnv = OsgiPreferences.getExecutionEnvironments();
+      ArrayList list = new ArrayList();
+      for(int i=0; i<prefEnv.length; i++) {
+        list.add(prefEnv[i].getName());
+      }
+      
+      if (list.contains(element)){
+        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
+      } else {
+        return imgLibraryWarning;
+      }
     }
-    
-    public String getColumnText(Object element, int columnIndex) {
+
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
+     */
+    public String getText(Object element) {
       return (String) element;
     }
-    
+
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
+     */
+    public void dispose() {
+    }
+
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
+     */
     public void addListener(ILabelProviderListener listener) {
     }
-    
+
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
+     */
     public boolean isLabelProperty(Object element, String property) {
       return false;
     }
-    
+
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
+     */
     public void removeListener(ILabelProviderListener listener) {
     }
   }
