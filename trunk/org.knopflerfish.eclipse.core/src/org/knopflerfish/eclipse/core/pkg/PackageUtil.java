@@ -48,7 +48,7 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
@@ -59,6 +59,22 @@ import org.knopflerfish.eclipse.core.project.IBundleProject;
  */
 public class PackageUtil {
   
+  public static PackageDescription[] getExportedPackages(){
+    return null;
+  }
+  
+  public static PackageDescription[] getFrameworkExportedPackages() {
+    return null;
+  }
+  
+  public static PackageDescription[] getRepositoryExportedPackages() {
+    return null;
+  }
+
+  public static PackageDescription[] getProjectExportedPackages() {
+    return null;
+  }
+  /*
   public static IPackage[] findPackage(String name, int type) {
     ArrayList matchPkgs = new ArrayList();
 
@@ -73,7 +89,7 @@ public class PackageUtil {
     return (IPackage[]) matchPkgs.toArray(new IPackage[matchPkgs.size()]);
   }
   
-  public static IPackage[] findPackage(String name, FrameworkDistribution distribution, int type) {
+  public static IPackage[] findPackage(String name, Framework distribution, int type) {
     ArrayList matchPkgs = new ArrayList();
 
     if (name != null) {
@@ -100,7 +116,7 @@ public class PackageUtil {
     ArrayList pkgs = new ArrayList();
     
     // Exported packages from distributions
-    FrameworkDistribution[] distributions = OsgiPreferences.getFrameworkDistributions();
+    Framework[] distributions = OsgiPreferences.getFrameworks();
     for(int i=0; i<distributions.length; i++) {
       pkgs.addAll(Arrays.asList(getPackages(distributions[i], type)));
     }
@@ -114,7 +130,7 @@ public class PackageUtil {
     return (IPackage[]) pkgs.toArray(new IPackage[pkgs.size()]);
   }
   
-  public static IPackage[] getPackages(FrameworkDistribution distribution, int type) {
+  public static IPackage[] getPackages(Framework distribution, int type) {
     ArrayList pkgs = new ArrayList();
     
     IFrameworkDefinition framework = Osgi.getFrameworkDefinition(distribution.getType());
@@ -138,6 +154,7 @@ public class PackageUtil {
     }
     return (IPackage[]) pkgs.toArray(new IPackage[pkgs.size()]);
   }
+  
 
   public static IPackage[] getPackages(IWorkspaceRoot root) {
     ArrayList pkgs = new ArrayList();
@@ -175,7 +192,7 @@ public class PackageUtil {
     ArrayList exportingBundles = new ArrayList(); 
     
     // Knopflerfish root
-    FrameworkDistribution[] distributions = OsgiPreferences.getFrameworkDistributions();
+    Framework[] distributions = OsgiPreferences.getFrameworks();
     
     for(int i=0; i<distributions.length; i++) {
       IOsgiBundle[] bundles = distributions[i].getBundles();
@@ -214,6 +231,6 @@ public class PackageUtil {
     
     return (IBundleProject[]) exportingProjects.toArray(new IBundleProject[exportingProjects.size()]);
   }
-  
+  */
   
 }

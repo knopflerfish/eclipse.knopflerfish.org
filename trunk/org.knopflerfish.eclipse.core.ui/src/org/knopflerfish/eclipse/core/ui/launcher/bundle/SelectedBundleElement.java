@@ -75,43 +75,38 @@ public class SelectedBundleElement {
   public String getPath() {
     if (bundle != null) {
       return bundle.getPath();
-    } else {
-      return project.getJavaProject().getProject().getName();
     }
+    return project.getJavaProject().getProject().getName();
   }
   
   public int getType() {
     if (bundle != null) {
       return TYPE_BUNDLE;
-    } else {
-      return TYPE_BUNDLE_PROJECT;
     }
+    return TYPE_BUNDLE_PROJECT;
   }
   
   public String getName() {
     if (bundle != null) {
       return bundle.getName();
-    } else {
-      return project.getBundleManifest().getName();
     }
+    return project.getBundleManifest().getName();
   }
   
   public String getVersion() {
     if (bundle != null) {
       if (bundle.getBundleManifest() == null) return null;
       return bundle.getBundleManifest().getVersion();
-    } else {
-      return project.getBundleManifest().getVersion();
     }
+    return project.getBundleManifest().getVersion();
   }
   
   public PackageDescription[] getImportedPackages() {
     if (bundle != null) {
       if (bundle.getBundleManifest() == null) return null;
       return bundle.getBundleManifest().getImportedPackages();
-    } else {
-      return project.getBundleManifest().getImportedPackages();
     }
+    return project.getBundleManifest().getImportedPackages();
   }
   
 
@@ -119,9 +114,8 @@ public class SelectedBundleElement {
     if (bundle != null) {
       if (bundle.getBundleManifest() == null) return null;
       return bundle.getBundleManifest().getExportedPackages();
-    } else {
-      return project.getBundleManifest().getExportedPackages();
     }
+    return project.getBundleManifest().getExportedPackages();
   }
   
   public String getError() {

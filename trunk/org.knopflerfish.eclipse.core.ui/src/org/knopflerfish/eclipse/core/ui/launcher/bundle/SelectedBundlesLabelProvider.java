@@ -42,8 +42,9 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
-import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.ui.launcher.main.MainTab;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -55,6 +56,8 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColor
   private static String IMAGE_BUNDLE_SRC  = "icons/obj16/jar_bsrc_obj.gif";
   private static String IMAGE_BUNDLE_OVR  = "icons/ovr16/bundle_ovr.gif";
   
+  private int initialStartLevel = MainTab.DEFAULT_START_LEVEL;
+  
   // Resources
   private Color colorError    = null;
   private Image imageBundle = null;
@@ -63,15 +66,15 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColor
   private Image sharedImageWorkspace  = PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT );
   
   public SelectedBundlesLabelProvider() {
-    ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
+    ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
     if (id != null) {
       imageBundle = id.createImage();
     }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_SRC);
+    id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_SRC);
     if (id != null) {
       imageBundleSrc = id.createImage();
     }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_OVR);
+    id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_OVR);
     if (id != null) {
       Image bundleOvrImage = id.createImage();
       imageProject = new Image(null, sharedImageWorkspace.getBounds());
@@ -83,6 +86,10 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColor
     }
 
     colorError = new Color(null, 255,0,0);
+  }
+  
+  void setInitialStartLevel(int level) {
+    initialStartLevel = level;
   }
   
   /****************************************************************************
@@ -142,15 +149,12 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColor
       if (e.getType() == SelectedBundleElement.TYPE_BUNDLE) {
         if (e.getLaunchInfo().getSource() != null) {
           return imageBundleSrc;
-        } else {
-          return imageBundle;
         }
-      } else {
-        return imageProject;
+        return imageBundle;
       }
-    } else {
-      return null;
+      return imageProject;
     }
+    return null;
   }
 
   /* (non-Javadoc)
@@ -162,22 +166,26 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColor
     switch (columnIndex) {
       case 0:
         // Name
-        String name = e.getName();
-        return name == null ? "" : name;
-        /*
-        if (e.getType() == SelectedBundleElement.TYPE_BUNDLE) {
-          return e.getName(); 
-        } else {
-          return e.getPath()+ " ("+e.getName()+")"; 
+        String name = e.getName(); 
+        if (e.getType() == SelectedBundleElement.TYPE_BUNDLE_PROJECT) {
+          name = e.getPath(); 
         }
-        */
+        return name;
       case 1:
         // Version
         String version = e.getVersion();
         return version == null ? "" : version;
       case 2:
         // Start level
-        return Integer.toString(e.getLaunchInfo().getStartLevel());
+        int startLevel = e.getLaunchInfo().getStartLevel();
+        StringBuffer buf = new StringBuffer();
+        buf.append(startLevel);
+        if (initialStartLevel < startLevel) {
+          buf.append(" > Initial Start Level (");
+          buf.append(initialStartLevel);
+          buf.append(")");
+        }
+        return buf.toString();
       case 3:
         // Mode
         return BundleLaunchInfo.MODES[e.getLaunchInfo().getMode()];
@@ -202,9 +210,8 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColor
     String error = e.getError();
     if (error != null && error.trim().length() > 0) {
       return colorError;
-    } else {
-      return null;
     }
+    return null;
   }
 
   /*

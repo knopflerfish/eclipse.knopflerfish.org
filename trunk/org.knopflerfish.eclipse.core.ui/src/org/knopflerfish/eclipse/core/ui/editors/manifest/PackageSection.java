@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.TreeMap;
 
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.JavaConventions;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IDocument;
@@ -102,11 +103,12 @@ public class PackageSection extends SectionPart {
   private static final int NUM_DYNAMIC_IMPORT_TABLE_ROWS = 4;
 
   // Dialog titles
-  private static String TITLE_ADD_DYNAMIC_IMPORT = "Add Dynamic Import";
+  static String TITLE_ADD_DYNAMIC_IMPORT = "Add Dynamic Import";
   
   // Column Properties
-  public static String PROP_PACKAGE_NAME    = "name";
-  public static String PROP_PACKAGE_VERSION = "version";
+  public static String PROP_PACKAGE_NAME       = "name";
+  public static String PROP_PACKAGE_VERSION    = "version";
+  public static String PROP_PACKAGE_CONTAINER  = "container";
   public static String NO_VERSION_STR = "[No version]";
 
   
@@ -116,26 +118,25 @@ public class PackageSection extends SectionPart {
   private static final String DESCRIPTION = 
     "This section lists packages that are exported and imported by this bundle.";
 
-  // SWT Widgets
-  private Button    wExportPackageRemoveButton;
+  Button    wExportPackageRemoveButton;
   private Button    wExportPackageAddButton;
-  private Button    wImportPackageRemoveButton;
+  Button    wImportPackageRemoveButton;
   private Button    wImportPackageAddButton;
-  private Button    wDynamicImportPackageRemoveButton;
+  Button    wDynamicImportPackageRemoveButton;
   private Button    wDynamicImportPackageAddButton;
   
   // jFace Widgets 
-  private TableViewer   wExportPackageTableViewer;
-  private TableViewer   wImportPackageTableViewer;
-  private TableViewer   wDynamicImportPackageTableViewer;
+  TableViewer   wExportPackageTableViewer;
+  TableViewer   wImportPackageTableViewer;
+  TableViewer   wDynamicImportPackageTableViewer;
   
-  // Model objects
-  private BundleManifest manifest = null;
-  private final BundleProject project;
+  BundleManifest manifest = null;
+  ImportPackageModel importPackageModel = null;
+  final BundleProject project;
   
   // Images 
   private Image imgPackageWarning;
-  private Image imgPackageError;
+  Image imgPackageError;
   
   public PackageSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
     super(parent, toolkit, style);
@@ -190,7 +191,8 @@ public class PackageSection extends SectionPart {
    */
   public void commit(boolean onSave) {
     // Commit values to document
-    IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
+    BundleDocument bundleDocument = (BundleDocument) getManagedForm().getInput();
+    IDocument doc = bundleDocument.getManifestDocument();
     if (manifest == null) return;
     
     StringBuffer buf = new StringBuffer(doc.get());
@@ -202,6 +204,8 @@ public class PackageSection extends SectionPart {
         BundleManifest.DYNAMIC_IMPORT_PACKAGE, manifest.getAttribute(BundleManifest.DYNAMIC_IMPORT_PACKAGE));
     doc.set(buf.toString());
     
+    bundleDocument.setImportPackageModel(importPackageModel);
+    
     super.commit(onSave);
   }
   
@@ -211,8 +215,11 @@ public class PackageSection extends SectionPart {
    */
   public void refresh() {
     // Refresh values from document
-    IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
+    BundleDocument bundleDocument = (BundleDocument) getManagedForm().getInput();
+    IDocument doc = bundleDocument.getManifestDocument();
     manifest = ManifestUtil.createManifest(doc.get().getBytes());
+    importPackageModel = bundleDocument.getImportPackageModel();
+    importPackageModel.updateManifest(manifest);
     
     // Refresh viewers
     if (wExportPackageTableViewer != null) {
@@ -220,7 +227,7 @@ public class PackageSection extends SectionPart {
     }
     UiUtils.packTableColumns(wExportPackageTableViewer.getTable());
     if (wImportPackageTableViewer != null) {
-      wImportPackageTableViewer.setInput(manifest);
+      wImportPackageTableViewer.setInput(importPackageModel);
     }
     UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
     if (wDynamicImportPackageTableViewer != null) {
@@ -359,7 +366,7 @@ public class PackageSection extends SectionPart {
         dialog.setImage(JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE));
         dialog.setMessage("Select package to export.");
         if (dialog.open() == Window.OK) {
-          Object[] packages = (Object[]) dialog.getResult();
+          Object[] packages = dialog.getResult();
           for(int i=0; i<packages.length;i++) {
             if (packages[i] instanceof PackageDescription) {
               PackageDescription pd = (PackageDescription) packages[i];
@@ -407,6 +414,11 @@ public class PackageSection extends SectionPart {
     ImportProvider importProvider = new ImportProvider();
     wImportPackageTableViewer.setContentProvider(importProvider);
     wImportPackageTableViewer.setLabelProvider(importProvider);
+    wImportPackageTableViewer.setColumnProperties(new String[] {PROP_PACKAGE_NAME, PROP_PACKAGE_VERSION, PROP_PACKAGE_CONTAINER});
+    wImportPackageTableViewer.setCellModifier(importProvider);
+    ContainerEditor containerEditor = new ContainerEditor(wImportPackageTable, SWT.NONE); 
+    wImportPackageTableViewer.setCellEditors(
+        new CellEditor[] {null, null, containerEditor});
     wImportPackageTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
       public void selectionChanged(SelectionChangedEvent event) {
         IStructuredSelection selection = 
@@ -447,14 +459,13 @@ public class PackageSection extends SectionPart {
 
         List packages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
         for (Iterator i = selection.iterator(); i.hasNext(); ) {
-          PackageDescription pd = (PackageDescription) i.next();
-          packages.remove(pd);
+          ImportPackageModelElement element = (ImportPackageModelElement) i.next();
+          packages.remove(element.getPackageDescription());
         }
         manifest.setImportedPackages((PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]));
-        
-        UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
-        
+        importPackageModel.setManifest(manifest);
         wImportPackageTableViewer.refresh();
+        UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
         markDirty();
       }
     });
@@ -489,7 +500,7 @@ public class PackageSection extends SectionPart {
         dialog.setImage(JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE));
         dialog.setMessage("Select package to import.");
         if (dialog.open() == Window.OK) {
-          Object[] packages = (Object[]) dialog.getResult();
+          Object[] packages = dialog.getResult();
           for(int i=0; i<packages.length;i++) {
             if (packages[i] instanceof PackageDescription) {
               PackageDescription pd = (PackageDescription) packages[i];
@@ -499,6 +510,7 @@ public class PackageSection extends SectionPart {
             }
           }
           manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+          importPackageModel.setManifest(manifest);
           wImportPackageTableViewer.refresh();
           UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
           markDirty();
@@ -594,9 +606,8 @@ public class PackageSection extends SectionPart {
           public boolean isValid(String value) {
             if (value.indexOf(",")!= -1) {
               return false;
-            } else {
-              return true;
             }
+            return true;
           }
         };
         p.setLabel("Dynamic Import:");
@@ -666,12 +677,10 @@ public class PackageSection extends SectionPart {
         List packages = Arrays.asList(project.getExportablePackages());
         if (packages.contains(desc)) {
           return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
-        } else {
-          return imgPackageError;
         }
-      } else {
-        return null;
+        return imgPackageError;
       }
+      return null;
     }
 
     public String getColumnText(Object element, int columnIndex) {
@@ -751,9 +760,8 @@ public class PackageSection extends SectionPart {
       List packages = Arrays.asList(project.getExportablePackages());
       if (packages.contains(desc)) {
         return null;
-      } else {
-        return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
       }
+      return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
     }
 
     public Color getBackground(Object element, int columnIndex) {
@@ -764,14 +772,14 @@ public class PackageSection extends SectionPart {
   /****************************************************************************
    * ImportProvider Inner classes
    ***************************************************************************/
-  class ImportProvider implements IStructuredContentProvider, ITableLabelProvider {
+  class ImportProvider implements IStructuredContentProvider, ITableLabelProvider, ICellModifier {
     
     public Object[] getElements(Object inputElement) {
-      if ( !(inputElement instanceof BundleManifest)) return null;
+      if ( !(inputElement instanceof ImportPackageModel)) return null;
       
-      BundleManifest manifest = (BundleManifest) inputElement; 
+      ImportPackageModel model = (ImportPackageModel) inputElement; 
       
-      return manifest.getImportedPackages();
+      return model.getElements();
     }
     
     public void dispose() {
@@ -783,25 +791,28 @@ public class PackageSection extends SectionPart {
     public Image getColumnImage(Object element, int columnIndex) {
       if (columnIndex == 0) {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
-      } else {
-        return null;
       }
+      return null;
     }
 
-    public String getColumnText(Object element, int columnIndex) {
-      PackageDescription desc = (PackageDescription) element;
+    public String getColumnText(Object o, int columnIndex) {
+      ImportPackageModelElement element = (ImportPackageModelElement) o;
       
       switch(columnIndex){
       case 0:
-        return desc.getPackageName();
+        return element.getPackageDescription().getPackageName();
       case 1:
-        String version = desc.getSpecificationVersion();
+        String version = element.getPackageDescription().getSpecificationVersion();
         if (version == null) {
           version = "";
         }
         return version;
       case 2:
-        return "Framework [Oscar 1.0]";
+        IClasspathEntry container = element.getContainer();
+        if (container == null) {
+          return "Unknown";
+        }
+        return container.getPath().toString();
       }
       return "";
     }
@@ -814,6 +825,20 @@ public class PackageSection extends SectionPart {
     }
 
     public void removeListener(ILabelProviderListener listener) {
+    }
+
+    public boolean canModify(Object element, String property) {
+      return PROP_PACKAGE_CONTAINER.equals(property);
+    }
+
+    public Object getValue(Object element, String property) {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
+    public void modify(Object element, String property, Object value) {
+      // TODO Auto-generated method stub
+      
     }
   }
   
@@ -847,9 +872,8 @@ public class PackageSection extends SectionPart {
       String name = (String) element;
       if (checkPackageName(name)) {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
-      } else {
-        return imgPackageError;
       }
+      return imgPackageError;
     }
 
     public String getColumnText(Object element, int columnIndex) {
@@ -870,9 +894,8 @@ public class PackageSection extends SectionPart {
       String name = (String) element;
       if (checkPackageName(name)) {
         return null;
-      } else {
-        return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
       }
+      return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
     }
 
     public Color getBackground(Object element, int columnIndex) {

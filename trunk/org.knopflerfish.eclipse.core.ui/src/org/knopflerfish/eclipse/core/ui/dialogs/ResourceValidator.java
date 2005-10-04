@@ -97,11 +97,10 @@ public class ResourceValidator implements ISelectionStatusValidator {
       Status status = new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core.ui", 
           IStatus.OK, error, null);
       return status;
-    } else {
-      Status status = new Status(IStatus.INFO, "org.knopflerfish.eclipse.core.ui", 
-          IStatus.OK, "", null);
-      return status;
     }
+    Status status = new Status(IStatus.INFO, "org.knopflerfish.eclipse.core.ui", 
+        IStatus.OK, "", null);
+    return status;
   }
   
 }

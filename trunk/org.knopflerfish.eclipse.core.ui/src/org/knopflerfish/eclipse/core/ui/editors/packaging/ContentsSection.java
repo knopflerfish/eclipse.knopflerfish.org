@@ -101,14 +101,14 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
   
   // SWT Widgets
   private Button    wResourceAddButton;
-  private Button    wResourceRemoveButton;
+  Button    wResourceRemoveButton;
   
   // jFace Widgets 
-  private TableViewer   wResourceTableViewer;
+  TableViewer   wResourceTableViewer;
   
   // Model objects
   private BundlePackDescription bundlePackDescription = null;
-  private final IProject project;
+  final IProject project;
   private final PackagingFormEditor editor;
   
   // Graphic Resources
@@ -191,9 +191,8 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
         }
       }
       return null;
-    } else {
-      return null;
     }
+    return null;
   }
   
   /* (non-Javadoc)
@@ -221,9 +220,8 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
       
       if (res == null) {
         return "Resource does not exist";
-      } else {
-        return "";
       }
+      return "";
     default:
       return "";
     }
@@ -412,7 +410,7 @@ public class ContentsSection extends SectionPart implements ITableLabelProvider,
     }
   }
 
-  private void updateResources(BundleResource resource, boolean remove) {
+  void updateResources(BundleResource resource, boolean remove) {
     // Flush values to document
     IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
 

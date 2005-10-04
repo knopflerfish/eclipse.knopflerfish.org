@@ -52,6 +52,7 @@ import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.editor.FormEditor;
 import org.eclipse.ui.forms.editor.FormPage;
+import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
@@ -159,11 +160,11 @@ public class PackagingFormEditor extends FormPage implements IDocumentListener {
     
     // Create sections
     exportSection = new ExportSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR, project);
+        Section.DESCRIPTION | ExpandableComposite.TITLE_BAR, project);
     exportSection.initialize(managedForm);
     
     resourceSection = new ContentsSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR, project.getJavaProject().getProject(), this);
+        Section.DESCRIPTION | ExpandableComposite.TITLE_BAR, project.getJavaProject().getProject(), this);
     resourceSection.initialize(managedForm);
     
     // Add sections to form

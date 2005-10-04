@@ -61,18 +61,16 @@ public class FileTreeContentProvider implements ITreeContentProvider {
       IContainer container = (IContainer) element;
       // Only show children which contain the files
       return getResources(container, files);
-    } else {
-      return new Object[0];
     }
+    return new Object[0];
   }
 
   public Object getParent(Object element) {
     if (element instanceof IResource) {
       IResource resource = (IResource) element;
       return resource.getParent();
-    } else {
-      return null;
     }
+    return null;
   }
 
   public boolean hasChildren(Object element) {
@@ -80,9 +78,8 @@ public class FileTreeContentProvider implements ITreeContentProvider {
       IContainer container = (IContainer) element;
       // Only show children which contain the files
       return getResources(container, files) != null;
-    } else {
-      return false;
     }
+    return false;
   }
 
   public Object[] getElements(Object element) {
@@ -90,9 +87,8 @@ public class FileTreeContentProvider implements ITreeContentProvider {
       IContainer container = (IContainer) element;
       // Only show children which contain the files
       return getResources(container, files);
-    } else {
-      return null;
     }
+    return null;
   }
 
   public void dispose() {
@@ -144,9 +140,8 @@ public class FileTreeContentProvider implements ITreeContentProvider {
     
     if (resources.size() > 0) {
       return (IResource[]) resources.toArray(new IResource[resources.size()]);
-    } else {
-      return null;
     }
+    return null;
   }
 }
 

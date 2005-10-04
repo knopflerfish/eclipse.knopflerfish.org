@@ -77,13 +77,13 @@ import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.launcher.SourcePathComputer;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
-import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
 /**
@@ -95,7 +95,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   
   // Default values
   private static final String DEFAULT_RUNTIME_PATH = "runtime-osgi";
-  private static final int DEFAULT_START_LEVEL     = 7;
+  public static final int DEFAULT_START_LEVEL     = 10;
   
   // Column Properties
   public static String PROP_NAME  = "name";
@@ -110,7 +110,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   // Widgets
   private Composite wPageComposite;
   private Combo     wOsgiInstallCombo;
-  private Text      wInstanceDirText;
+  Text      wInstanceDirText;
   private Spinner   wStartLevelSpinner;
   private Button    wInitButton;
   private Button    wAddPropertyButton;
@@ -120,18 +120,17 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   private Label     wDefaultLabel;
   private Label     wDefaultText;
   
-  // jFace Widgets 
-  private TreeViewer    wPropertyTreeViewer;
-  private int treeWidth = -1;
+  TreeViewer    wPropertyTreeViewer;
+  int treeWidth = -1;
 
   // Resources
   private Image imageTab = null;
   
-  private SystemPropertyGroup userGroup = new SystemPropertyGroup(USER_GROUP);
-  private Map systemProperties;
+  SystemPropertyGroup userGroup = new SystemPropertyGroup(USER_GROUP);
+  Map systemProperties;
   
   public MainTab() {
-    ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE);
+    ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE);
     if (id != null) {
       imageTab = id.createImage();
     }
@@ -195,7 +194,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wInstanceDirText = new Text(wLocationGroup, SWT.SINGLE | SWT.BORDER);
     wInstanceDirText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
-        updateLaunchConfigurationDialog();
+        updateDialog();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -209,7 +208,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         String path = dialog.open();
         if (path != null) {
           wInstanceDirText.setText(path);
-          updateLaunchConfigurationDialog();
+          updateDialog();
         }
       }
     });
@@ -231,7 +230,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wOsgiInstallCombo = new Combo(wFrameworkGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
     wOsgiInstallCombo.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        updateLaunchConfigurationDialog();
+        updateDialog();
         // Update System Properties accepted by this framework
         initializeSystemProperties(systemProperties);
       }
@@ -243,7 +242,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wStartLevelSpinner = new Spinner(wFrameworkGroup, SWT.READ_ONLY);
     wStartLevelSpinner.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
-        updateLaunchConfigurationDialog();
+        updateDialog();
       }
     });
     wStartLevelSpinner.setMinimum(0);
@@ -253,7 +252,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wInitButton.setText("Clear bundle cache when starting framework");
     wInitButton.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
-        updateLaunchConfigurationDialog();
+        updateDialog();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -344,7 +343,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         wPropertyTreeViewer.refresh();
         wPropertyTreeViewer.editElement(property, 0);
 
-        updateLaunchConfigurationDialog();
+        updateDialog();
       }
     });
     wRemovePropertyButton = new Button(wPropertyGroup, SWT.PUSH);
@@ -362,7 +361,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         if (property != null) {
           userGroup.removeSystemProperty(property);
           wPropertyTreeViewer.refresh();
-          updateLaunchConfigurationDialog();
+          updateDialog();
         }
       }
     });
@@ -430,7 +429,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     // New configuration created, set default values
 
     // Set default framework
-    FrameworkDistribution distribution = OsgiPreferences.getDefaultFrameworkDistribution();
+    Framework distribution = OsgiPreferences.getDefaultFramework();
     if (distribution != null) {
       configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, distribution.getName());
     }
@@ -545,7 +544,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     } catch (CoreException e) {
       e.printStackTrace();
     }
-    if(OsgiPreferences.getFrameworkDistribution(name) == null) {
+    if(OsgiPreferences.getFramework(name) == null) {
       setErrorMessage("No framework selected.");
       return false;
     }
@@ -562,15 +561,15 @@ public class MainTab extends AbstractLaunchConfigurationTab {
    ***************************************************************************/
   private void updateOsgiInstalls() {
     wOsgiInstallCombo.removeAll();
-    FrameworkDistribution[] distributions = OsgiPreferences.getFrameworkDistributions();
+    Framework[] distributions = OsgiPreferences.getFrameworks();
     
     for(int i=0; i<distributions.length;i++) {
       wOsgiInstallCombo.add(distributions[i].getName());
     }
   }
   
-  private void initializeSystemProperties(Map properties) {
-    FrameworkDistribution distribution = OsgiPreferences.getFrameworkDistribution(wOsgiInstallCombo.getText());
+  void initializeSystemProperties(Map properties) {
+    Framework distribution = OsgiPreferences.getFramework(wOsgiInstallCombo.getText());
     if (distribution == null) return;
     distribution.addSystemPropertyGroup(userGroup);
     userGroup.clear();
@@ -591,7 +590,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   }
 
   private Map getSystemProperties() {
-    FrameworkDistribution distribution = (FrameworkDistribution) wPropertyTreeViewer.getInput();
+    Framework distribution = (Framework) wPropertyTreeViewer.getInput();
     if (distribution == null) return null;
     
     SystemPropertyGroup[] groups = distribution.getSystemPropertyGroups();
@@ -625,7 +624,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     return false;
   }
   
-  private void showPropertyInfo() {
+  void showPropertyInfo() {
     IStructuredSelection selection = 
       (IStructuredSelection) wPropertyTreeViewer.getSelection();
 
@@ -669,6 +668,10 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
   protected void update(Object element) {
     wPropertyTreeViewer.update(element, null);
+    updateLaunchConfigurationDialog();
+  }
+  
+  protected void updateDialog() {
     updateLaunchConfigurationDialog();
   }
 }

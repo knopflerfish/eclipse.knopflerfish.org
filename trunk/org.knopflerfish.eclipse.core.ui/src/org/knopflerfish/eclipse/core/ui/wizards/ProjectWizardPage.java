@@ -42,7 +42,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.jface.dialogs.DialogPage;
+import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
@@ -61,7 +61,7 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 
 /**
@@ -82,16 +82,16 @@ public class ProjectWizardPage extends WizardPage {
   // Widgets
   private Text    wProjectNameText;
   private Button  wProjectContentsDefaultButton;
-  private Label   wProjectContentsDirectoryLabel;
-  private Text    wProjectContentsDirectoryText;
-  private Button  wProjectContentsBrowseButton;  
+  Label   wProjectContentsDirectoryLabel;
+  Text    wProjectContentsDirectoryText;
+  Button  wProjectContentsBrowseButton;  
   private Text    wProjectSettingsSrcText;
   private Text    wProjectSettingsOutText;
-  private Label   wExecutionEnvironmentLabel;
-  private Combo   wExecutionEnvironmentCombo;
+  Label   wExecutionEnvironmentLabel;
+  Combo   wExecutionEnvironmentCombo;
   private Button  wExecutionEnvironmentDefaultButton;
-  private Label   wFrameworkLabel;
-  private Combo   wFrameworkCombo;
+  Label   wFrameworkLabel;
+  Combo   wFrameworkCombo;
   private Button  wFrameworkDefaultButton;
   
 
@@ -291,8 +291,8 @@ public class ProjectWizardPage extends WizardPage {
     wFrameworkLabel.setText("Framework:");
     wFrameworkLabel.setEnabled(false);
     wFrameworkCombo = new Combo(wBuildPathGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
-    FrameworkDistribution[] distribution = OsgiPreferences.getFrameworkDistributions();
-    FrameworkDistribution defaultDistribution = null;
+    Framework[] distribution = OsgiPreferences.getFrameworks();
+    Framework defaultDistribution = null;
     if (distribution.length > 0) {
       for(int i=0; i<distribution.length;i++) {
         wFrameworkCombo.add(distribution[i].getName());
@@ -324,7 +324,7 @@ public class ProjectWizardPage extends WizardPage {
    * UI control methods
    ***************************************************************************/
   
-  private void updateLocation() {
+  void updateLocation() {
     if (isDefaultProjectLocation()) {
       IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
       IPath path = root.getLocation();
@@ -333,7 +333,7 @@ public class ProjectWizardPage extends WizardPage {
     }
   }
   
-  private void updateStatus() {
+  void updateStatus() {
     Control c = getControl();
     if (c == null) return;
     Composite composite = (Composite) c;
@@ -343,7 +343,7 @@ public class ProjectWizardPage extends WizardPage {
     String error = (String) getData(getControl(), ERROR);
     if (error != null) {
       setPageComplete(false);
-      setMessage(error, DialogPage.ERROR);
+      setMessage(error, IMessageProvider.ERROR);
       return;
     }
     
@@ -351,7 +351,7 @@ public class ProjectWizardPage extends WizardPage {
     String warning = (String) getData(getControl(), WARNING);
     if (warning != null) {
       setPageComplete(true);
-      setMessage(warning, DialogPage.WARNING);
+      setMessage(warning, IMessageProvider.WARNING);
       return;
     }
 
@@ -384,7 +384,7 @@ public class ProjectWizardPage extends WizardPage {
   /****************************************************************************
    * Verify UI Input methods
    ***************************************************************************/
-  private String verifyProjectName() {
+  String verifyProjectName() {
     String name = getProjectName();
 
     // Check that project name is not empty
@@ -410,7 +410,7 @@ public class ProjectWizardPage extends WizardPage {
     return null;
   }
   
-  private String verifyProjectLocation() {
+  String verifyProjectLocation() {
     //String location = wProjectContentsDirectoryText.getText();
     
     // TODO:Check that project location is valid folder name
@@ -434,9 +434,8 @@ public class ProjectWizardPage extends WizardPage {
   public IPath getProjectLocation() {
     if (isDefaultProjectLocation()) {
       return null;
-    } else {
-      return new Path(wProjectContentsDirectoryText.getText());
     }
+    return new Path(wProjectContentsDirectoryText.getText());
   }
   
   public IPath getSourceFolder() {

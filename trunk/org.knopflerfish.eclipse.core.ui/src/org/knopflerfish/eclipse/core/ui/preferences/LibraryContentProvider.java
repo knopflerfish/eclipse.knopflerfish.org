@@ -50,12 +50,10 @@ public class LibraryContentProvider implements IStructuredContentProvider, ITabl
     if (columnIndex == 0) {
       if (lib.getSource() == null) {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR);
-      } else {
-        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR_WITH_SOURCE);
-      }        
-    } else {
-      return null;
+      }
+      return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR_WITH_SOURCE);        
     }
+    return null;
   }
   
   /*
@@ -67,9 +65,8 @@ public class LibraryContentProvider implements IStructuredContentProvider, ITabl
 
     if (columnIndex == 0) {
       return lib.getName();
-    } else {
-      return "";
     }
+    return "";
   }
   
   /****************************************************************************

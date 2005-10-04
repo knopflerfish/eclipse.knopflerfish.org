@@ -119,9 +119,8 @@ public class StatusLabel extends Canvas implements PaintListener, ControlListene
   public Point computeSize(int wHint, int hHint, boolean changed) {
     if (offScreenImageGC != null && text != null) {
       return offScreenImageGC.textExtent(text);
-    } else {
-      return super.computeSize(wHint, hHint, changed);
     }
+    return super.computeSize(wHint, hHint, changed);
   }
 
   /****************************************************************************

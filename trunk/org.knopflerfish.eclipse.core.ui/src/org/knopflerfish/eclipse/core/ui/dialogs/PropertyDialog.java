@@ -74,6 +74,7 @@ public class PropertyDialog extends Dialog {
   private Composite   wErrorComposite;
   private Label       wErrorMsgLabel;
   private Label       wErrorImgLabel;
+  Composite   wDialogAreaComposite;
   
   // Class
   static public class Property {
@@ -173,20 +174,20 @@ public class PropertyDialog extends Dialog {
    * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets.Composite)
    */
   protected Control createDialogArea(Composite parent) {
-    Composite composite = (Composite)super.createDialogArea(parent);
+    wDialogAreaComposite = (Composite)super.createDialogArea(parent);
     
     GridLayout layout = new GridLayout();
     layout.numColumns = 2;
-    composite.setLayout(layout);
+    wDialogAreaComposite.setLayout(layout);
     
     for(Iterator i=map.entrySet().iterator();i.hasNext();) {
       Map.Entry entry = (Map.Entry) i.next();
       
       Property p = (Property) entry.getValue();
 
-      Label wLabel = new Label(composite, SWT.LEFT);
+      Label wLabel = new Label(wDialogAreaComposite, SWT.LEFT);
       wLabel.setText(p.getLabel());
-      Text wText = new Text(composite, SWT.BORDER);
+      Text wText = new Text(wDialogAreaComposite, SWT.BORDER);
       wText.setData(p);
       wText.addModifyListener(new ModifyListener() {
         public void modifyText(ModifyEvent e) {
@@ -198,7 +199,7 @@ public class PropertyDialog extends Dialog {
           } else {
             w.setData(ERROR, "Invalid value for "+p.getKey());
           }
-          updateStatus(getDialogArea());
+          updateStatus(wDialogAreaComposite);
         }
       });
       
@@ -209,7 +210,7 @@ public class PropertyDialog extends Dialog {
     }
     
     // Error label
-    wErrorComposite = new Composite(composite, SWT.NONE);
+    wErrorComposite = new Composite(wDialogAreaComposite, SWT.NONE);
     layout = new GridLayout();
     layout.numColumns = 2;
     wErrorComposite.setLayout(layout);
@@ -224,7 +225,7 @@ public class PropertyDialog extends Dialog {
     
     setMessage(null, null);
 
-    return composite;
+    return wDialogAreaComposite;
   }
     
   /****************************************************************************
@@ -252,7 +253,7 @@ public class PropertyDialog extends Dialog {
     return map;
   }
   
-  private void updateStatus(Control c) {
+  void updateStatus(Control c) {
     
     // Loop through widgets checking for errors
     String error = (String) getData(c, ERROR);

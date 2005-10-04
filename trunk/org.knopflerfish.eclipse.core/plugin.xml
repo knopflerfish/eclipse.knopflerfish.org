@@ -26,7 +26,8 @@
       <import plugin="org.eclipse.core.resources"/>
    </requires>
 
-   <extension-point id="frameworkDefinition" name="OSGi Framework Definition" schema="schema/frameworkDefinition.exsd"/>
+   <extension-point id="frameworkDefinition" name="Framework Definition" schema="schema/frameworkDefinition.exsd"/>
+   <extension-point id="bundleRepositoryType" name="Bundle Repository Type" schema="schema/bundleRepositoryType.exsd"/>
 
    <extension point="org.eclipse.debug.core.sourcePathComputers">
 	<sourcePathComputer 

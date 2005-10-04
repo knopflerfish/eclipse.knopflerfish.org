@@ -77,7 +77,7 @@ import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.ui.dialogs.ImportLibrariesDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
@@ -99,11 +99,11 @@ public class FrameworkDialog extends Dialog {
   private static String TITLE_ADD = "Add framework definition";
   private static String TITLE_EDIT = "Edit framework definition";
 
-  private static String TITLE_ADD_LIBRARY = "Add library";
-  private static String TITLE_EDIT_LIBRARY = "Edit library";
-  private static String TITLE_ADD_BUNDLE = "Add bundle";
-  private static String TITLE_EDIT_BUNDLE = "Edit bundle";
-  private static String TITLE_IMPORT_LIBRARIES = "Import libraries";
+  static String TITLE_ADD_LIBRARY = "Add library";
+  static String TITLE_EDIT_LIBRARY = "Edit library";
+  static String TITLE_ADD_BUNDLE = "Add bundle";
+  static String TITLE_EDIT_BUNDLE = "Edit bundle";
+  static String TITLE_IMPORT_LIBRARIES = "Import libraries";
   
   private final static int NUM_CHARS_NAME = 60;
   
@@ -114,8 +114,8 @@ public class FrameworkDialog extends Dialog {
   // Widgets
   private Text    wNameText;
   private Combo   wTypeCombo;
-  private Text    wLocationText;
-  private Button  wDefaultButton;
+  Text    wLocationText;
+  Button  wDefaultButton;
   private Text    wMainClassText;
   private Text    wSpecificationVersionText;
   private Button  wLibraryUpButton;
@@ -128,19 +128,17 @@ public class FrameworkDialog extends Dialog {
   private Label   wErrorMsgLabel;
   private Label   wErrorImgLabel;
 
-  // jFace Widgets 
-  private TreeViewer    wLibraryTreeViewer;
+  TreeViewer    wLibraryTreeViewer;
   
-  // Model
-  private LibraryElementRoot frameworkLibraryModel = new LibraryElementRoot();;
-  private ArrayList usedNames;
-  private FrameworkDistribution distribution;
+  LibraryElementRoot frameworkLibraryModel = new LibraryElementRoot();
+  ArrayList usedNames;
+  private Framework distribution;
   private TreeMap distributions = new TreeMap();
   
   /**
    * @param parentShell
    */
-  protected FrameworkDialog(Shell parentShell, ArrayList usedNames, FrameworkDistribution distribution) {
+  protected FrameworkDialog(Shell parentShell, ArrayList usedNames, Framework distribution) {
     super(parentShell);
     this.usedNames = usedNames;
     this.distribution = distribution;
@@ -201,7 +199,7 @@ public class FrameworkDialog extends Dialog {
   protected void okPressed() {
     if (distribution == null) {
       // Create definition
-      distribution = new FrameworkDistribution();
+      distribution = new Framework();
     }
 
     distribution.setName(wNameText.getText());
@@ -437,7 +435,7 @@ public class FrameworkDialog extends Dialog {
         int type = element.getType();
 
         IOsgiLibrary lib = null;
-        String title = TITLE_EDIT_LIBRARY;;
+        String title = TITLE_EDIT_LIBRARY;
         if (type == ILibraryTreeElement.TYPE_RUNTIME) {
           lib = ((LibraryElementRuntime) element).getLibrary();
         } else if (type == ILibraryTreeElement.TYPE_BUNDLE) {
@@ -513,7 +511,7 @@ public class FrameworkDialog extends Dialog {
         
         if (dialog.open() == Window.OK) {
           String name = dialog.getFrameworkName();
-          FrameworkDistribution framework = OsgiPreferences.getFrameworkDistribution(name);
+          Framework framework = OsgiPreferences.getFramework(name);
           boolean onlyUserDefined = dialog.isOnlyUserDefined();
           
           // Import runtime libraries
@@ -620,7 +618,7 @@ public class FrameworkDialog extends Dialog {
   /**
    * @return
    */
-  public FrameworkDistribution getFrameworkDistribution() {
+  public Framework getFrameworkDistribution() {
     return distribution;
   }
 
@@ -693,16 +691,15 @@ public class FrameworkDialog extends Dialog {
     if (!def.isValidDir(homeDir)) {
       setState("The location is not a valid directory for the selected framework type.", STATE_ERROR);
       return false;
-    } else {
-      setState(null, STATE_OK);
-      return true;
     }
+    setState(null, STATE_OK);
+    return true;
   }
 
   /****************************************************************************
    * Private Utility Methods
    ***************************************************************************/
-  private void updateButtons() {
+  void updateButtons() {
     // Get current selection
     IStructuredSelection selection = (IStructuredSelection) wLibraryTreeViewer.getSelection();
     
@@ -747,12 +744,12 @@ public class FrameworkDialog extends Dialog {
         usedNames != null && usedNames.size() > 0);
   }
   
-  private void enableCustomSettings(boolean enable) {
+  void enableCustomSettings(boolean enable) {
     wMainClassText.setEditable(enable);
     updateButtons();
   }
 
-  private void setDefaultSettings() {
+  void setDefaultSettings() {
 
     // Clear model
     frameworkLibraryModel.clear();
@@ -803,7 +800,7 @@ public class FrameworkDialog extends Dialog {
     wLibraryTreeViewer.refresh();
   }
   
-  private void setValues(FrameworkDistribution settings) {
+  private void setValues(Framework settings) {
     
     // Name
     if (settings != null) { 

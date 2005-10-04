@@ -38,7 +38,7 @@ import org.eclipse.jface.viewers.ICellModifier;
 import org.eclipse.swt.widgets.Item;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -52,7 +52,7 @@ public class SystemPropertyCellModifier implements ICellModifier {
     this.mainTab = mainTab;
   }
   public boolean canModify(Object element, String cellProperty) {
-    if (element instanceof FrameworkDistribution) {
+    if (element instanceof Framework) {
       return false;
     } else if (element instanceof SystemPropertyGroup) {
       return false;

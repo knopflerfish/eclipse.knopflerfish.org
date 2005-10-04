@@ -60,11 +60,11 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
-import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
 /**
@@ -78,11 +78,10 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
   private static final String TABLE_TITLE =
     "Installed OSGi frameworks:";
   
-  private List distributions;
+  List distributions;
   private HashMap images = new HashMap();
   
-  // Widgets
-  private Table     wDefinitionsTable;
+  Table     wDefinitionsTable;
   private Button    wEditDefinitionButton;
   private Button    wRemoveDefinitionButton;
   
@@ -96,9 +95,9 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
       
       ImageDescriptor id = null;
       if (imagePath != null) {
-        id = OsgiUiPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
+        id = AbstractUIPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
       } else {
-        id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
+        id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
         "icons/obj16/_knopflerfish_obj.gif");
       }      
       if (id != null) {
@@ -110,7 +109,7 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
     }
     
     // Load preferences
-    distributions = new ArrayList(Arrays.asList(OsgiPreferences.getFrameworkDistributions()));
+    distributions = new ArrayList(Arrays.asList(OsgiPreferences.getFrameworks()));
   }
   
   /****************************************************************************
@@ -181,12 +180,12 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
         FrameworkDialog dialog = 
           new FrameworkDialog(((Button) e.widget).getShell(), getFrameworkNames(), null); 
         if (dialog.open() == Window.OK) {
-          FrameworkDistribution distriution = dialog.getFrameworkDistribution();
+          Framework framework = dialog.getFrameworkDistribution();
           if (distributions.size() == 0) {
-            distriution.setDefaultDefinition(true);
+            framework.setDefaultDefinition(true);
           }
-          distributions.add(distriution);
-          addFrameworkDistribution(distriution);
+          distributions.add(framework);
+          addFrameworkDistribution(framework);
           UiUtils.packTableColumns(wDefinitionsTable);
         }
       }
@@ -203,7 +202,7 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
       public void widgetSelected(SelectionEvent e) {
         int idx = wDefinitionsTable.getSelectionIndex();
         if (idx != -1) {
-          FrameworkDistribution distribution = (FrameworkDistribution) distributions.get(idx);
+          Framework distribution = (Framework) distributions.get(idx);
           
           FrameworkDialog dialog = 
             new FrameworkDialog(((Button) e.widget).getShell(), getFrameworkNames(), distribution); 
@@ -227,10 +226,10 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
       public void widgetSelected(SelectionEvent e) {
         int idx = wDefinitionsTable.getSelectionIndex();
         if (idx != -1) {
-          FrameworkDistribution distribution = (FrameworkDistribution) distributions.remove(idx);
+          Framework framework = (Framework) distributions.remove(idx);
           wDefinitionsTable.remove(idx);
-          if (distribution.isDefaultDefinition() && distributions.size()>0) {
-            ((FrameworkDistribution) distributions.get(0)).setDefaultDefinition(true);
+          if (framework.isDefaultDefinition() && distributions.size()>0) {
+            ((Framework) distributions.get(0)).setDefaultDefinition(true);
             updateFrameworkDistribution(0);
           }
           updateButtons();
@@ -256,14 +255,14 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
         if ( (e.detail & SWT.CHECK) != 0 ) {
           TableItem item = (TableItem) e.item;
           int idx = table.indexOf(item);
-          ((FrameworkDistribution) item.getData()).setDefaultDefinition(true);
+          ((Framework) item.getData()).setDefaultDefinition(true);
           if (item.getChecked()) {
             // Uncheck all others
             TableItem [] items = table.getItems();
             for(int i=0; i<items.length; i++) {
               if(i != idx) {
                 items[i].setChecked(false);
-                ((FrameworkDistribution) items[i].getData()).setDefaultDefinition(false);
+                ((Framework) items[i].getData()).setDefaultDefinition(false);
               }
             }
           } else {
@@ -277,7 +276,7 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
       public void widgetDefaultSelected(SelectionEvent e) {
         int idx = wDefinitionsTable.getSelectionIndex();
         if (idx != -1) {
-          FrameworkDistribution distribution = (FrameworkDistribution) distributions.get(idx);
+          Framework distribution = (Framework) distributions.get(idx);
           FrameworkDialog dialog = 
             new FrameworkDialog(((Table) e.widget).getShell(), getFrameworkNames(), distribution); 
           if (dialog.open() == Window.OK) {
@@ -299,7 +298,7 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
     // Add framework definitions
     if (distributions != null) {
       for (int i=0; i<distributions.size(); i++) {
-        addFrameworkDistribution( (FrameworkDistribution) distributions.get(i));
+        addFrameworkDistribution( (Framework) distributions.get(i));
       }
     }
     
@@ -319,8 +318,8 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
   public boolean performOk() {
     // Save framework distributions to preference store
     try {
-      OsgiPreferences.setFrameworkDistributions(
-          (FrameworkDistribution[]) distributions.toArray(new FrameworkDistribution[distributions.size()]));
+      OsgiPreferences.setFrameworks(
+          (Framework[]) distributions.toArray(new Framework[distributions.size()]));
       
       ClasspathUtil.updateFrameworkContainers();
     } catch (Exception e) {
@@ -329,18 +328,17 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
     return true;
   }
   
-  
   /****************************************************************************
    * Private worker methods
    ***************************************************************************/
   
-  private void updateButtons() {
+  void updateButtons() {
     boolean enabled = (wDefinitionsTable.getSelectionIndex() != -1);
     wEditDefinitionButton.setEnabled(enabled);
     wRemoveDefinitionButton.setEnabled(enabled);
   }
   
-  private void addFrameworkDistribution(FrameworkDistribution distribution) {
+  void addFrameworkDistribution(Framework distribution) {
     TableItem item = new TableItem(wDefinitionsTable, 0);
     item.setData(distribution);
     item.setChecked(distribution.isDefaultDefinition());
@@ -349,8 +347,8 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
     item.setText(1, distribution.getLocation());
   }
   
-  private void updateFrameworkDistribution(int idx) {
-    FrameworkDistribution distribution = (FrameworkDistribution) distributions.get(idx);
+  void updateFrameworkDistribution(int idx) {
+    Framework distribution = (Framework) distributions.get(idx);
     
     TableItem item = wDefinitionsTable.getItem(idx);
     item.setData(distribution);
@@ -360,7 +358,7 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
     item.setText(1, distribution.getLocation());
   }
   
-  private ArrayList getFrameworkNames() {
+  ArrayList getFrameworkNames() {
     ArrayList names = new ArrayList();
     
     for (int i=0; i<wDefinitionsTable.getItemCount(); i++) {

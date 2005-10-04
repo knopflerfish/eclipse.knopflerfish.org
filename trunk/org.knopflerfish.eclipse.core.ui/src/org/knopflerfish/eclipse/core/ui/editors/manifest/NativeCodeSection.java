@@ -1,10 +1,5 @@
 package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.Map;
-
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -23,7 +18,6 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
@@ -32,9 +26,7 @@ import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.NativeCodeClause;
-import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.project.BundleResource;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
 
@@ -52,17 +44,16 @@ public class NativeCodeSection extends SectionPart implements IStructuredContent
   private Button    wNativeCodeRemoveButton;
   private Button    wNativeCodeAddButton;
   
-  // jFace Widgets 
-  private TableViewer   wNativeCodeTableViewer;
+  TableViewer   wNativeCodeTableViewer;
   
   // Model objects
   private BundleManifest manifest = null;
-  private final BundleProject project;
+  //private final BundleProject project;
   
   public NativeCodeSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
     super(parent, toolkit, style);
     
-    this.project = project;
+    //this.project = project;
     
     Section section = getSection();
     createClient(section, toolkit);
@@ -223,7 +214,7 @@ public class NativeCodeSection extends SectionPart implements IStructuredContent
     section.setClient(container);
   }
   
-  private void updateButtons() {
+  void updateButtons() {
     IStructuredSelection selection = 
       (IStructuredSelection) wNativeCodeTableViewer.getSelection();
     
@@ -338,6 +329,7 @@ public class NativeCodeSection extends SectionPart implements IStructuredContent
    * Private utility methods
    ***************************************************************************/
 
+  /*
   private BundlePackDescription getBundlePackDescription() {
     try {
       BundleDocument buildDoc = (BundleDocument) getManagedForm().getInput();
@@ -361,6 +353,7 @@ public class NativeCodeSection extends SectionPart implements IStructuredContent
     } catch (Throwable t) {
     }
   }
+  */
 
   private BundleManifest getManifest() {
     IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
@@ -381,6 +374,7 @@ public class NativeCodeSection extends SectionPart implements IStructuredContent
     doc.set(buf.toString());
   }
   
+  /*
   private void removeClasspathResource(String name) {
     // Refresh values from document
     BundlePackDescription bundlePackDescription = getBundlePackDescription();
@@ -401,6 +395,7 @@ public class NativeCodeSection extends SectionPart implements IStructuredContent
     bundlePackDescription.addResource(resource);
     setBundlePackDescription(bundlePackDescription);
   }
+  */
   
   private String toString(String[] strs) {
     if (strs == null) return null;

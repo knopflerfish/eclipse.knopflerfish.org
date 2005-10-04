@@ -100,8 +100,8 @@ public class GeneralSection extends SectionPart {
   private static final int NUM_ENVIRONMENT_TABLE_ROWS = 5;
   
   // Dialog titles
-  private static String TITLE_ADD_CATEGORY = "Add Category";
-  private static String TITLE_ADD_ENVIRONMENT = "Add Execution Environment";
+  static String TITLE_ADD_CATEGORY = "Add Category";
+  static String TITLE_ADD_ENVIRONMENT = "Add Execution Environment";
   
   // Section title and description
   private static final String TITLE = "General Information";
@@ -158,7 +158,7 @@ public class GeneralSection extends SectionPart {
   private Text wNameText;
   private Text wUpdateLocationText;
   private StatusLabel wUpdateLocationStatusLabel;
-  private Text wActivatorText;
+  Text wActivatorText;
   private StatusLabel wActivatorStatusLabel;
   private Text wDescriptionText;
   private StatusLabel wDocUrlStatusLabel;
@@ -167,20 +167,18 @@ public class GeneralSection extends SectionPart {
   private Text wContactText;
   private Text wCopyrightText;
   private Button wCategoryAddButton;
-  private Button wCategoryRemoveButton;
-  private Button wEnvironmentRemoveButton;
+  Button wCategoryRemoveButton;
+  Button wEnvironmentRemoveButton;
   private Button wEnvironmentAddButton;
   
-  // jFace Widgets 
-  private TableViewer wCategoryTableViewer;
-  private TableViewer wEnvironmentTableViewer;
+  TableViewer wCategoryTableViewer;
+  TableViewer wEnvironmentTableViewer;
   
   // Model
-  private final BundleProject project;
-  private BundleManifest manifest = null;
+  final BundleProject project;
+  BundleManifest manifest = null;
 
-  // Images 
-  private Image imgLibraryWarning;
+  Image imgLibraryWarning;
   
   public GeneralSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
     super(parent, toolkit, style);
@@ -507,9 +505,8 @@ public class GeneralSection extends SectionPart {
           public boolean isValid(String value) {
             if (value.indexOf(",")!= -1) {
               return false;
-            } else {
-              return true;
             }
+            return true;
           }
         };
         p.setLabel("Category:");
@@ -638,7 +635,7 @@ public class GeneralSection extends SectionPart {
         if (dialog.open() == Window.OK) {
           Object [] result = dialog.getResult();
           for (int i=0; i<result.length;i++) {
-            environments.add((String) result[i]);
+            environments.add(result[i]);
           }
           if (result.length > 0) {
             manifest.setExecutionEnvironments((String[]) environments.toArray(new String[environments.size()]));
@@ -769,9 +766,8 @@ public class GeneralSection extends SectionPart {
       
       if (list.contains(element)){
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
-      } else {
-        return imgLibraryWarning;
       }
+      return imgLibraryWarning;
     }
 
     /*

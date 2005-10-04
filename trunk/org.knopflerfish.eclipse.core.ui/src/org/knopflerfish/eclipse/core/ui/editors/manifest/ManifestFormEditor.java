@@ -51,6 +51,7 @@ import org.eclipse.ui.forms.IManagedForm;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.editor.FormEditor;
 import org.eclipse.ui.forms.editor.FormPage;
+import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
@@ -152,24 +153,24 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     // Set layout manager
     GridLayout layout = new GridLayout();
     layout.numColumns = 2;
-    layout.makeColumnsEqualWidth = true;
+    //layout.makeColumnsEqualWidth = true;
     body.setLayout(layout);
     
     // Create sections
     generalSection = new GeneralSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR, project);
+        Section.DESCRIPTION | ExpandableComposite.TITLE_BAR, project);
     generalSection.initialize(managedForm);
 
     classPathSection = new ClasspathSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR, project);
+        Section.DESCRIPTION | ExpandableComposite.TITLE_BAR, project);
     classPathSection.initialize(managedForm);
     
     packageSection = new PackageSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR, project);
+        Section.DESCRIPTION | ExpandableComposite.TITLE_BAR, project);
     packageSection.initialize(managedForm);
 
     nativeCodeSection = new NativeCodeSection(body, toolkit, 
-        Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE, project);
+        Section.DESCRIPTION | ExpandableComposite.TITLE_BAR | ExpandableComposite.TWISTIE, project);
     nativeCodeSection.initialize(managedForm);
     
     // Add sections to form

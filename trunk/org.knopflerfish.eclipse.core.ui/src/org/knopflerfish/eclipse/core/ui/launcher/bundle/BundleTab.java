@@ -79,6 +79,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
@@ -87,20 +88,20 @@ import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
-import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
+import org.knopflerfish.eclipse.core.ui.launcher.main.MainTab;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleTab extends AbstractLaunchConfigurationTab {
-  private static String TITLE_ADD_LIBRARY = "Add external bundle";
+  static String TITLE_ADD_LIBRARY = "Add external bundle";
   
   // Column Properties
   public static String PROP_NAME       = "name";
@@ -119,31 +120,30 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
 
   // SWT Widgets
   private Composite wPageComposite;
-  private Button    wBundleAddButton;
-  private Button    wBundleRemoveButton;
+  Button    wBundleAddButton;
+  Button    wBundleRemoveButton;
   private Group     wBundleInfoGroup;
   private Text      wBundleInfoNameText;
   private Text      wBundleInfoVersionText;
   private Text      wBundleInfoPathText;
 
-  // jFace Widgets 
-  private TreeViewer    wAvailableBundleTreeViewer;
-  private TableViewer   wSelectedBundleTableViewer;
+  TreeViewer    wAvailableBundleTreeViewer;
+  TableViewer   wSelectedBundleTableViewer;
 
-  // Models
-  private SelectedBundlesModel selectedBundlesModel = new SelectedBundlesModel();
-  private FrameworkDistribution distribution;
+  SelectedBundlesModel selectedBundlesModel = new SelectedBundlesModel();
+  SelectedBundlesLabelProvider selectedBundlesLabelProvider;
+  private Framework distribution;
 
   // Images, fonts
   private Image imageTab = null;
   private Image imageFish = null;
   
   public BundleTab() {
-    ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
+    ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
     if (id != null) {
       imageTab = id.createImage();
     }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_FISH);
+    id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_FISH);
     if (id != null) {
       imageFish = id.createImage();
     }
@@ -269,7 +269,8 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     Table wSelectedBundleTable = new Table(wPageComposite, SWT.MULTI | SWT.FULL_SELECTION | SWT.BORDER);
     wSelectedBundleTableViewer = new TableViewer(wSelectedBundleTable);
     wSelectedBundleTableViewer.setContentProvider(new SelectedBundlesContentProvider());
-    wSelectedBundleTableViewer.setLabelProvider(new SelectedBundlesLabelProvider());
+    selectedBundlesLabelProvider = new SelectedBundlesLabelProvider();
+    wSelectedBundleTableViewer.setLabelProvider(selectedBundlesLabelProvider);
     wSelectedBundleTableViewer.setSorter(new SorterStartLevel());
     wSelectedBundleTableViewer.setColumnProperties(
         new String[] {PROP_NAME, PROP_VERSION, PROP_STARTLEVEL, PROP_MODE, PROP_ERROR});
@@ -360,7 +361,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
             wAvailableBundleTreeViewer.refresh();
             
             // Notify that configuration is changed
-            updateLaunchConfigurationDialog();
+            updateDialog();
             
             // Resize columns in selected table 
             UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
@@ -430,7 +431,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
    */
   public void setDefaults(ILaunchConfigurationWorkingCopy configuration) {
     // New configuration created, set default values
-
+    
     // Set default bundles
     HashMap defaultBundles = new HashMap();
     // TODO: Calculate default bundles
@@ -450,14 +451,24 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     try {
       String name = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
       if (name != null) {
-        distribution = OsgiPreferences.getFrameworkDistribution(name);
+        distribution = OsgiPreferences.getFramework(name);
       } else {
-        distribution = OsgiPreferences.getDefaultFrameworkDistribution();
+        distribution = OsgiPreferences.getDefaultFramework();
       }
     } catch (CoreException e) {
       e.printStackTrace();
     }
+    
 
+    // Start level
+    int startLevel = MainTab.DEFAULT_START_LEVEL;
+    try {
+      startLevel = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, MainTab.DEFAULT_START_LEVEL);
+    } catch (CoreException e) {
+      e.printStackTrace();
+    }
+    selectedBundlesLabelProvider.setInitialStartLevel(startLevel);
+    
     try {
       selectedBundlesModel.clear();
       // Bundles
@@ -471,7 +482,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
 
     // Update packages
     updatePackages();
-
     
     wAvailableBundleTreeViewer.refresh();
     UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
@@ -482,7 +492,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
    */
   public void performApply(ILaunchConfigurationWorkingCopy configuration) {
     // Read values from GUI widgets
-
+    
     // Bundles
     HashMap bundles = new HashMap();
     if (selectedBundlesModel.getBundles() != null) {
@@ -501,7 +511,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
   /****************************************************************************
    * Private utility methods
    ***************************************************************************/
-  private void updateInfoWidgets(IStructuredSelection selection) {
+  void updateInfoWidgets(IStructuredSelection selection) {
     if (selection == null || selection.size() != 1) {
       // Disable bundle info group
       wBundleInfoGroup.setEnabled(false);
@@ -535,7 +545,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     }
   }
   
-  private void selectBundle() {
+  void selectBundle() {
     IStructuredSelection selection = 
       (IStructuredSelection) wAvailableBundleTreeViewer.getSelection();
     for (Iterator i = selection.iterator(); i.hasNext(); ) {
@@ -588,7 +598,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
   }
   
-  private void unselectBundle() {
+  void unselectBundle() {
     IStructuredSelection selection = 
       (IStructuredSelection) wSelectedBundleTableViewer.getSelection();
     
@@ -675,6 +685,9 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     }
   }
   
+  protected void updateDialog() {
+    updateLaunchConfigurationDialog();
+  }
   
   /****************************************************************************
    * Inner classes
@@ -706,9 +719,8 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     public boolean canModify(Object element, String property) {
       if (PROP_STARTLEVEL.equals(property) || PROP_MODE.equals(property)) {
         return true;
-      } else {
-        return false;
       }
+      return false;
     }
 
     /* (non-Javadoc)
@@ -739,18 +751,21 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
       if (PROP_STARTLEVEL.equals(property)) {
         try {
           int i = Integer.parseInt((String) value);
-          if (i >= 1) {
+          if (i >= 1 && i != element.getLaunchInfo().getStartLevel()) {
             element.getLaunchInfo().setStartLevel(i);
-            selectedBundlesModel.update(wSelectedBundleTableViewer, element);
-            updateLaunchConfigurationDialog();
+            selectedBundlesModel.update(wSelectedBundleTableViewer, element, PROP_STARTLEVEL);
+            updateDialog();
           }
         } catch (Exception e) {
           // Failed to set start level
         }
       } else if (PROP_MODE.equals(property)) {
-        element.getLaunchInfo().setMode( (((Integer) value)).intValue());
-        selectedBundlesModel.update(wSelectedBundleTableViewer, element);
-        updateLaunchConfigurationDialog();
+        int mode = ((Integer) value).intValue();
+        if (mode != element.getLaunchInfo().getMode()) {
+          element.getLaunchInfo().setMode(mode);
+          selectedBundlesModel.update(wSelectedBundleTableViewer, element, PROP_MODE);
+          updateDialog();
+        }
       }
     }
   }
@@ -829,9 +844,8 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
           default:
             return 0;
         }
-      } else {
-        return 0;
       }
+      return 0;
     }
   }
 
@@ -847,13 +861,12 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
       int sl = e1.getLaunchInfo().getStartLevel()-e2.getLaunchInfo().getStartLevel();
       if (sl != 0) {
         return sl;
-      } else {
-        String n1 = e1.getName();
-        String n2 = e2.getName();
-        if (n1 == null) n1 = "";
-        if (n2 == null) n2 = "";
-        return n1.toLowerCase().compareTo(n2.toLowerCase());
       }
+      String n1 = e1.getName();
+      String n2 = e2.getName();
+      if (n1 == null) n1 = "";
+      if (n2 == null) n2 = "";
+      return n1.toLowerCase().compareTo(n2.toLowerCase());
     }
   }
 }

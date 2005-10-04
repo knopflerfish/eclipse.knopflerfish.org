@@ -68,7 +68,7 @@ import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.pkg.IPackage;
 import org.knopflerfish.eclipse.core.pkg.PackageUtil;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
@@ -146,7 +146,7 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
    * Private worker methods
    ***************************************************************************/
   
-  private void doFinish(IProgressMonitor monitor) throws CoreException {
+  void doFinish(IProgressMonitor monitor) throws CoreException {
     // Create project
     String name = projectPage.getProjectName();
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -261,7 +261,7 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
           packageName, 
           className);
       
-      FrameworkDistribution distribution = OsgiPreferences.getFrameworkDistribution(projectPage.getFrameworkName());
+      Framework distribution = OsgiPreferences.getFramework(projectPage.getFrameworkName());
       IPackage[] pkgs = PackageUtil.findPackage("org.osgi.framework", distribution, IPackage.FRAMEWORK);
       if (pkgs != null && pkgs.length > 0) {
         bundleProject.importPackage(pkgs[0], true);
