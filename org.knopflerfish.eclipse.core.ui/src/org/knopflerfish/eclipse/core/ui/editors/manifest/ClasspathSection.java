@@ -108,18 +108,16 @@ public class ClasspathSection extends SectionPart {
   private Button    wClassPathRemoveButton;
   private Button    wClassPathAddButton;
   
-  // jFace Widgets 
-  private TableViewer   wClassPathTableViewer;
+  TableViewer   wClassPathTableViewer;
   
-  // Model objects
-  private BundleManifest manifest = null;
-  private final BundleProject project;
-  private BundlePackDescription bundlePackDescription = null;
-  private Map bundleContents;
+  BundleManifest manifest = null;
+  final BundleProject project;
+  BundlePackDescription bundlePackDescription = null;
+  Map bundleContents;
   
   // Images
   private Image imgJarWarning;
-  private Image imgJarError;
+  Image imgJarError;
   
   public ClasspathSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
     super(parent, toolkit, style);
@@ -380,7 +378,7 @@ public class ClasspathSection extends SectionPart {
     section.setClient(container);
   }
   
-  private void updateButtons() {
+  void updateButtons() {
     IStructuredSelection selection = 
       (IStructuredSelection) wClassPathTableViewer.getSelection();
     
@@ -441,7 +439,7 @@ public class ClasspathSection extends SectionPart {
     return manifest;
   }
 
-  private void setManifest(BundleManifest manifest) {
+  void setManifest(BundleManifest manifest) {
     // Flush values to document
     IDocument doc = ((BundleDocument) getManagedForm().getInput()).getManifestDocument();
     
@@ -453,7 +451,7 @@ public class ClasspathSection extends SectionPart {
     doc.set(buf.toString());
   }
   
-  private void removeClasspathResource(String name) {
+  void removeClasspathResource(String name) {
     // Refresh values from document
     Map contents = bundlePackDescription.getContentsMap(false);
     bundlePackDescription.removeResource((IPath) contents.get(name));
@@ -461,7 +459,7 @@ public class ClasspathSection extends SectionPart {
     setBundlePackDescription(bundlePackDescription);
   }
   
-  private void addClasspathResource(IPath path) {
+  void addClasspathResource(IPath path) {
     if (path == null) return;
     bundlePackDescription.removeResource(path);
     BundleResource resource = new BundleResource(
@@ -474,7 +472,7 @@ public class ClasspathSection extends SectionPart {
     setBundlePackDescription(bundlePackDescription);
   }
   
-  private IFile[] getAvailableLibraries() {
+  IFile[] getAvailableLibraries() {
     IFile[] files = project.getJars();
     HashMap fileMap = new HashMap();
     for (int i=0; i<files.length; i++) {
@@ -511,9 +509,8 @@ public class ClasspathSection extends SectionPart {
       String [] classPath = manifest.getBundleClassPath();
       if (classPath.length == 0) {
         return new String[] {"."};
-      } else {
-        return manifest.getBundleClassPath();
       }
+      return manifest.getBundleClassPath();
     }
 
     public void dispose() {
@@ -534,15 +531,13 @@ public class ClasspathSection extends SectionPart {
       
       if (".".equals(path)) {
         return JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_CLASS);
-      } else  {
-        if (path.startsWith("/")) path = path.substring(1);
-          
-        if (bundleContents.containsKey(path)) {
-          return JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_JAR);
-        } else {
-          return imgJarError;
-        }
       }
+      if (path.startsWith("/")) path = path.substring(1);
+        
+      if (bundleContents.containsKey(path)) {
+        return JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_JAR);
+      }
+      return imgJarError;
     }
     
     /*
@@ -554,9 +549,8 @@ public class ClasspathSection extends SectionPart {
       
       if (".".equals(path)) {
         return "Bundle´s classes"; 
-      } else  {
-        return element.toString();
       }
+      return element.toString();
     }
     
 
@@ -575,15 +569,13 @@ public class ClasspathSection extends SectionPart {
       
       if (".".equals(path)) {
         return null;
-      } else  {
-        if (path.startsWith("/")) path = path.substring(1);
-          
-        if (bundleContents.containsKey(path)) {
-          return null;
-        } else {
-          return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
-        }
       }
+      if (path.startsWith("/")) path = path.substring(1);
+        
+      if (bundleContents.containsKey(path)) {
+        return null;
+      }
+      return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
     }
 
     public Color getBackground(Object element, int columnIndex) {

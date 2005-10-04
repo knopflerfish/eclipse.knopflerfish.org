@@ -64,9 +64,8 @@ public class ImportQuickFix implements IQuickFixProcessor {
   public boolean hasCorrections(ICompilationUnit unit, int problemId) {
     if (problemId == IProblem.ImportNotFound) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   /* (non-Javadoc)
@@ -100,6 +99,7 @@ public class ImportQuickFix implements IQuickFixProcessor {
       }
       PackageDescription pkg = new PackageDescription(name, null);
 
+      /*
       IOsgiBundle[] bundles = PackageUtil.findExportingBundles(pkg);
       for (int j=0; bundles != null && j<bundles.length; j++) {
         proposals.add(new BundleImportCompletionProposal(project, pkg, bundles[j]));
@@ -109,6 +109,7 @@ public class ImportQuickFix implements IQuickFixProcessor {
       for (int j=0; projects != null && j<projects.length; j++) {
         proposals.add(new ProjectImportCompletionProposal(project, pkg, projects[j]));
       }
+      */
     }
     
     return (IJavaCompletionProposal[]) proposals.toArray(new IJavaCompletionProposal[proposals.size()]);

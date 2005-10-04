@@ -36,7 +36,7 @@ package org.knopflerfish.eclipse.core;
 
 import java.util.ArrayList;
 
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -45,7 +45,7 @@ import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
 public class SystemPropertyGroup {
 
   private final String name;
-  private FrameworkDistribution distribution;
+  private Framework distribution;
   private ArrayList properties = new ArrayList();
   
   public SystemPropertyGroup(String name) {
@@ -56,11 +56,11 @@ public class SystemPropertyGroup {
     return name;
   }
 
-  public FrameworkDistribution getFrameworkDistribution() {
+  public Framework getFrameworkDistribution() {
     return distribution;
   }
 
-  public void setFrameworkDistribution(FrameworkDistribution distribution) {
+  public void setFrameworkDistribution(Framework distribution) {
     this.distribution = distribution;
   }
   
@@ -79,9 +79,8 @@ public class SystemPropertyGroup {
     int idx = properties.indexOf(new SystemProperty(name));
     if (idx != -1) {
       return (SystemProperty) properties.get(idx);
-    } else {
-      return null;
     }
+    return null;
   }
 
   public void addSystemProperty(SystemProperty property) {

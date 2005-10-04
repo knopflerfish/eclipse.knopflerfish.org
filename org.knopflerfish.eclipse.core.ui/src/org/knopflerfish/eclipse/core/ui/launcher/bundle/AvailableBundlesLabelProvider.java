@@ -42,10 +42,10 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
-import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -64,15 +64,15 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
   private HashMap images = new HashMap();
   
   public AvailableBundlesLabelProvider() {
-    ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
+    ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
     if (id != null) {
       imageBundle = id.createImage();
     }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_SRC);
+    id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_SRC);
     if (id != null) {
       imageBundleSrc = id.createImage();
     }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_OVR);
+    id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_OVR);
     if (id != null) {
       Image bundleOvrImage = id.createImage();
       imageProject = new Image(null, imageWorkspace.getBounds());
@@ -90,9 +90,9 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
       
       id = null;
       if (imagePath != null) {
-        id = OsgiUiPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
+        id = AbstractUIPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
       } else {
-        id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
+        id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
         "icons/obj16/_knopflerfish_obj.gif");
       }      
       if (id != null) {
@@ -142,11 +142,10 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
         IOsgiBundle bundle = ((AvailableElementBundle) e).getBundle();
         if (bundle != null && bundle.getSource() != null) {
           return imageBundleSrc;
-        } else {
-          return imageBundle;
         }
+        return imageBundle;
       case IAvailableTreeElement.TYPE_DISTRIBUTION:
-        FrameworkDistribution distribution = ((AvailableElementDistribution) e).getFrameworkDistribution();
+        Framework distribution = ((AvailableElementDistribution) e).getFrameworkDistribution();
         return (Image) images.get(distribution.getType());
       case IAvailableTreeElement.TYPE_PROJECT:
         return imageProject;
@@ -168,7 +167,7 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
     switch (e.getType()) {
     case IAvailableTreeElement.TYPE_PROJECT:
       // Name
-      String name = e.getName();
+      String name = e.getPath();
       return name == null ? "" : name;
     default :
       // Name

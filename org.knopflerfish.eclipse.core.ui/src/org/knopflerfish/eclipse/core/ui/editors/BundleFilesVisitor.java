@@ -54,9 +54,8 @@ public class BundleFilesVisitor implements IResourceDeltaVisitor {
       String name = ((IProject) res).getName();
       if (project.getName().equals(name)) {
         return true;
-      } else {
-        return false;
       }
+      return false;
     case IResource.ROOT:
       return true;
     default:  

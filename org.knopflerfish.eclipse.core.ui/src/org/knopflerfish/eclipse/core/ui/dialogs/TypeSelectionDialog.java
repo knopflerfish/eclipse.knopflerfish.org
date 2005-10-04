@@ -63,7 +63,7 @@ public class TypeSelectionDialog extends ListDialog {
         elements.add(new Selection(input[i]));
       }
     }
-    setInput((Selection[]) elements.toArray(new Selection[elements.size()]));
+    setInput(elements.toArray(new Selection[elements.size()]));
     
     setTitle("Select "+type);
     setMessage("Select "+type+" implementation from the list below.");
@@ -117,9 +117,8 @@ public class TypeSelectionDialog extends ListDialog {
       Selection s = (Selection) element;
       if (s.getType() != null) {
         return s.getType().getFullyQualifiedName();
-      } else {
-        return noTypeText;
       }
+      return noTypeText;
     }
 
     public void addListener(ILabelProviderListener listener) {

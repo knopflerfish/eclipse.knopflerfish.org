@@ -34,7 +34,7 @@
 
 package org.knopflerfish.eclipse.core.ui.wizards;
 
-import org.eclipse.jface.dialogs.DialogPage;
+import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
@@ -72,13 +72,13 @@ public class BundleWizardPage extends WizardPage {
   
   // Widgets
   private Text    wBundleNameText;
-  private Text    wBundleSymbolicNameText;
+  Text    wBundleSymbolicNameText;
   private Text    wBundleVersionText;
   private Text    wBundleDescriptionText;
   private Text    wBundleVendorText;
   private Button  wCreateBundleActivatorButton;
   private Label   wBundleActivatorPackageLabel;
-  private Text    wBundleActivatorPackageText;
+  Text    wBundleActivatorPackageText;
   private Label   wBundleActivatorClassLabel;
   private Text    wBundleActivatorClassText;
 
@@ -289,7 +289,7 @@ public class BundleWizardPage extends WizardPage {
   /****************************************************************************
    * UI control methods
    ***************************************************************************/
-  private void updateActivatorControls() {
+  void updateActivatorControls() {
     boolean enable = wCreateBundleActivatorButton.getSelection();
     // Enable/disbale manual location widgets
     wBundleActivatorClassLabel.setEnabled(enable);
@@ -298,7 +298,7 @@ public class BundleWizardPage extends WizardPage {
     wBundleActivatorPackageText.setEnabled(enable);
   }
   
-  private void updateStatus() {
+  void updateStatus() {
     
     Control c = getControl();
     Composite composite = (Composite) c;
@@ -308,7 +308,7 @@ public class BundleWizardPage extends WizardPage {
     String error = (String) getData(getControl(), ERROR);
     if (error != null) {
       setPageComplete(false);
-      setMessage(error, DialogPage.ERROR);
+      setMessage(error, IMessageProvider.ERROR);
       return;
     }
     
@@ -316,7 +316,7 @@ public class BundleWizardPage extends WizardPage {
     String warning = (String) getData(getControl(), WARNING);
     if (warning != null) {
       setPageComplete(true);
-      setMessage(warning, DialogPage.WARNING);
+      setMessage(warning, IMessageProvider.WARNING);
       return;
     }
 
@@ -357,11 +357,11 @@ public class BundleWizardPage extends WizardPage {
     verifyActivatorClassName();
   }
   
-  private void verifyBundleSymbolicName() {
+  void verifyBundleSymbolicName() {
     //String name = getBundleSymbolicName();
   }
   
-  private void verifyBundleName() {
+  void verifyBundleName() {
     //String name = getBundleName();
     
     // TODO:Check that project name is not empty
@@ -372,19 +372,19 @@ public class BundleWizardPage extends WizardPage {
     
   }
 
-  private void verifyBundleVersion() {
+  void verifyBundleVersion() {
     //String version = getBundleVersion();
   }
   
-  private void verifyBundleDescription() {
+  void verifyBundleDescription() {
     //String description = getBundleDescription();
   }
   
-  private void verifyBundleVendor() {
+  void verifyBundleVendor() {
     //String vendor = getBundleVendor();
   }
 
-  private void verifyActivatorPackageName() {
+  void verifyActivatorPackageName() {
     String packageName = getActivatorPackageName();
     if (isCreateBundleActivator()) {
       if (packageName == null || packageName.trim().length() == 0) {
@@ -406,7 +406,7 @@ public class BundleWizardPage extends WizardPage {
     }
   }
 
-  private void verifyActivatorClassName() {
+  void verifyActivatorClassName() {
     String className = getActivatorClassName();
     if (isCreateBundleActivator()) {
       if (className == null || className.trim().length() == 0) {
@@ -441,9 +441,8 @@ public class BundleWizardPage extends WizardPage {
     
     if (val == null || val.trim().length()==0) {
       return null;
-    } else {
-      return val.trim();
     }
+    return val.trim();
   }
   
   public String getBundleName() {
@@ -456,54 +455,48 @@ public class BundleWizardPage extends WizardPage {
     
     if (val == null || val.trim().length()==0) {
       return null;
-    } else {
-      return val.trim();
     }
+    return val.trim();
   }
   
   public String getBundleVersion() {
     String val = wBundleVersionText.getText();
     if (val == null || val.trim().length()==0) {
       return null;
-    } else {
-      return val.trim();
     }
+    return val.trim();
   }
 
   public String getBundleDescription() {
     String val = wBundleDescriptionText.getText();
     if (val == null || val.trim().length()==0) {
       return null;
-    } else {
-      return val.trim();
     }
+    return val.trim();
   }
 
   public String getBundleVendor() {
     String val = wBundleVendorText.getText();
     if (val == null || val.trim().length()==0) {
       return null;
-    } else {
-      return val.trim();
     }
+    return val.trim();
   }
 
   public String getActivatorPackageName() {
     String val = wBundleActivatorPackageText.getText();
     if (val == null || val.trim().length()==0) {
       return null;
-    } else {
-      return val.trim();
     }
+    return val.trim();
   }
   
   public String getActivatorClassName() {
     String val = wBundleActivatorClassText.getText();
     if (val == null || val.trim().length()==0) {
       return null;
-    } else {
-      return val.trim();
     }
+    return val.trim();
   }
   
   public boolean isCreateBundleActivator() {

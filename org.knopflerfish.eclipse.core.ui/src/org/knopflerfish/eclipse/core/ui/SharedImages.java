@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 public class SharedImages {
 
@@ -15,11 +16,11 @@ public class SharedImages {
   private HashMap images = new HashMap();
   
   public SharedImages() {
-    ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMG_OVR_WARNING);
+    ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMG_OVR_WARNING);
     if (id != null) {
       images.put(IMG_OVR_WARNING, id.createImage());
     }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMG_OVR_ERROR);
+    id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMG_OVR_ERROR);
     if (id != null) {
       images.put(IMG_OVR_ERROR, id.createImage());
     }

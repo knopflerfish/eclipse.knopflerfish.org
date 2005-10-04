@@ -44,7 +44,6 @@ import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IJavaProject;
-import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -53,9 +52,160 @@ import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 public class Osgi {
   public static String NATURE_ID = "org.knopflerfish.eclipse.core.bundlenature";
   public static String BUILDER_ID = "org.knopflerfish.eclipse.core.bundlebuilder";
-  
+
+  // Extension points
   private static String EXTENSION_POINT_FRAMEWORKDEFINITION = "org.knopflerfish.eclipse.core.frameworkDefinition";
+  private static String EXTENSION_POINT_BUNDLEREPOSITORYTYPE = "org.knopflerfish.eclipse.core.bundleRepositoryType";
   
+  /****************************************************************************
+   * Bundle Repository Methods
+   ***************************************************************************/
+  public static String[] getBundleRepositoryTypeNames()  {
+    TreeSet definitions = new TreeSet();
+    IExtensionRegistry registry = Platform.getExtensionRegistry();
+    IExtensionPoint point = registry.getExtensionPoint(EXTENSION_POINT_BUNDLEREPOSITORYTYPE);
+    if (point != null) {
+      IExtension[] extensions = point.getExtensions();
+      for (int i = 0; i < extensions.length; i++) {
+        IConfigurationElement [] configs = extensions[i].getConfigurationElements();
+        if (configs == null) continue;
+        
+        for (int j=0; j<configs.length; j++) {
+          if ("bundleRepositoryType".equals(configs[j].getName())) {
+            definitions.add( configs[j].getAttribute("name") );
+          }
+        }
+      }
+    }
+    
+    return (String[]) definitions.toArray(new String[definitions.size()]);
+  }
+  
+  public static String getBundleRepositoryTypeImage(String name) {
+    if (name == null) return null;
+    
+    IExtensionRegistry registry = Platform.getExtensionRegistry();
+    IExtensionPoint point = registry.getExtensionPoint(EXTENSION_POINT_BUNDLEREPOSITORYTYPE);
+    if (point != null) {
+      IExtension[] extensions = point.getExtensions();
+      for (int i = 0; i < extensions.length; i++) {
+        IConfigurationElement [] configs = extensions[i].getConfigurationElements();
+        if (configs == null) continue;
+        
+        for (int j=0; j<configs.length; j++) {
+          if ("bundleRepositoryType".equals(configs[j].getName()) && 
+              name.equals(configs[j].getAttribute("name"))) {
+            
+            String image = configs[j].getAttribute("image");
+            return image;
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  public static String getBundleRepositoryTypeConfigDescription(String name) {
+    if (name == null) return null;
+    
+    IExtensionRegistry registry = Platform.getExtensionRegistry();
+    IExtensionPoint point = registry.getExtensionPoint(EXTENSION_POINT_BUNDLEREPOSITORYTYPE);
+    if (point != null) {
+      IExtension[] extensions = point.getExtensions();
+      for (int i = 0; i < extensions.length; i++) {
+        IConfigurationElement [] configs = extensions[i].getConfigurationElements();
+        if (configs == null) continue;
+        
+        for (int j=0; j<configs.length; j++) {
+          if ("bundleRepositoryType".equals(configs[j].getName()) && 
+              name.equals(configs[j].getAttribute("name"))) {
+            
+            String description = configs[j].getAttribute("configDescription");
+            return description;
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  public static String getBundleRepositoryTypeId(String name) {
+    if (name == null) return null;
+    
+    IExtensionRegistry registry = Platform.getExtensionRegistry();
+    IExtensionPoint point = registry.getExtensionPoint(EXTENSION_POINT_BUNDLEREPOSITORYTYPE);
+    if (point != null) {
+      IExtension[] extensions = point.getExtensions();
+      for (int i = 0; i < extensions.length; i++) {
+        IConfigurationElement [] configs = extensions[i].getConfigurationElements();
+        if (configs == null) continue;
+        
+        for (int j=0; j<configs.length; j++) {
+          if ("bundleRepositoryType".equals(configs[j].getName()) && 
+              name.equals(configs[j].getAttribute("name"))) {
+            return extensions[i].getNamespace();
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  public static IBundleRepositoryType getBundleRepositoryType(String name) {
+    if (name == null) return null;
+    
+    IExtensionRegistry registry = Platform.getExtensionRegistry();
+    IExtensionPoint point = registry.getExtensionPoint(EXTENSION_POINT_BUNDLEREPOSITORYTYPE);
+    if (point != null) {
+      IExtension[] extensions = point.getExtensions();
+      for (int i = 0; i < extensions.length; i++) {
+        IConfigurationElement [] configs = extensions[i].getConfigurationElements();
+        if (configs == null) continue;
+        
+        for (int j=0; j<configs.length; j++) {
+          if ("bundleRepositoryType".equals(configs[j].getName()) && 
+              name.equals(configs[j].getAttribute("name"))) { 
+            try {
+              return (IBundleRepositoryType) configs[j].createExecutableExtension("class");
+            } catch (CoreException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  public static IBundleRepositoryType[] getBundleRepositoryTypes()  {
+    ArrayList repos = new ArrayList();
+    IExtensionRegistry registry = Platform.getExtensionRegistry();
+    IExtensionPoint point = registry.getExtensionPoint(EXTENSION_POINT_BUNDLEREPOSITORYTYPE);
+    if (point != null) {
+      IExtension[] extensions = point.getExtensions();
+      for (int i = 0; i < extensions.length; i++) {
+        IConfigurationElement [] configs = extensions[i].getConfigurationElements();
+        if (configs == null) continue;
+        
+        for (int j=0; j<configs.length; j++) {
+          if ("bundleRepositoryType".equals(configs[j].getName())) {
+            try {
+              repos.add( configs[j].createExecutableExtension("class"));
+            } catch (CoreException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      }
+    }
+    
+    return (IBundleRepositoryType[]) repos.toArray(new IBundleRepositoryType[repos.size()]);
+  }
+
   /****************************************************************************
    * Framework Definition Methods
    ***************************************************************************/
@@ -76,7 +226,6 @@ public class Osgi {
         }
       }
     }
-    
     
     return (String[]) definitions.toArray(new String[definitions.size()]);
   }
@@ -184,6 +333,7 @@ public class Osgi {
   /****************************************************************************
    * Package methods
    ***************************************************************************/
+  /*
   public static PackageDescription[] getExportedFrameworkPackages(IFrameworkDefinition framework) {
     if (framework == null) return null;
     
@@ -201,6 +351,7 @@ public class Osgi {
 
     return null;
   }
+  */
   
   
   /****************************************************************************

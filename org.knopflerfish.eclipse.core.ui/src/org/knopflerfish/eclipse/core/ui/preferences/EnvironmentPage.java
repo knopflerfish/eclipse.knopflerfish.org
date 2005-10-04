@@ -77,14 +77,13 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
   private static final String TABLE_TITLE =
     "Installed execution environments:";
   
-  private List environments;
+  List environments;
   
   // Widgets
   private Button wEditEnvironmentButton;
   private Button wRemoveEnvironmentButton;
   
-  // jFace Widgets 
-  private CheckboxTableViewer   wEnvironmentTableViewer;
+  CheckboxTableViewer   wEnvironmentTableViewer;
   
   public EnvironmentPage() {
     noDefaultAndApplyButton();
@@ -318,7 +317,7 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
    * Private worker methods
    ***************************************************************************/
   
-  private void updateButtons() {
+  void updateButtons() {
     IStructuredSelection selection = 
       (IStructuredSelection) wEnvironmentTableViewer.getSelection();
     
@@ -332,7 +331,7 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
     wRemoveEnvironmentButton.setEnabled(enable);
   }
   
-  private ArrayList getEnvironmentNames() {
+  ArrayList getEnvironmentNames() {
     ArrayList names = new ArrayList();
     
     for (Iterator i=environments.iterator(); i.hasNext();) {

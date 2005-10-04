@@ -62,7 +62,7 @@ public class ExportSection extends SectionPart {
   private static final String DESCRIPTION = 
     "Packages and exports the bundle";
 
-  private final BundleProject project;
+  final BundleProject project;
   
   // SWT Widgets
   private Button    wExportButton;

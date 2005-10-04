@@ -78,7 +78,6 @@ public class EnvironmentDialog extends Dialog {
 
   private final static String TITLE_ADD_LIBRARY = "Add library";
   private final static String TITLE_EDIT_LIBRARY = "Edit library";
-  
 
   private final static int NUM_CHARS_NAME = 60;
 
@@ -97,12 +96,11 @@ public class EnvironmentDialog extends Dialog {
   private Label   wErrorMsgLabel;
   private Label   wErrorImgLabel;
 
-  // jFace Widgets 
-  private TableViewer    wLibraryTableViewer;
+  TableViewer    wLibraryTableViewer;
   
   private ArrayList usedNames;
   private ExecutionEnvironment environment;
-  private ArrayList libraries = new ArrayList(); 
+  ArrayList libraries = new ArrayList(); 
   
   protected EnvironmentDialog(Shell parentShell, ArrayList usedNames, ExecutionEnvironment environment) {
     super(parentShell);
@@ -404,7 +402,7 @@ public class EnvironmentDialog extends Dialog {
   /****************************************************************************
    * Private Utility Methods
    ***************************************************************************/
-  private void updateButtons() {
+  void updateButtons() {
     // Get current selection
     IStructuredSelection selection = (IStructuredSelection) wLibraryTableViewer.getSelection();
     

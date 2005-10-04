@@ -63,7 +63,7 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
@@ -82,7 +82,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
       ILaunch launch, IProgressMonitor monitor) throws CoreException {
 
     // Verify framework distribution
-    FrameworkDistribution distribution = verifyFrameworkDistribution(configuration);
+    Framework distribution = verifyFrameworkDistribution(configuration);
     
     // Verify directory used for this OSGi configuration
     File instanceDir =  verifyInstanceDirectory(configuration);
@@ -175,14 +175,14 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     runner.run(runConfig, launch, monitor);
   }
 
-  public FrameworkDistribution verifyFrameworkDistribution(ILaunchConfiguration configuration) throws CoreException {
+  public Framework verifyFrameworkDistribution(ILaunchConfiguration configuration) throws CoreException {
     String name = getFrameworkDistributionName(configuration);
     if (name == null) {
       abort("Framework name not specified.", null,
           IOsgiLaunchConfigurationConstants.ERR_UNSPECIFIED_INSTALL_NAME);
     }
     
-    FrameworkDistribution distribution = OsgiPreferences.getFrameworkDistribution(name);
+    Framework distribution = OsgiPreferences.getFramework(name);
     if (distribution == null) {
       abort("Could not find framework '"+name+"'", null,
           IOsgiLaunchConfigurationConstants.ERR_INSTALL_NOT_FOUND);
@@ -320,16 +320,14 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     if (configuration.getAttributes().containsKey(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE) && 
         ((Boolean) configuration.getAttributes().get(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE)).booleanValue()) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   public static int getStartLevel(ILaunchConfiguration configuration) throws CoreException {
     if (configuration.getAttributes().containsKey(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL) ) {
       return  ((Integer) configuration.getAttributes().get(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL)).intValue();
-    } else {
-      return 1;
     }
+    return 1;
   }
 }

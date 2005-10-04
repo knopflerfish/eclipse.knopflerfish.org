@@ -35,7 +35,7 @@
 package org.knopflerfish.eclipse.core.pkg;
 
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -44,14 +44,14 @@ import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
 public class FrameworkPackage implements IPackage {
   
   private final PackageDescription packageDescription;
-  private final FrameworkDistribution framework;
+  private final Framework framework;
   
-  public FrameworkPackage(PackageDescription packageDescription, FrameworkDistribution framework) {
+  public FrameworkPackage(PackageDescription packageDescription, Framework framework) {
     this.packageDescription = packageDescription;
     this.framework = framework;
   }
 
-  public FrameworkDistribution getFramework() {
+  public Framework getFramework() {
     return framework;
   }
   

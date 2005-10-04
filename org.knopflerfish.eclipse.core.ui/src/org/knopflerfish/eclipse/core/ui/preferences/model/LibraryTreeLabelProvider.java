@@ -46,7 +46,7 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
-import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -64,15 +64,15 @@ public class LibraryTreeLabelProvider extends LabelProvider implements IFontProv
   
   public LibraryTreeLabelProvider() {
     
-    ImageDescriptor id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
+    ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
     if (id != null) {
       imageBundle = id.createImage();
     }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_SRC);
+    id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_SRC);
     if (id != null) {
       imageBundleSrc = id.createImage();
     }
-    id = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_RUNTIME);
+    id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_RUNTIME);
     if (id != null) {
       imageRuntime = id.createImage();
     }
@@ -134,17 +134,15 @@ public class LibraryTreeLabelProvider extends LabelProvider implements IFontProv
     case ILibraryTreeElement.TYPE_RUNTIME:
       if (((LibraryElementRuntime) e).getLibrary().getSource() != null) {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR_WITH_SOURCE);
-      } else {
-        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR);
       }
+      return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR);
     case ILibraryTreeElement.TYPE_BUNDLE_ROOT:
       return PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ISharedImages.IMG_OBJ_FOLDER);
     case ILibraryTreeElement.TYPE_BUNDLE:
       if (((LibraryElementBundle) e).getBundle().getSource() != null) {
         return imageBundleSrc;
-      } else {
-        return imageBundle;
       }
+      return imageBundle;
     default :
       return null;
     }
@@ -195,17 +193,15 @@ public class LibraryTreeLabelProvider extends LabelProvider implements IFontProv
     case ILibraryTreeElement.TYPE_RUNTIME:
       if (((LibraryElementRuntime) e).getLibrary().isUserDefined()) {
         return fontUser;
-      } else {
-        return null;
       }
+      return null;
     case ILibraryTreeElement.TYPE_BUNDLE_ROOT:
       return null;
     case ILibraryTreeElement.TYPE_BUNDLE:
       if (((LibraryElementBundle) e).getBundle().isUserDefined()) {
         return fontUser;
-      } else {
-        return null;
       }
+      return null;
     default :
       return null;
     }

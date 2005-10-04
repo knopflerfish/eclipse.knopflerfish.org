@@ -49,13 +49,10 @@ import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
 /**
- * Knopflerfish implementation of the IOsgiInstall interface. Use preferences
- * to save settings.
- * 
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class FrameworkDistribution {
+public class Framework {
 
   private static String PREF_LOCATION               = "Location";
   private static String PREF_SPECIFICATION_VERISION = "SpecificationVersion";
@@ -84,10 +81,10 @@ public class FrameworkDistribution {
   private ArrayList bundles = new ArrayList();
   private ArrayList propertyGroups = new ArrayList();
   
-  public FrameworkDistribution() {
+  public Framework() {
   }
   
-  public FrameworkDistribution(Preferences node) throws BackingStoreException {
+  public Framework(Preferences node) throws BackingStoreException {
     load(node);
   }
   

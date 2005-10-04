@@ -78,10 +78,9 @@ public class BundleResourceDialog extends Dialog {
   private static final int NUM_CHARS_WIDTH = 60;
 
   private BundleResource resource;
-  private IProject project;
+  IProject project;
 
-  // Widgets
-  private Text      wResourceText;
+  Text      wResourceText;
   private Text      wDestinationText;
   private Text      wPatternText;
   private Composite wErrorComposite;
@@ -256,7 +255,7 @@ public class BundleResourceDialog extends Dialog {
   /****************************************************************************
    * Verify UI Input methods
    ***************************************************************************/
-  private String verifyResource() {
+  String verifyResource() {
     String resource = wResourceText.getText();
     
     // Empty resource
@@ -278,7 +277,7 @@ public class BundleResourceDialog extends Dialog {
     return null;
   }
   
-  private String verifyDestination() {
+  String verifyDestination() {
     //String destination = wDestinationText.getText();
     
     // TODO: Verify that destination is a valid jar folder or file
@@ -286,7 +285,7 @@ public class BundleResourceDialog extends Dialog {
     return null;
   }
   
-  private String verifyPattern() {
+  String verifyPattern() {
     String pattern = wPatternText.getText();
 
     // Empty pattern ok
@@ -307,7 +306,7 @@ public class BundleResourceDialog extends Dialog {
   /****************************************************************************
    * Private Worker Methods
    ***************************************************************************/
-  private void updateStatus() {
+  void updateStatus() {
     Control c = getDialogArea();
     if (c == null) return;
     

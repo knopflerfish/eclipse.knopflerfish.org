@@ -38,7 +38,7 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -74,16 +74,15 @@ public class SystemPropertySorter extends ViewerSorter {
    * @see org.eclipse.jface.viewers.ViewerSorter#category(java.lang.Object)
    */
   public int category(Object o) {
-    if (o instanceof FrameworkDistribution) {
+    if (o instanceof Framework) {
       return 0;
     } else if (o instanceof SystemPropertyGroup) {
       // Check if user defined group
       SystemPropertyGroup group = (SystemPropertyGroup) o;
       if (MainTab.USER_GROUP.equals(group.getName())) {
         return 11;
-      } else {
-        return 10;
       }
+      return 10;
     } else if (o instanceof SystemProperty) {
       return 100;
     } else {

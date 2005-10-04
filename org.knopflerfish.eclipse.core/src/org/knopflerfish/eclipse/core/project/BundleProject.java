@@ -55,7 +55,6 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IAccessRule;
 import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -101,14 +100,14 @@ public class BundleProject implements IBundleProject {
   private final IJavaProject javaProject;
   //private BundleManifest manifest;
   
-  public BundleProject(String name) throws CoreException {
+  public BundleProject(String name) {
     IWorkspaceRoot workspace = ResourcesPlugin.getWorkspace().getRoot();
     IProject project = workspace.getProject(name);
     IJavaProject javaProject = JavaCore.create(project);
     this.javaProject = javaProject;
   }
   
-  public BundleProject(IJavaProject project) throws CoreException {
+  public BundleProject(IJavaProject project) {
     this.javaProject = project;
   }
   
@@ -364,7 +363,7 @@ public class BundleProject implements IBundleProject {
     }
   }
   
-  public void importFrameworkPackage(PackageDescription pd, boolean updateManifest){
+  private void importFrameworkPackage(PackageDescription pd, boolean updateManifest){
     if (updateManifest) {
       // Add package to manifest
       BundleManifest manifest = getBundleManifest();
@@ -395,12 +394,7 @@ public class BundleProject implements IBundleProject {
       }
       
       // Check if access rule aleady exist
-      String pattern = pd.getPackageName().replace('.', '/');
-      if (!pattern.endsWith("*") && !pattern.endsWith("/")) {
-        pattern = pattern + "/";
-      }
-      IAccessRule rule = JavaCore.newAccessRule(
-          new Path(pattern), IAccessRule.K_ACCESSIBLE);
+      IAccessRule rule = ClasspathUtil.createAccessRule(pd);
       if (idx != -1) {
         boolean exist = false;
         IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
@@ -408,7 +402,7 @@ public class BundleProject implements IBundleProject {
         ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
         // Check if rule exists
         for(int i=0;i<rules.size();i++) {
-          if (rule.equals((IAccessRule) rules.get(i))) {
+          if (rule.equals(rules.get(i))) {
             exist = true;
             break;
           }
@@ -555,9 +549,8 @@ public class BundleProject implements IBundleProject {
       }
       //Could not find activator
       return "Bundle activator "+activator+" does not exist.";
-    } else {
-      return null;
     }
+    return null;
   }
   
   public String checkManifestBundleName(BundleManifest manifest) {
@@ -582,9 +575,8 @@ public class BundleProject implements IBundleProject {
       } catch (MalformedURLException e) {
         return "Malformed URL specified as documentation location ["+e.getMessage()+"]";
       }
-    } else {
-      return null;
     }
+    return null;
   }
   
   public String checkManifestExecutionEnvironment(BundleManifest manifest) {
@@ -613,9 +605,8 @@ public class BundleProject implements IBundleProject {
       } catch (MalformedURLException e) {
         return "Malformed URL specified as bundle update location ["+e.getMessage()+"]";
       }
-    } else {
-      return null;
     }
+    return null;
   }
   
   public String checkManifestBundleClassPath(BundleManifest manifest) { 

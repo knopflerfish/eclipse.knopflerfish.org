@@ -94,9 +94,8 @@ public class SystemProperty {
   public boolean isDefaultValue() {
     if (defaultValue == null) {
       return value == null || value.length() == 0;
-    } else {
-      return defaultValue.equals(value);
     }
+    return defaultValue.equals(value);
   }
   
   /****************************************************************************

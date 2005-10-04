@@ -99,9 +99,8 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
       // Only interested in bundle projects
       if (((IProject) res).isOpen()) {
         return ((IProject) res).hasNature(Osgi.NATURE_ID);
-      } else {
-        return false; 
       }
+      return false; 
     case IResource.ROOT:
       return true;
     default:  

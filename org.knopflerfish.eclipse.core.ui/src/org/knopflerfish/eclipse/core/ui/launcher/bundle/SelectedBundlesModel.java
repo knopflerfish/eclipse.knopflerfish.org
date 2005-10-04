@@ -44,6 +44,7 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.ui.UiUtils;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -63,7 +64,7 @@ public class SelectedBundlesModel {
 
   public void addBundles(Map m) {
     if (m == null) return;
-    bundles.putAll(m);
+
     for(Iterator i=m.entrySet().iterator();i.hasNext();) {
       try {
         Map.Entry entry = (Map.Entry) i.next();
@@ -72,6 +73,7 @@ public class SelectedBundlesModel {
         BundleLaunchInfo info = new BundleLaunchInfo((String) entry.getValue());
         SelectedBundleElement element = new SelectedBundleElement(bundle, info);
         elements.add(element);
+        bundles.put(entry.getKey(), entry.getValue());
       } catch (Exception e) {
         // Something went wrong, skip this element
       }
@@ -84,7 +86,7 @@ public class SelectedBundlesModel {
   
   public void addBundleProjects(Map m) {
     if (m == null) return;
-    bundleProjects.putAll(m);
+
     for(Iterator i=m.entrySet().iterator();i.hasNext();) {
       try {
         Map.Entry entry = (Map.Entry) i.next();
@@ -92,6 +94,7 @@ public class SelectedBundlesModel {
         BundleLaunchInfo info = new BundleLaunchInfo((String) entry.getValue());
         SelectedBundleElement element = new SelectedBundleElement(new BundleProject(name), info);
         elements.add(element);
+        bundleProjects.put(entry.getKey(), entry.getValue());
       } catch (Exception e) {
         // Something went wrong, skip this element
       }
@@ -146,7 +149,7 @@ public class SelectedBundlesModel {
     return (SelectedBundleElement[]) elements.toArray(new SelectedBundleElement[elements.size()]);
   }
   
-  public void update(TableViewer viewer, SelectedBundleElement element) {
+  public void update(TableViewer viewer, SelectedBundleElement element, String prop) {
     if (element == null) return;
     
     // Check if element already exists
@@ -160,6 +163,9 @@ public class SelectedBundlesModel {
     }
     
     // Update element in viewer
-    viewer.update(element, null);
+    viewer.refresh(element);
+    //viewer.update(element, new String[] {prop});
+    
+    UiUtils.packTableColumns(viewer.getTable());
   }
 }

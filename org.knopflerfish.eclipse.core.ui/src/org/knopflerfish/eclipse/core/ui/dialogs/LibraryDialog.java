@@ -68,9 +68,9 @@ public class LibraryDialog extends Dialog {
   private final String title;
   
   // Widgets
-  private Text    wLibraryText;
+  Text    wLibraryText;
   private Button  wLibraryButton;
-  private Text    wSourceText;
+  Text    wSourceText;
   
   public LibraryDialog(Shell parentShell, IOsgiLibrary library, String title) {
     super(parentShell);

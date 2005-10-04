@@ -66,8 +66,27 @@ public class BundleContainer extends ClasspathContainerInitializer  implements I
    * @see org.eclipse.jdt.core.ClasspathContainerInitializer#initialize(org.eclipse.core.runtime.IPath, org.eclipse.jdt.core.IJavaProject)
    */
   public void initialize(IPath containerPath, IJavaProject project) throws CoreException {
+    // Get hinted bundle
+    //String hint = containerPath.lastSegment();
+    
+    /*
+    distribution = null;
+    if (hint != null) {
+      distribution = OsgiPreferences.getFrameworkDistribution(hint);
+    }
+    if (distribution == null) {
+      distribution = OsgiPreferences.getDefaultFrameworkDistribution();
+    }
+    */
+    
+    // Create classpath container
+    JavaCore.setClasspathContainer(
+        containerPath, 
+        new IJavaProject[] {project}, 
+        new IClasspathContainer[] {this},
+        null);        
     // TODO Auto-generated method stub
-    System.err.println("Initialize bundle dependencies for project "+project.getProject().getName()+", path="+containerPath);
+    System.err.println("Initialize bundle containers for project "+project.getProject().getName()+", path="+containerPath);
     this.containerPath = containerPath;
 
     JavaCore.setClasspathContainer(
@@ -87,6 +106,8 @@ public class BundleContainer extends ClasspathContainerInitializer  implements I
    */
   public IClasspathEntry[] getClasspathEntries() {
     ArrayList classPath = new ArrayList();
+    
+    // TODO : Search the bundle repositories for the hinted the bundle
     // TODO Auto-generated method stub
     IClasspathEntry entry = JavaCore.newContainerEntry(new Path(ExecutionEnvironmentContainer.CONTAINER_PATH));
     classPath.add(entry);

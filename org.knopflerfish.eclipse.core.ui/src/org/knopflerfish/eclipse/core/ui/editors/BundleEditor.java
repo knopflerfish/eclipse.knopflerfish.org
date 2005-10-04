@@ -55,7 +55,9 @@ import org.eclipse.ui.forms.editor.FormEditor;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.texteditor.DocumentProviderRegistry;
 import org.eclipse.ui.texteditor.IDocumentProvider;
+import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.ui.editors.manifest.ImportPackageModel;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestFormEditor;
 import org.knopflerfish.eclipse.core.ui.editors.packaging.PackagingFormEditor;
 
@@ -72,14 +74,14 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
   
   private IFile manifestFile;
   private IFile packFile;
-  private IFileEditorInput manifestInput;
-  private IFileEditorInput bundlePackInput;
-  private ManifestFormEditor manifestFormEditor;
-  private TextEditor manifestTextEditor;
-  private PackagingFormEditor buildFormEditor;
-  private BundleProject project;
+  IFileEditorInput manifestInput;
+  IFileEditorInput bundlePackInput;
+  ManifestFormEditor manifestFormEditor;
+  TextEditor manifestTextEditor;
+  PackagingFormEditor buildFormEditor;
+  BundleProject project;
   
-  private IDocumentProvider provider;
+  IDocumentProvider provider;
 
   /****************************************************************************
    * org.eclipse.ui.IWorkbenchPart methods
@@ -144,7 +146,12 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
       
       IDocument manifestDoc = provider.getDocument(manifestInput);
       IDocument packDoc = provider.getDocument(bundlePackInput);
-      BundleDocument buildDoc = new BundleDocument(manifestDoc, packDoc);
+      ImportPackageModel model = 
+        new ImportPackageModel(
+            ManifestUtil.createManifest(manifestDoc.get().getBytes()),
+            project);
+
+      BundleDocument buildDoc = new BundleDocument(manifestDoc, packDoc, model);
       manifestFormEditor.attachDocument(buildDoc);
       buildFormEditor.attachDocument(buildDoc);
 
@@ -178,6 +185,10 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
         // Save documents
         provider.saveDocument(monitor, manifestInput, buildFormEditor.getDocument().getManifestDocument(), true);
         provider.saveDocument(monitor, bundlePackInput, buildFormEditor.getDocument().getPackDocument(), true);
+        // TODO: Update containers
+        System.err.println("Update containers");
+        ImportPackageModel model = buildFormEditor.getDocument().getImportPackageModel();
+        model.getElements();
         firePropertyChange(PROP_DIRTY);
       }
     };
@@ -277,7 +288,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
    * Private utility methods
    ***************************************************************************/
   
-  private void refreshEditors(final BundleFilesVisitor visitor) {
+  void refreshEditors(final BundleFilesVisitor visitor) {
     Display.getDefault().asyncExec(new Runnable() {
       public void run() {
         try {
@@ -300,7 +311,12 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
             manifestFormEditor.setErrors(visitor.getManifestFile().findMarkers(null, true, IResource.DEPTH_INFINITE));
             IDocument manifestDoc = provider.getDocument(manifestInput);
             IDocument packDoc = provider.getDocument(bundlePackInput);
-            manifestFormEditor.attachDocument(new BundleDocument(manifestDoc, packDoc));
+            ImportPackageModel model = 
+              new ImportPackageModel(
+                  ManifestUtil.createManifest(manifestDoc.get().getBytes()),
+                  project);
+
+            manifestFormEditor.attachDocument(new BundleDocument(manifestDoc, packDoc, model));
             manifestFormEditor.refresh();
           }
           
@@ -308,7 +324,12 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
           if (visitor.isManifestChanged() || visitor.isPackDescriptionChanged()) {
             IDocument manifestDoc = provider.getDocument(manifestInput);
             IDocument packDoc = provider.getDocument(bundlePackInput);
-            buildFormEditor.attachDocument(new BundleDocument(manifestDoc, packDoc));
+            ImportPackageModel model = 
+              new ImportPackageModel(
+                  ManifestUtil.createManifest(manifestDoc.get().getBytes()),
+                  project);
+
+            buildFormEditor.attachDocument(new BundleDocument(manifestDoc, packDoc, model));
             buildFormEditor.refresh();
           }
 
@@ -320,7 +341,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
     });
   }
   
-  private void connectBundlePack(IFileEditorInput bundlePackInput) throws CoreException {
+  void connectBundlePack(IFileEditorInput bundlePackInput) throws CoreException {
     if (provider == null) return;
 
     disconnectBundlePack();
@@ -331,7 +352,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
     }
   }
   
-  private void connectManifest(IFileEditorInput manifestInput) throws CoreException {
+  void connectManifest(IFileEditorInput manifestInput) throws CoreException {
     if (provider == null) return;
 
     disconnectManifest();
@@ -356,5 +377,9 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
     if (manifestInput != null) {
       provider.disconnect(manifestInput);
     }
+  }
+  
+  protected void firePropertyChange(final int propertyId) {
+    super.firePropertyChange(propertyId);
   }
 }

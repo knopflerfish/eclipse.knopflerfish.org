@@ -36,6 +36,7 @@ package org.knopflerfish.eclipse.core.ui.editors;
 
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentListener;
+import org.knopflerfish.eclipse.core.ui.editors.manifest.ImportPackageModel;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -45,10 +46,12 @@ public class BundleDocument {
 
   private final IDocument manifestDocument;
   private final IDocument packDocument;
+  private ImportPackageModel importPackageModel;
   
-  public BundleDocument(IDocument manifestDocument, IDocument packDocument) {
+  public BundleDocument(IDocument manifestDocument, IDocument packDocument, ImportPackageModel importPackageModel) {
     this.manifestDocument = manifestDocument;
     this.packDocument = packDocument;
+    this.importPackageModel = importPackageModel;
   }
   
   public void addDocumentListener(IDocumentListener listener) {
@@ -69,5 +72,13 @@ public class BundleDocument {
 
   public IDocument getPackDocument() {
     return packDocument;
+  }
+
+  public ImportPackageModel getImportPackageModel() {
+    return importPackageModel;
+  }
+
+  public void setImportPackageModel(ImportPackageModel importPackageModel) {
+    this.importPackageModel = importPackageModel;
   }
 }

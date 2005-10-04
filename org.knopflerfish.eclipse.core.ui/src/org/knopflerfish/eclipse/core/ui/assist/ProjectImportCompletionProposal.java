@@ -93,10 +93,9 @@ public class ProjectImportCompletionProposal implements IJavaCompletionProposal 
       return "Bundle project '"+bundleProject.getJavaProject().getProject().getName()+
         "' will be added to this projects classpath and "+
         "the package '"+pkg.getPackageName()+"' will be added to the manifest Import-Package";
-    } else {
-      return "Bundle project '"+bundleProject.getJavaProject().getProject().getName()+
-      "' will be added to this projects classpath.";
     }
+    return "Bundle project '"+bundleProject.getJavaProject().getProject().getName()+
+    "' will be added to this projects classpath.";
   }
 
   /* (non-Javadoc)

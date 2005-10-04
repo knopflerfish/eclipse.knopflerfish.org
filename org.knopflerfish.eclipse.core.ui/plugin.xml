@@ -86,6 +86,11 @@
           name="OSGi"
           id="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"/>
     <page
+          class="org.knopflerfish.eclipse.core.ui.preferences.BundleRepositoryPage"
+          category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"
+          name="Bundle Repositories"
+          id="org.knopflerfish.eclipse.core.ui.preferences.BundleRepositoryPage"/>
+    <page
           class="org.knopflerfish.eclipse.core.ui.preferences.EnvironmentPage"
           category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"
           name="Environments"

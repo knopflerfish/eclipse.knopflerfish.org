@@ -172,8 +172,7 @@ public class BundleResource implements Comparable {
     // Check type, therafter source
     if (type == resource.getType()) {
       return src.toString().compareTo(resource.getSource().toString());
-    } else {
-      return type-resource.getType();
     }
+    return type-resource.getType();
   }
 }

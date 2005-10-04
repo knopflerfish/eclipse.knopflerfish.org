@@ -54,7 +54,7 @@ public class OsgiUiPlugin extends AbstractUIPlugin {
   private ResourceBundle resourceBundle;
   
   // Image descriptors
-  public static ImageDescriptor BUNDLE_WIZARD_BANNER = OsgiUiPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_WIZ);
+  public static ImageDescriptor BUNDLE_WIZARD_BANNER = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE_WIZ);
   
   private SharedImages sharedImages;
   

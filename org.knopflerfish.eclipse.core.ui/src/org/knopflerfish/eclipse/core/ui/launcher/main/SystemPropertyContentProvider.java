@@ -38,7 +38,7 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
-import org.knopflerfish.eclipse.core.preferences.FrameworkDistribution;
+import org.knopflerfish.eclipse.core.preferences.Framework;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -50,8 +50,8 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
    * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
    */
   public Object[] getChildren(Object parentElement) {
-    if (parentElement instanceof FrameworkDistribution) {
-      FrameworkDistribution distribution = (FrameworkDistribution) parentElement;
+    if (parentElement instanceof Framework) {
+      Framework distribution = (Framework) parentElement;
       return distribution.getSystemPropertyGroups();
     } else if (parentElement instanceof SystemPropertyGroup) {
       SystemPropertyGroup group = (SystemPropertyGroup) parentElement;
@@ -65,7 +65,7 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
    * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
    */
   public Object getParent(Object element) {
-    if (element instanceof FrameworkDistribution) {
+    if (element instanceof Framework) {
       return null;
     } else if (element instanceof SystemPropertyGroup) {
       SystemPropertyGroup group = (SystemPropertyGroup) element;
@@ -82,8 +82,8 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
    * @see org.eclipse.jface.viewers.ITreeContentProvider#hasChildren(java.lang.Object)
    */
   public boolean hasChildren(Object element) {
-    if (element instanceof FrameworkDistribution) {
-      FrameworkDistribution distribution = (FrameworkDistribution) element;
+    if (element instanceof Framework) {
+      Framework distribution = (Framework) element;
       return distribution.getSystemPropertyGroups().length > 0;
     } else if (element instanceof SystemPropertyGroup) {
       SystemPropertyGroup group = (SystemPropertyGroup) element;
@@ -99,8 +99,8 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
    * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
    */
   public Object[] getElements(Object inputElement) {
-    if (inputElement instanceof FrameworkDistribution) {
-      FrameworkDistribution distribution = (FrameworkDistribution) inputElement;
+    if (inputElement instanceof Framework) {
+      Framework distribution = (Framework) inputElement;
       return distribution.getSystemPropertyGroups();
     } else if (inputElement instanceof SystemPropertyGroup) {
       SystemPropertyGroup group = (SystemPropertyGroup) inputElement;
