@@ -35,6 +35,7 @@
 package org.knopflerfish.eclipse.repository.obr;
 
 import org.knopflerfish.eclipse.core.IBundleRepository;
+import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
@@ -73,6 +74,15 @@ public class BundleRepository implements IBundleRepository {
    * @see org.knopflerfish.eclipse.core.IBundleRepository#getBundleLibraries(org.knopflerfish.eclipse.core.manifest.BundleIdentity)
    */
   public IOsgiLibrary[] getBundleLibraries(BundleIdentity id) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleRepository#getBundles()
+   */
+  public IOsgiBundle[] getBundles() {
     // TODO Auto-generated method stub
     return null;
   }

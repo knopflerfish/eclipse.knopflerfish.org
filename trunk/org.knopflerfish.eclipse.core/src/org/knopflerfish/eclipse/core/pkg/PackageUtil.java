@@ -144,26 +144,8 @@ public class PackageUtil {
   }
 
   /****************************************************************************
-   * Get container path methods
+   * Methods for finding framework/bundles which exports a given package
    ***************************************************************************/
-  /*
-  public static IPath[] getContainerPaths(BundleProject project, PackageDescription pd) {
-    ArrayList paths = new ArrayList();
-
-    // Check if framework exports package
-    if (frameworkExportsPackage(project, pd)) {
-      paths.add(new Path(FrameworkContainer.CONTAINER_PATH));
-    }
-    // Get projects which export the package
-    paths.addAll(Arrays.asList(getProjectContainerPaths(pd)));
-    // Get bundles which export the package
-    //paths.addAll(Arrays.asList(getRepositoryExportedPackages()));
-    
-    // Find bundles exporting this package
-    
-    return (IPath[]) paths.toArray(new IPath[paths.size()]);
-  }
-  */
   
   public static boolean frameworkExportsPackage(BundleProject project, PackageDescription pd) {
     ArrayList packages = new ArrayList();
@@ -177,38 +159,6 @@ public class PackageUtil {
     return packages.contains(pd);
   }
   
-  /*
-  public static IPath[] getExportingRepositoryBundles(PackageDescription pkg) {
-    if (pkg == null) return null;
-    ArrayList exportingBundles = new ArrayList(); 
-    
-    RepositoryPreference[] repositoryPref = OsgiPreferences.getBundleRepositories();
-    for (int i=0; i<repositoryPref.length; i++) {
-      if (!repositoryPref[i].isActive()) continue;
-      
-      IBundleRepositoryType repositoryType = Osgi.getBundleRepositoryType(repositoryPref[i].getType());
-      if (repositoryType == null) continue;
-      
-      IBundleRepository repository = repositoryType.createRepository(repositoryPref[i].getConfig());
-      if (repository == null) continue;
-
-      packages.addAll(Arrays.asList(repository.getExportedPackages()));
-    }
-    // Knopflerfish root
-    FrameworkPreference[] distributions = OsgiPreferences.getFrameworks();
-    
-    for(int i=0; i<distributions.length; i++) {
-      IOsgiBundle[] bundles = distributions[i].getBundles();
-      for(int j=0; bundles != null && j<bundles.length; j++) {
-        IOsgiBundle b = bundles[j]; 
-        if (b.hasExportedPackage(pkg)) {
-          exportingBundles.add(b);
-        }
-      }
-    }
-    return (IOsgiBundle[]) exportingBundles.toArray(new IOsgiBundle[exportingBundles.size()]);
-  }
-  */
   public static BuildPath[] getExportingProjectBundles(PackageDescription pd) {
     ArrayList bundleIds = new ArrayList(); 
     
@@ -226,7 +176,7 @@ public class PackageUtil {
           if (bundleProject.hasExportedPackage(pd)) {
             BundleIdentity id = bundleProject.getId();
             String  name = bundleProject.getBundleManifest().getName();
-            bundleIds.add(new BuildPath(path, pd, id, name));
+            bundleIds.add(new BuildPath(path.append("/"+id.toString()), pd, id, name));
           }
         }
       } catch (CoreException e) {
@@ -258,201 +208,10 @@ public class PackageUtil {
         BundleIdentity id = new BundleIdentity(
             manifests[j].getSymbolicName(), 
             manifests[j].getVersion());
-        bundleIds.add(new BuildPath(path, pd, id, manifests[j].getName()));
+        bundleIds.add(new BuildPath(path.append("/"+id.toString()), pd, id, manifests[j].getName()));
       }
     }
     
     return (BuildPath[]) bundleIds.toArray(new BuildPath[bundleIds.size()]);
-  }
-  
-  /****************************************************************************
-   * Find package methods
-   ***************************************************************************/
-  
-  /*
-  public static IPackage[] findPackage(BundleProject project, String name) {
-    ArrayList matchPkgs = new ArrayList();
-    matchPkgs.addAll(Arrays.asList(findFrameworkPackage(project,name)));
-    return (IPackage[]) matchPkgs.toArray(new IPackage[matchPkgs.size()]);
-  }
-  
-  public static IPackage[] findFrameworkPackage(BundleProject project, String name) {
-    ArrayList matchPkgs = new ArrayList();
-
-    try {
-      if (name != null) {
-        // First check framework
-        FrameworkPreference framework = project.getFramework();
-        PackageDescription[] packages = getFrameworkExportedPackages(project);
-        for (int i=0; i<packages.length;i++) {
-          if (name.equals(packages[i].getPackageName())) {
-            matchPkgs.add(new FrameworkPackage(packages[i], framework));
-          }
-        }
-      }
-    } catch (Throwable t) {
-    }
-    return (IPackage[]) matchPkgs.toArray(new IPackage[matchPkgs.size()]);
-  }
-  */
-  
-  /*
-  public static IPackage[] findPackage(String name, int type) {
-    ArrayList matchPkgs = new ArrayList();
-
-    if (name != null) {
-      IPackage[] pkgs = getPackages(type);
-      for (int i=0; i<pkgs.length;i++) {
-        if (name.equals(pkgs[i].getPackageDescription().getPackageName())) {
-          matchPkgs.add(pkgs[i]);
-        }
-      }
-    }
-    return (IPackage[]) matchPkgs.toArray(new IPackage[matchPkgs.size()]);
-  }
-  
-  public static IPackage[] findPackage(String name, Framework distribution, int type) {
-    ArrayList matchPkgs = new ArrayList();
-
-    if (name != null) {
-      IPackage[] pkgs = getPackages(distribution, type);
-      for (int i=0; i<pkgs.length;i++) {
-        if (name.equals(pkgs[i].getPackageDescription().getPackageName())) {
-          matchPkgs.add(pkgs[i]);
-        }
-      }
-      if ((type & IPackage.PROJECT) != 0) {
-        IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-        pkgs = getPackages(root);
-        for (int i=0; i<pkgs.length;i++) {
-          if (name.equals(pkgs[i].getPackageDescription().getPackageName())) {
-            matchPkgs.add(pkgs[i]);
-          }
-        }
-      }
-    }
-    return (IPackage[]) matchPkgs.toArray(new IPackage[matchPkgs.size()]);
-  }
-  
-  public static IPackage[] getPackages(int type) {
-    ArrayList pkgs = new ArrayList();
-    
-    // Exported packages from distributions
-    Framework[] distributions = OsgiPreferences.getFrameworks();
-    for(int i=0; i<distributions.length; i++) {
-      pkgs.addAll(Arrays.asList(getPackages(distributions[i], type)));
-    }
-    
-    // Exported packages from projects
-    if ((type & IPackage.PROJECT) != 0) {
-      IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-      pkgs.addAll(Arrays.asList(getPackages(root)));
-    }
-    
-    return (IPackage[]) pkgs.toArray(new IPackage[pkgs.size()]);
-  }
-  
-  public static IPackage[] getPackages(Framework distribution, int type) {
-    ArrayList pkgs = new ArrayList();
-    
-    IFrameworkDefinition framework = Osgi.getFrameworkDefinition(distribution.getType());
-    
-    if ( (type & IPackage.FRAMEWORK) != 0) {
-      IOsgiLibrary [] libraries = distribution.getRuntimeLibraries();
-      PackageDescription [] packageDescriptions = framework.getExportedPackages(libraries);
-      for (int i=0; i<packageDescriptions.length; i++) {
-        pkgs.add(new FrameworkPackage(packageDescriptions[i], distribution));
-      }
-    }
-    
-    if ( (type & IPackage.BUNDLE) != 0) {
-      IOsgiBundle [] bundles = distribution.getBundles();
-      for (int i=0; i<bundles.length; i++) {
-        PackageDescription [] packageDescriptions = bundles[i].getBundleManifest().getExportedPackages();
-        for (int j=0; j<packageDescriptions.length; j++) {
-          pkgs.add(new BundlePackage(packageDescriptions[j], distribution, bundles[i]));
-        }
-      }
-    }
-    return (IPackage[]) pkgs.toArray(new IPackage[pkgs.size()]);
-  }
-  
-
-  public static IPackage[] getPackages(IWorkspaceRoot root) {
-    ArrayList pkgs = new ArrayList();
-  
-    IProject [] projects = root.getProjects();
-    for(int i=0; projects != null && i<projects.length; i++) {
-      try {
-        if (projects[i].hasNature(Osgi.NATURE_ID)) {
-          IJavaProject project = JavaCore.create(projects[i]);
-          IBundleProject b = new BundleProject(project);
-          pkgs.addAll(Arrays.asList(getPackages(b)));
-        }
-      } catch (CoreException e) {
-        // Failed to check project nature.
-      }
-    }
-    return (IPackage[]) pkgs.toArray(new IPackage[pkgs.size()]);
-  }
-
-  public static IPackage[] getPackages(IBundleProject project) {
-    ArrayList pkgs = new ArrayList();
-    try {
-      PackageDescription[] packageDescriptions = project.getBundleManifest().getExportedPackages();
-      for (int i=0; i<packageDescriptions.length; i++) {
-        pkgs.add(new ProjectPackage(packageDescriptions[i], project));
-      }
-    } catch (Throwable t) {}
-    return (IPackage[]) pkgs.toArray(new IPackage[pkgs.size()]);
-  }
-  
-  
-  
-  public static IOsgiBundle[] findExportingBundles(PackageDescription pkg) {
-    if (pkg == null) return null;
-    ArrayList exportingBundles = new ArrayList(); 
-    
-    // Knopflerfish root
-    Framework[] distributions = OsgiPreferences.getFrameworks();
-    
-    for(int i=0; i<distributions.length; i++) {
-      IOsgiBundle[] bundles = distributions[i].getBundles();
-      for(int j=0; bundles != null && j<bundles.length; j++) {
-        IOsgiBundle b = bundles[j]; 
-        if (b.hasExportedPackage(pkg)) {
-          exportingBundles.add(b);
-        }
-      }
-    }
-    return (IOsgiBundle[]) exportingBundles.toArray(new IOsgiBundle[exportingBundles.size()]);
-  }
-  
-  public static IBundleProject[] findExportingProjects(PackageDescription pkg) {
-    if (pkg == null) return null;
-    ArrayList exportingProjects = new ArrayList(); 
-    
-    // Workspace root
-    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-    // Projects
-    IProject [] projects = root.getProjects();
-    for(int i=0; projects != null && i<projects.length; i++) {
-      try {
-        if (projects[i].hasNature(Osgi.NATURE_ID)) {
-          IJavaProject project = JavaCore.create(projects[i]);
-          IBundleProject b = new BundleProject(project);
-          
-          if (b.hasExportedPackage(pkg)) {
-            exportingProjects.add(b);
-          }
-        }
-      } catch (CoreException e) {
-        // Failed to check project nature.
-      }
-    }
-    
-    return (IBundleProject[]) exportingProjects.toArray(new IBundleProject[exportingProjects.size()]);
-  }
-  */
-  
+  }  
 }

@@ -34,14 +34,18 @@
 
 package org.knopflerfish.eclipse.core.ui.preferences;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
-import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 
 /**
@@ -49,6 +53,32 @@ import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
  * @see http://www.gatespacetelematics.com/
  */
 public class RepositoryContentProvider implements IStructuredContentProvider, ITableLabelProvider {
+  
+  private HashMap images = new HashMap();
+
+  public RepositoryContentProvider() {
+    
+    // Initialize image map
+    String[] names = Osgi.getBundleRepositoryTypeNames();
+    for (int i=0;i<names.length; i++) {
+      String imagePath = Osgi.getBundleRepositoryTypeImage(names[i]);
+      String pluginId = Osgi.getBundleRepositoryTypeId(names[i]);
+      
+      ImageDescriptor id = null;
+      if (imagePath != null) {
+        id = AbstractUIPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
+      } else {
+        id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
+        "icons/obj16/knopflerfish_obj.gif");
+      }      
+      if (id != null) {
+        Image image = id.createImage();
+        if (image != null) {
+          images.put(names[i], image);
+        }
+      }
+    }
+  }
   
   /****************************************************************************
    * org.eclipse.jface.viewers.IStructuredContentProvider methods
@@ -83,8 +113,9 @@ public class RepositoryContentProvider implements IStructuredContentProvider, IT
    * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.Object, int)
    */
   public Image getColumnImage(Object element, int columnIndex) {
+    RepositoryPreference repository = (RepositoryPreference) element;
     if (columnIndex == 0) {
-      return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
+      return (Image) images.get(repository.getType());
     }
     return null;
   }
@@ -114,6 +145,10 @@ public class RepositoryContentProvider implements IStructuredContentProvider, IT
    * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
    */
   public void dispose() {
+    for (Iterator i=images.values().iterator(); i.hasNext();){
+      Image image = (Image) i.next();
+      image.dispose();
+     }
   }
   
   /*

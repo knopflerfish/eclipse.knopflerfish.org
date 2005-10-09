@@ -81,7 +81,7 @@ public class BundleContainer implements IClasspathContainer {
    * @see org.eclipse.jdt.core.IClasspathContainer#getClasspathEntries()
    */
   public IClasspathEntry[] getClasspathEntries() {
- 
+    
     // Check if workspace contains bundle
     try {
       IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -117,19 +117,29 @@ public class BundleContainer implements IClasspathContainer {
       if (libraries == null || libraries.length == 0) continue;
 
       ArrayList entries = new ArrayList();
+      boolean libsOk = true;
       for(int j=0; j<libraries.length; j++) {
         if (libraries[j] instanceof IOsgiBundle) {
           name = ((IOsgiBundle) libraries[j]).getBundleManifest().getName();
         }
         Path path = new Path(libraries[j].getPath());
+        if (!path.toFile().exists()) {
+          libsOk = false;
+          break;
+        }
         Path src = null;
         if (libraries[j].getSource() != null) {
           try {
             src = new Path(libraries[j].getSource());
+            if (!src.toFile().exists()) {
+              src = null;
+            }
           } catch (Exception e) {
           }
         }
-        entries.add(JavaCore.newLibraryEntry(path, src, null, false));
+        if (libsOk) {
+          entries.add(JavaCore.newLibraryEntry(path, src, null, false));
+        }
       }
       return (IClasspathEntry[]) entries.toArray(new IClasspathEntry[entries.size()]);
     }

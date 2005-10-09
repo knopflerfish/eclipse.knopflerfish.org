@@ -38,8 +38,8 @@ import java.util.ArrayList;
 
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.osgi.framework.Version;
 
 /**
@@ -55,10 +55,10 @@ public class AvailableElementRoot implements IAvailableTreeElement {
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
     children.add(new AvailableElementWorkspace(this, root));
 
-    // Add knopflerfish roots
-    FrameworkPreference[] distributions = OsgiPreferences.getFrameworks();
-    for(int i=0; i<distributions.length; i++) {
-      children.add(new AvailableElementDistribution(this, distributions[i]));
+    // Add repositories
+    RepositoryPreference[] repositories = OsgiPreferences.getBundleRepositories();
+    for(int i=0; i<repositories.length; i++) {
+      children.add(new AvailableElementRepository(this, repositories[i]));
     }
   }
 

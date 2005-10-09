@@ -38,30 +38,37 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.viewers.IFontProvider;
 import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
+import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class AvailableBundlesLabelProvider extends LabelProvider {
+public class AvailableBundlesLabelProvider extends LabelProvider implements IFontProvider {
   
   private static String IMAGE_BUNDLE      = "icons/obj16/jar_b_obj.gif";
   private static String IMAGE_BUNDLE_SRC  = "icons/obj16/jar_bsrc_obj.gif";
   private static String IMAGE_BUNDLE_OVR  = "icons/ovr16/bundle_ovr.gif";
   
+  // Resources
   private Image imageBundle = null;
   private Image imageBundleSrc = null;
   private Image imageProject = null;
   private Image imageWorkspace  = PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT );
   private HashMap images = new HashMap();
+  private Font  fontInactive = null;
   
   public AvailableBundlesLabelProvider() {
     ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE_BUNDLE);
@@ -83,17 +90,18 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
       bundleOvrImage.dispose();
     }
     
-    String[] names = Osgi.getFrameworkDefinitionNames();
+    // Initialize image map
+    String[] names = Osgi.getBundleRepositoryTypeNames();
     for (int i=0;i<names.length; i++) {
-      String imagePath = Osgi.getFrameworkDefinitionImage(names[i]);
-      String pluginId = Osgi.getFrameworkDefinitionId(names[i]);
+      String imagePath = Osgi.getBundleRepositoryTypeImage(names[i]);
+      String pluginId = Osgi.getBundleRepositoryTypeId(names[i]);
       
       id = null;
       if (imagePath != null) {
         id = AbstractUIPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
       } else {
         id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
-        "icons/obj16/_knopflerfish_obj.gif");
+        "icons/obj16/knopflerfish_obj.gif");
       }      
       if (id != null) {
         Image image = id.createImage();
@@ -103,8 +111,19 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
       }
     }
     
+    // Create font used for inactive repositories
+    if (fontInactive == null) {
+      Font font = Display.getCurrent().getSystemFont();
+      FontData fontData = font.getFontData()[0];
+      fontData.setStyle(SWT.ITALIC);
+      fontInactive = new Font(Display.getCurrent(), fontData);
+    }
+    
   }
 
+  /****************************************************************************
+   * org.eclipse.jface.viewers.ILabelProvider methods
+   ***************************************************************************/
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
@@ -144,9 +163,9 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
           return imageBundleSrc;
         }
         return imageBundle;
-      case IAvailableTreeElement.TYPE_DISTRIBUTION:
-        FrameworkPreference distribution = ((AvailableElementDistribution) e).getFrameworkDistribution();
-        return (Image) images.get(distribution.getType());
+      case IAvailableTreeElement.TYPE_REPOSITORY:
+        RepositoryPreference pref = ((AvailableElementRepository) e).getRepositoryPreference();
+        return (Image) images.get(pref.getType());
       case IAvailableTreeElement.TYPE_PROJECT:
         return imageProject;
       case IAvailableTreeElement.TYPE_WORKSPACE:
@@ -175,4 +194,27 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
       return name == null ? "" : name;
     }
   }
+
+  /****************************************************************************
+   * org.eclipse.jface.viewers.IFontProvider methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IFontProvider#getFont(java.lang.Object)
+   */
+  public Font getFont(Object o) {
+    if (!(o instanceof IAvailableTreeElement)) return null;
+    
+    IAvailableTreeElement e = (IAvailableTreeElement) o;
+
+    if (e.getType() == IAvailableTreeElement.TYPE_REPOSITORY) {
+      RepositoryPreference pref = ((AvailableElementRepository) e).getRepositoryPreference();
+      if (!pref.isActive()) {
+        return fontInactive;
+      }
+    }
+    return null;
+  }
+  
+  
 }
