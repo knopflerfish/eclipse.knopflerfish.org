@@ -45,7 +45,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -145,7 +145,7 @@ public class AvailableBundlesLabelProvider extends LabelProvider {
         }
         return imageBundle;
       case IAvailableTreeElement.TYPE_DISTRIBUTION:
-        Framework distribution = ((AvailableElementDistribution) e).getFrameworkDistribution();
+        FrameworkPreference distribution = ((AvailableElementDistribution) e).getFrameworkDistribution();
         return (Image) images.get(distribution.getType());
       case IAvailableTreeElement.TYPE_PROJECT:
         return imageProject;

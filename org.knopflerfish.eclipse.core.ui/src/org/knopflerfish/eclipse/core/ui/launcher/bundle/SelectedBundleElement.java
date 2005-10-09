@@ -38,6 +38,7 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -93,7 +94,7 @@ public class SelectedBundleElement {
     return project.getBundleManifest().getName();
   }
   
-  public String getVersion() {
+  public Version getVersion() {
     if (bundle != null) {
       if (bundle.getBundleManifest() == null) return null;
       return bundle.getBundleManifest().getVersion();

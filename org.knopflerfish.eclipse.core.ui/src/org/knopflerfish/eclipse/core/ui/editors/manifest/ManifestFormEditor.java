@@ -226,6 +226,8 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
           String type = markers[i].getType(); 
           if (type.equals(BundleProject.MARKER_BUNDLE_ACTIVATOR)) {
             errorsGeneralSection.put(BundleManifest.BUNDLE_ACTIVATOR, markers[i]); 
+          } else if (type.equals(BundleProject.MARKER_BUNDLE_VERSION)) {
+            errorsGeneralSection.put(BundleManifest.BUNDLE_VERSION, markers[i]); 
           } else if (type.equals(BundleProject.MARKER_BUNDLE_UPDATELOCATION)) {
             errorsGeneralSection.put(BundleManifest.BUNDLE_UPDATELOCATION, markers[i]); 
           } else if (type.equals(BundleProject.MARKER_BUNDLE_DOCURL)) {

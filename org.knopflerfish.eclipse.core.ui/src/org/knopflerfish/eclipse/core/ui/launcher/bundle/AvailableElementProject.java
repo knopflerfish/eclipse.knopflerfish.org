@@ -37,6 +37,7 @@ package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 import java.util.ArrayList;
 
 import org.knopflerfish.eclipse.core.project.IBundleProject;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -100,7 +101,7 @@ public class AvailableElementProject implements IAvailableTreeElement {
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getVersion()
    */
-  public String getVersion() {
+  public Version getVersion() {
     return project.getBundleManifest().getVersion();
   }
   

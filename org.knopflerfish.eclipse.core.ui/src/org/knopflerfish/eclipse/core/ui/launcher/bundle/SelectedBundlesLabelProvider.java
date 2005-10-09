@@ -45,6 +45,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.ui.launcher.main.MainTab;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -173,8 +174,8 @@ public class SelectedBundlesLabelProvider implements ITableLabelProvider, IColor
         return name;
       case 1:
         // Version
-        String version = e.getVersion();
-        return version == null ? "" : version;
+        Version version = e.getVersion();
+        return version == null ? "" : version.toString();
       case 2:
         // Start level
         int startLevel = e.getLaunchInfo().getStartLevel();

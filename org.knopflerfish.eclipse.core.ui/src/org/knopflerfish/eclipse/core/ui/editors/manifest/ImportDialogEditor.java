@@ -32,19 +32,54 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.dialogs;
+package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.viewers.DialogCellEditor;
+import org.eclipse.jface.window.Window;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
+import org.knopflerfish.eclipse.core.project.BuildPath;
+import org.knopflerfish.eclipse.core.ui.dialogs.BuildPathLabelProvider;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class PackageListSelectionDialog extends ElementListSelectionDialog {
+public class ImportDialogEditor extends DialogCellEditor {
+
+  private BuildPath[] elements;
   
-  public PackageListSelectionDialog(Shell parent) {
-    super(parent, new PackageLabelProvider());
+  public ImportDialogEditor(Composite parent) {
+    super(parent);
   }
+
+  public void setElements(BuildPath[] elements) {
+    this.elements = elements;
+  }
+  
+  /****************************************************************************
+   * org.eclipse.jface.viewers.DialogCellEditor methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.DialogCellEditor#openDialogBox(org.eclipse.swt.widgets.Control)
+   */
+  protected Object openDialogBox(Control cellEditorWindow) {
+    ElementListSelectionDialog dialog = new ElementListSelectionDialog(
+        Display.getCurrent().getActiveShell(), new BuildPathLabelProvider());
+    dialog.setElements(elements);
+    dialog.setMultipleSelection(true);
+    dialog.setTitle("Select bundle");
+    dialog.setImage(JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY));
+    dialog.setMessage("Select bundle to import package from.");
+    if (dialog.open() == Window.OK) {
+      return dialog.getFirstResult();
+    }
+    return null;
+  }
+
   
 }

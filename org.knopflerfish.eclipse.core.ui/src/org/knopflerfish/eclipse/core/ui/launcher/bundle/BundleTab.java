@@ -88,7 +88,7 @@ import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
@@ -132,7 +132,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
 
   SelectedBundlesModel selectedBundlesModel = new SelectedBundlesModel();
   SelectedBundlesLabelProvider selectedBundlesLabelProvider;
-  private Framework distribution;
+  private FrameworkPreference distribution;
 
   // Images, fonts
   private Image imageTab = null;
@@ -534,12 +534,12 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
       if (o instanceof IAvailableTreeElement) {
         IAvailableTreeElement element = (IAvailableTreeElement) o;
         wBundleInfoNameText.setText(element.getName() == null ? "" : element.getName());
-        wBundleInfoVersionText.setText(element.getVersion() == null ? "" : element.getVersion());
+        wBundleInfoVersionText.setText(element.getVersion() == null ? "" : element.getVersion().toString());
         wBundleInfoPathText.setText(element.getPath() == null ? "" : element.getPath());
       } else if (o instanceof SelectedBundleElement) {
         SelectedBundleElement element = (SelectedBundleElement) o;
         wBundleInfoNameText.setText(element.getName() == null ? "" : element.getName());
-        wBundleInfoVersionText.setText(element.getVersion() == null ? "" : element.getVersion());
+        wBundleInfoVersionText.setText(element.getVersion() == null ? "" : element.getVersion().toString());
         wBundleInfoPathText.setText(element.getPath() == null ? "" : element.getPath());
       }
     }

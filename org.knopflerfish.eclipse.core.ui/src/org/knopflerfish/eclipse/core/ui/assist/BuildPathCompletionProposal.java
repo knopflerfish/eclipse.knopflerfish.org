@@ -34,38 +34,39 @@
 
 package org.knopflerfish.eclipse.core.ui.assist;
 
-import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.ui.ISharedImages;
+import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.ui.PlatformUI;
-import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.manifest.PackageDescription;
-import org.knopflerfish.eclipse.core.project.IBundleProject;
+import org.knopflerfish.eclipse.core.project.BuildPath;
+import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class ProjectImportCompletionProposal implements IJavaCompletionProposal {
+public class BuildPathCompletionProposal implements IJavaCompletionProposal {
 
-  private final PackageDescription pkg;
-  private final IBundleProject bundleProject;
-  private final IJavaProject project;
+  private final BundleProject bundleProject;
+  private final BuildPath buildPath;
   
-  public ProjectImportCompletionProposal(IJavaProject project, PackageDescription pkg, IBundleProject bundleProject) {
-    this.pkg = pkg;
+  public BuildPathCompletionProposal(BundleProject bundleProject, BuildPath buildPath) {
     this.bundleProject = bundleProject;
-    this.project = project;
+    this.buildPath = buildPath;
   }
 
   /* (non-Javadoc)
    * @see org.eclipse.jdt.ui.text.java.IJavaCompletionProposal#getRelevance()
    */
   public int getRelevance() {
-    return 20;
+    if (buildPath.getContainerPath().toString().equals(FrameworkContainer.CONTAINER_PATH)) {
+      return 20;
+    } 
+    return 10;
   }
 
   /****************************************************************************
@@ -76,6 +77,7 @@ public class ProjectImportCompletionProposal implements IJavaCompletionProposal 
    * @see org.eclipse.jface.text.contentassist.ICompletionProposal#apply(org.eclipse.jface.text.IDocument)
    */
   public void apply(IDocument document) {
+    bundleProject.addBuildPath(buildPath, true);
   }
 
   /* (non-Javadoc)
@@ -89,27 +91,36 @@ public class ProjectImportCompletionProposal implements IJavaCompletionProposal 
    * @see org.eclipse.jface.text.contentassist.ICompletionProposal#getAdditionalProposalInfo()
    */
   public String getAdditionalProposalInfo() {
-    if (Osgi.isBundleProject(project)) {
-      return "Bundle project '"+bundleProject.getJavaProject().getProject().getName()+
-        "' will be added to this projects classpath and "+
-        "the package '"+pkg.getPackageName()+"' will be added to the manifest Import-Package";
-    }
-    return "Bundle project '"+bundleProject.getJavaProject().getProject().getName()+
-    "' will be added to this projects classpath.";
+    StringBuffer info = new StringBuffer();
+    info.append("The package ");
+    info.append(buildPath.getPackageDescription().getPackageName());
+    info.append(" will be added to this projects classpath and also added to the");
+    info.append(" Import-Package header in the bundle manifest");
+    return info.toString();
   }
 
   /* (non-Javadoc)
    * @see org.eclipse.jface.text.contentassist.ICompletionProposal#getDisplayString()
    */
   public String getDisplayString() {
-    return "Import package '"+pkg.getPackageName()+ "' from project '"+bundleProject.getBundleManifest().getName()+"'";
+    StringBuffer info = new StringBuffer("Import package ");
+    info.append(buildPath.getPackageDescription().getPackageName());
+    if (buildPath.getContainerPath().toString().equals(FrameworkContainer.CONTAINER_PATH)) {
+      info.append(" from framework");
+    } else {
+      info.append(" from bundle ");
+      info.append(buildPath.getBundleIdentity().getSymbolicName().getSymbolicName());
+      info.append("-");
+      info.append(buildPath.getBundleIdentity().getBundleVersion());
+    }
+    return info.toString();
   }
 
   /* (non-Javadoc)
    * @see org.eclipse.jface.text.contentassist.ICompletionProposal#getImage()
    */
   public Image getImage() {
-    return PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT );
+    return JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_EXTERNAL_ARCHIVE);
   }
 
   /* (non-Javadoc)

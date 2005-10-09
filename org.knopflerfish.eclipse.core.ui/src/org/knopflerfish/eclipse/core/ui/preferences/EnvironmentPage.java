@@ -61,7 +61,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
-import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
@@ -181,7 +181,7 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
           new EnvironmentDialog(Display.getDefault().getActiveShell(), getEnvironmentNames(), null);
         
         if (dialog.open() == Window.OK) {
-          ExecutionEnvironment environment = dialog.getExecutionEnvironment();
+          EnvironmentPreference environment = dialog.getExecutionEnvironment();
           environments.add(environment);
           wEnvironmentTableViewer.refresh();
           if (environments.size() == 1) {
@@ -206,7 +206,7 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
         
         if (selection == null || selection.size() != 1) return;
         
-        ExecutionEnvironment environment = (ExecutionEnvironment) selection.getFirstElement();
+        EnvironmentPreference environment = (EnvironmentPreference) selection.getFirstElement();
 
         EnvironmentDialog dialog = 
           new EnvironmentDialog(Display.getDefault().getActiveShell(), getEnvironmentNames(), environment);
@@ -236,11 +236,11 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
         
         if (selection == null || selection.size() != 1) return;
         
-        ExecutionEnvironment environment = (ExecutionEnvironment) selection.getFirstElement();
+        EnvironmentPreference environment = (EnvironmentPreference) selection.getFirstElement();
         environments.remove(environment);
         wEnvironmentTableViewer.refresh();
         if (environment.isDefaultEnvironment() && environments.size() > 0) {
-          environment = (ExecutionEnvironment) environments.get(0);
+          environment = (EnvironmentPreference) environments.get(0);
           environment.setDefaultEnvironment(true);
           wEnvironmentTableViewer.setChecked(environment, true);
         }
@@ -251,7 +251,7 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
     
     wEnvironmentTableViewer.setInput(environments);
     for (int i=0; i< environments.size(); i++) {
-      ExecutionEnvironment env = (ExecutionEnvironment) environments.get(i);
+      EnvironmentPreference env = (EnvironmentPreference) environments.get(i);
       if (env.isDefaultEnvironment()) {
         wEnvironmentTableViewer.setChecked(env, true);
       }
@@ -274,7 +274,7 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
     // Save execution environments to preference store
     try {
       OsgiPreferences.setExecutionEnvironment(
-          (ExecutionEnvironment[]) environments.toArray(new ExecutionEnvironment[environments.size()]));
+          (EnvironmentPreference[]) environments.toArray(new EnvironmentPreference[environments.size()]));
 
       ClasspathUtil.updateEnvironmentContainers();
     } catch (Exception e) {
@@ -292,7 +292,7 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
    * @see org.eclipse.jface.viewers.ICheckStateListener#checkStateChanged(org.eclipse.jface.viewers.CheckStateChangedEvent)
    */
   public void checkStateChanged(CheckStateChangedEvent event) {
-    ExecutionEnvironment environment = (ExecutionEnvironment) event.getElement();
+    EnvironmentPreference environment = (EnvironmentPreference) event.getElement();
     boolean checked = event.getChecked();
 
     if (!checked && environment.isDefaultEnvironment()) {
@@ -303,7 +303,7 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
       for (int i=0; i< environments.size(); i++) {
         if (i == idx) continue;
         
-        ExecutionEnvironment env = (ExecutionEnvironment) environments.get(i);
+        EnvironmentPreference env = (EnvironmentPreference) environments.get(i);
         if (env.isDefaultEnvironment()) {
           env.setDefaultEnvironment(false);
           wEnvironmentTableViewer.setChecked(env, false);
@@ -324,8 +324,8 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
     // Enable/disable remove and edit buttons
     boolean enable = false;
     if (selection != null && !selection.isEmpty()) {
-      ExecutionEnvironment environment = (ExecutionEnvironment) selection.getFirstElement();
-      enable = environment.getType() == ExecutionEnvironment.TYPE_USER;
+      EnvironmentPreference environment = (EnvironmentPreference) selection.getFirstElement();
+      enable = environment.getType() == EnvironmentPreference.TYPE_USER;
     }
     wEditEnvironmentButton.setEnabled(enable);
     wRemoveEnvironmentButton.setEnabled(enable);
@@ -335,7 +335,7 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
     ArrayList names = new ArrayList();
     
     for (Iterator i=environments.iterator(); i.hasNext();) {
-      ExecutionEnvironment environment = (ExecutionEnvironment) i.next();
+      EnvironmentPreference environment = (EnvironmentPreference) i.next();
       names.add(environment.getName());
     }
     

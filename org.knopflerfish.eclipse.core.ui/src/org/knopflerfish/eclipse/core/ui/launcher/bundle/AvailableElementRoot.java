@@ -38,8 +38,9 @@ import java.util.ArrayList;
 
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -55,7 +56,7 @@ public class AvailableElementRoot implements IAvailableTreeElement {
     children.add(new AvailableElementWorkspace(this, root));
 
     // Add knopflerfish roots
-    Framework[] distributions = OsgiPreferences.getFrameworks();
+    FrameworkPreference[] distributions = OsgiPreferences.getFrameworks();
     for(int i=0; i<distributions.length; i++) {
       children.add(new AvailableElementDistribution(this, distributions[i]));
     }
@@ -108,7 +109,7 @@ public class AvailableElementRoot implements IAvailableTreeElement {
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getVersion()
    */
-  public String getVersion() {
+  public Version getVersion() {
     return null;
   }
   

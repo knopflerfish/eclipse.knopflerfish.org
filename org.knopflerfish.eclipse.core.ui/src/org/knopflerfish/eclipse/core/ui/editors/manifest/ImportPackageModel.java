@@ -38,12 +38,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import org.eclipse.jdt.core.IClasspathEntry;
-import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.core.runtime.Path;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.pkg.PackageUtil;
+import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
+import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -52,7 +53,7 @@ import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
 public class ImportPackageModel {
 
   private final BundleProject project;
-  private ArrayList elements = new ArrayList();
+  private ArrayList paths = new ArrayList();
 
   public ImportPackageModel(BundleManifest manifest, BundleProject project) {
     this.project = project;
@@ -60,19 +61,13 @@ public class ImportPackageModel {
   }
   
   public void setManifest(BundleManifest manifest) {
-    elements.clear();
+    paths.clear();
     if (manifest == null) return;
     
     // Link import packages to project containers
     PackageDescription[] importedPackages = manifest.getImportedPackages();
-    IJavaProject javaProject = project.getJavaProject();
-    
     for(int i=0; i<importedPackages.length; i++) {
-      PackageDescription pkg = importedPackages[i];
-      
-      // Link package to classpath entry
-      IClasspathEntry entry = ClasspathUtil.getClasspathEntry(pkg, javaProject);
-      elements.add(new ImportPackageModelElement(pkg, entry));
+      paths.add(project.getBuildPath(importedPackages[i]));
     }
   }
   
@@ -81,28 +76,46 @@ public class ImportPackageModel {
     
     ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
     
-    for(Iterator i=elements.iterator(); i.hasNext(); ) {
-      ImportPackageModelElement element = (ImportPackageModelElement) i.next();
-      
-      PackageDescription packageDescription =  element.getPackageDescription();
+    for(Iterator i=paths.iterator(); i.hasNext(); ) {
+      BuildPath path = (BuildPath) i.next();
+      PackageDescription packageDescription =  path.getPackageDescription();
       if (!importedPackages.remove(packageDescription)) {
         i.remove();
       }
     }
     
-    IJavaProject javaProject = project.getJavaProject();
     for(Iterator i=importedPackages.iterator(); i.hasNext();) {
-      PackageDescription pkg = (PackageDescription) i.next();
+      BuildPath bp = project.getBuildPath((PackageDescription) i.next());
+      // Check if framework exports package
+      if (bp.getContainerPath() == null) {
+        if (PackageUtil.frameworkExportsPackage(project, bp.getPackageDescription())) {
+          bp.setBundleName("Framework");
+          bp.setContainerPath(new Path(FrameworkContainer.CONTAINER_PATH));
+        }
+      }
       
-      // Link package to classpath entry
-      IClasspathEntry entry = ClasspathUtil.getClasspathEntry(pkg, javaProject);
-      elements.add(new ImportPackageModelElement(pkg, entry));
+      // Check bundle entries from projects
+      if (bp.getContainerPath() == null) {
+        BuildPath [] projectPaths = PackageUtil.getExportingProjectBundles(bp.getPackageDescription());
+        if (projectPaths != null && projectPaths.length > 0) {
+          bp = projectPaths[0];
+        }
+      }
+      // Check bundle entries from repositories
+      if (bp.getContainerPath() == null) {
+        BuildPath [] projectPaths = PackageUtil.getExportingRepositoryBundles(bp.getPackageDescription());
+        if (projectPaths != null && projectPaths.length > 0) {
+          bp = projectPaths[0];
+        }
+      }
+      
+      paths.add(bp);
     }
     
   }
   
-  public ImportPackageModelElement[] getElements() {
-    return (ImportPackageModelElement[]) elements.toArray(new ImportPackageModelElement[elements.size()]);
+  public BuildPath[] getPaths() {
+    return (BuildPath[]) paths.toArray(new BuildPath[paths.size()]);
   }
   
 }

@@ -56,7 +56,7 @@
           category="org.knopflerfish.eclipse.core.ui"
           class="org.knopflerfish.eclipse.core.ui.wizards.BundleProjectWizard"
           finalPerspective="org.eclipse.jdt.ui.JavaPerspective"
-          icon="icons/obj16/bundle_obj.gif"
+          icon="icons/obj16/knopflerfish_obj.gif"
           id="org.knopflerfish.eclipse.core.ui.wizards.BundleProjectWizard"
           name="Bundle Project"
           project="true">

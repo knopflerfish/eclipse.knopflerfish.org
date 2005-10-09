@@ -82,7 +82,7 @@ import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.launcher.SourcePathComputer;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
@@ -429,7 +429,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     // New configuration created, set default values
 
     // Set default framework
-    Framework distribution = OsgiPreferences.getDefaultFramework();
+    FrameworkPreference distribution = OsgiPreferences.getDefaultFramework();
     if (distribution != null) {
       configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, distribution.getName());
     }
@@ -561,7 +561,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
    ***************************************************************************/
   private void updateOsgiInstalls() {
     wOsgiInstallCombo.removeAll();
-    Framework[] distributions = OsgiPreferences.getFrameworks();
+    FrameworkPreference[] distributions = OsgiPreferences.getFrameworks();
     
     for(int i=0; i<distributions.length;i++) {
       wOsgiInstallCombo.add(distributions[i].getName());
@@ -569,7 +569,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   }
   
   void initializeSystemProperties(Map properties) {
-    Framework distribution = OsgiPreferences.getFramework(wOsgiInstallCombo.getText());
+    FrameworkPreference distribution = OsgiPreferences.getFramework(wOsgiInstallCombo.getText());
     if (distribution == null) return;
     distribution.addSystemPropertyGroup(userGroup);
     userGroup.clear();
@@ -590,7 +590,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   }
 
   private Map getSystemProperties() {
-    Framework distribution = (Framework) wPropertyTreeViewer.getInput();
+    FrameworkPreference distribution = (FrameworkPreference) wPropertyTreeViewer.getInput();
     if (distribution == null) return null;
     
     SystemPropertyGroup[] groups = distribution.getSystemPropertyGroups();

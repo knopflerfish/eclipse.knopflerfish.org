@@ -9,7 +9,7 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.graphics.Image;
-import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
 
 public class EnvironmentContentProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider {
   
@@ -22,7 +22,7 @@ public class EnvironmentContentProvider extends ViewerSorter implements IStructu
    * @see org.eclipse.jface.viewers.ViewerSorter#category(java.lang.Object)
    */
   public int category(Object element) {
-    ExecutionEnvironment environment = (ExecutionEnvironment) element;
+    EnvironmentPreference environment = (EnvironmentPreference) element;
     
     return environment.getType();
   }
@@ -36,11 +36,10 @@ public class EnvironmentContentProvider extends ViewerSorter implements IStructu
     int c2 = category(o2);
     if (c1 != c2) {
       return c1-c2;
-    } else {
-      ExecutionEnvironment e1 = (ExecutionEnvironment) o1;
-      ExecutionEnvironment e2 = (ExecutionEnvironment) o2;
-      return e1.getName().compareTo(e2.getName());
     }
+    EnvironmentPreference e1 = (EnvironmentPreference) o1;
+    EnvironmentPreference e2 = (EnvironmentPreference) o2;
+    return e1.getName().compareTo(e2.getName());
   }
   
   /****************************************************************************
@@ -53,7 +52,7 @@ public class EnvironmentContentProvider extends ViewerSorter implements IStructu
    */
   public Object[] getElements(Object inputElement) {
     List environments = (List) inputElement;
-    return (ExecutionEnvironment[]) environments.toArray(new ExecutionEnvironment[environments.size()]);
+    return (EnvironmentPreference[]) environments.toArray(new EnvironmentPreference[environments.size()]);
   }
   
   /****************************************************************************
@@ -78,9 +77,8 @@ public class EnvironmentContentProvider extends ViewerSorter implements IStructu
   public Image getColumnImage(Object element, int columnIndex) {
     if (columnIndex == 0) {
       return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
-    } else {
-      return null;
     }
+    return null;
   }
   
   /*
@@ -88,20 +86,19 @@ public class EnvironmentContentProvider extends ViewerSorter implements IStructu
    * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object, int)
    */
   public String getColumnText(Object element, int columnIndex) {
-    ExecutionEnvironment environment = (ExecutionEnvironment) element;
+    EnvironmentPreference environment = (EnvironmentPreference) element;
     if (columnIndex == 0) {
       return environment.getName();
-    } else {
-      switch (environment.getType()) {
-      case ExecutionEnvironment.TYPE_JRE:
-        return "";
-      case ExecutionEnvironment.TYPE_OSGI:
-        return "OSGi Defined";
-      case ExecutionEnvironment.TYPE_USER:
-        return "User Defined";
-      default:
-        return "Unknown type";
-      }
+    }
+    switch (environment.getType()) {
+    case EnvironmentPreference.TYPE_JRE:
+      return "";
+    case EnvironmentPreference.TYPE_OSGI:
+      return "OSGi Defined";
+    case EnvironmentPreference.TYPE_USER:
+      return "User Defined";
+    default:
+      return "Unknown type";
     }
   }
   

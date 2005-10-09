@@ -160,7 +160,7 @@ public class PackagingFormEditor extends FormPage implements IDocumentListener {
     
     // Create sections
     exportSection = new ExportSection(body, toolkit, 
-        Section.DESCRIPTION | ExpandableComposite.TITLE_BAR, project);
+        Section.DESCRIPTION | ExpandableComposite.TITLE_BAR, project, getEditor());
     exportSection.initialize(managedForm);
     
     resourceSection = new ContentsSection(body, toolkit, 

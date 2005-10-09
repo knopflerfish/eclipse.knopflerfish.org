@@ -36,66 +36,42 @@ package org.knopflerfish.eclipse.core.project.classpath;
 
 import java.util.ArrayList;
 
-import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.jdt.core.ClasspathContainerInitializer;
 import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.knopflerfish.eclipse.core.IBundleRepository;
+import org.knopflerfish.eclipse.core.IBundleRepositoryType;
+import org.knopflerfish.eclipse.core.IOsgiBundle;
+import org.knopflerfish.eclipse.core.IOsgiLibrary;
+import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
+import org.knopflerfish.eclipse.core.project.BundleProject;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class BundleContainer extends ClasspathContainerInitializer  implements IClasspathContainer {
+public class BundleContainer implements IClasspathContainer {
   
   public static final String CONTAINER_PATH = "org.knopflerfish.eclipse.core.BUNDLE_CONTAINER";
-  
-  private static final String DESCRIPTION = "Bundle";
 
-  private IPath containerPath;
+  private final IPath path;
+  private final BundleIdentity id;
+  private String name;
   
-  /****************************************************************************
-   * org.eclipse.jdt.core.ClasspathContainerInitializer methods
-   ***************************************************************************/
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jdt.core.ClasspathContainerInitializer#initialize(org.eclipse.core.runtime.IPath, org.eclipse.jdt.core.IJavaProject)
-   */
-  public void initialize(IPath containerPath, IJavaProject project) throws CoreException {
-    // Get hinted bundle
-    //String hint = containerPath.lastSegment();
-    
-    /*
-    distribution = null;
-    if (hint != null) {
-      distribution = OsgiPreferences.getFrameworkDistribution(hint);
-    }
-    if (distribution == null) {
-      distribution = OsgiPreferences.getDefaultFrameworkDistribution();
-    }
-    */
-    
-    // Create classpath container
-    JavaCore.setClasspathContainer(
-        containerPath, 
-        new IJavaProject[] {project}, 
-        new IClasspathContainer[] {this},
-        null);        
-    // TODO Auto-generated method stub
-    System.err.println("Initialize bundle containers for project "+project.getProject().getName()+", path="+containerPath);
-    this.containerPath = containerPath;
-
-    JavaCore.setClasspathContainer(
-        containerPath, 
-        new IJavaProject[] {project}, 
-        new IClasspathContainer[] {this},
-        null);        
+  public BundleContainer(IPath path, BundleIdentity id) {
+    this.path = path;
+    this.id = id;
   }
-
+  
   /****************************************************************************
    * org.eclipse.jdt.core.IClasspathContainer methods
    ***************************************************************************/
@@ -105,14 +81,60 @@ public class BundleContainer extends ClasspathContainerInitializer  implements I
    * @see org.eclipse.jdt.core.IClasspathContainer#getClasspathEntries()
    */
   public IClasspathEntry[] getClasspathEntries() {
-    ArrayList classPath = new ArrayList();
-    
-    // TODO : Search the bundle repositories for the hinted the bundle
-    // TODO Auto-generated method stub
-    IClasspathEntry entry = JavaCore.newContainerEntry(new Path(ExecutionEnvironmentContainer.CONTAINER_PATH));
-    classPath.add(entry);
+ 
+    // Check if workspace contains bundle
+    try {
+      IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+      IProject [] projects = root.getProjects();
+      for(int i=0; projects != null && i<projects.length; i++) {
+        if (projects[i].isOpen() && projects[i].hasNature(Osgi.NATURE_ID)) {
+          IJavaProject javaProject = JavaCore.create(projects[i]);
+          BundleProject bundleProject = new BundleProject(javaProject);
+          if (id.equals(bundleProject.getId())) {
+            name = bundleProject.getBundleManifest().getName();
+            // Create classpath for project
+            IClasspathEntry entry = 
+              JavaCore.newProjectEntry(javaProject.getPath());
+            return new IClasspathEntry[] {entry};
+          }
+        }
+      }
+    } catch (Throwable t) {
+    }
 
-    return (IClasspathEntry[]) classPath.toArray(new IClasspathEntry[classPath.size()]); 
+    // Check if repository contains bundle
+    RepositoryPreference[] repositoryPref = OsgiPreferences.getBundleRepositories();
+    for (int i=0; i<repositoryPref.length; i++) {
+      if (!repositoryPref[i].isActive()) continue;
+      
+      IBundleRepositoryType repositoryType = Osgi.getBundleRepositoryType(repositoryPref[i].getType());
+      if (repositoryType == null) continue;
+      
+      IBundleRepository repository = repositoryType.createRepository(repositoryPref[i].getConfig());
+      if (repository == null) continue;
+
+      IOsgiLibrary[] libraries = repository.getBundleLibraries(id);
+      if (libraries == null || libraries.length == 0) continue;
+
+      ArrayList entries = new ArrayList();
+      for(int j=0; j<libraries.length; j++) {
+        if (libraries[j] instanceof IOsgiBundle) {
+          name = ((IOsgiBundle) libraries[j]).getBundleManifest().getName();
+        }
+        Path path = new Path(libraries[j].getPath());
+        Path src = null;
+        if (libraries[j].getSource() != null) {
+          try {
+            src = new Path(libraries[j].getSource());
+          } catch (Exception e) {
+          }
+        }
+        entries.add(JavaCore.newLibraryEntry(path, src, null, false));
+      }
+      return (IClasspathEntry[]) entries.toArray(new IClasspathEntry[entries.size()]);
+    }
+
+    return new IClasspathEntry[] {}; 
   }
 
   /*
@@ -120,7 +142,14 @@ public class BundleContainer extends ClasspathContainerInitializer  implements I
    * @see org.eclipse.jdt.core.IClasspathContainer#getDescription()
    */
   public String getDescription() {
-    return DESCRIPTION;
+    StringBuffer buf = new StringBuffer("Bundle [");
+    if (name != null) {
+      buf.append(name);
+    } else {
+      buf.append(id.getSymbolicName().toString());
+    }
+    buf.append("]");
+    return buf.toString();
   }
 
   /*
@@ -136,6 +165,6 @@ public class BundleContainer extends ClasspathContainerInitializer  implements I
    * @see org.eclipse.jdt.core.IClasspathContainer#getPath()
    */
   public IPath getPath() {
-    return containerPath;
+    return path;
   }
 }

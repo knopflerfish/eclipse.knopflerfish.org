@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.compiler.IProblem;
@@ -47,10 +49,11 @@ import org.eclipse.jdt.ui.text.java.IInvocationContext;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.jdt.ui.text.java.IQuickFixProcessor;
-import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.pkg.PackageUtil;
-import org.knopflerfish.eclipse.core.project.IBundleProject;
+import org.knopflerfish.eclipse.core.project.BuildPath;
+import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -58,11 +61,15 @@ import org.knopflerfish.eclipse.core.project.IBundleProject;
  */
 public class ImportQuickFix implements IQuickFixProcessor {
 
+  /****************************************************************************
+   * org.eclipse.jdt.ui.text.java.IQuickFixProcessor methods
+   ***************************************************************************/
+  
   /* (non-Javadoc)
    * @see org.eclipse.jdt.ui.text.java.IQuickFixProcessor#hasCorrections(org.eclipse.jdt.core.ICompilationUnit, int)
    */
   public boolean hasCorrections(ICompilationUnit unit, int problemId) {
-    if (problemId == IProblem.ImportNotFound) {
+    if (problemId == IProblem.ImportNotFound || problemId == IProblem.ForbiddenReference) {
       return true;
     }
     return false;
@@ -75,11 +82,15 @@ public class ImportQuickFix implements IQuickFixProcessor {
       IProblemLocation[] locations) throws CoreException {
     if (locations == null) return null;
     
-    IJavaProject project = context.getCompilationUnit().getJavaProject();
+    IJavaProject javaProject = context.getCompilationUnit().getJavaProject();
+    BundleProject bundleProject = new BundleProject(javaProject);
     
     ArrayList proposals = new ArrayList();
     for(int i=0; i<locations.length; i++) {
-      if (locations[i].getProblemId() != IProblem.ImportNotFound) continue;
+      int problemId = locations[i].getProblemId();
+      
+      if (problemId != IProblem.ImportNotFound &&
+          problemId != IProblem.ForbiddenReference) continue;
 
       // Import declaration
       ASTNode node = context.getCoveredNode();
@@ -97,19 +108,24 @@ public class ImportQuickFix implements IQuickFixProcessor {
       if (idx != -1) {
         name = name.substring(0, idx);
       }
-      PackageDescription pkg = new PackageDescription(name, null);
+      PackageDescription pd = new PackageDescription(name, null);
 
-      /*
-      IOsgiBundle[] bundles = PackageUtil.findExportingBundles(pkg);
-      for (int j=0; bundles != null && j<bundles.length; j++) {
-        proposals.add(new BundleImportCompletionProposal(project, pkg, bundles[j]));
+      // Add import from framework proposal
+      if (PackageUtil.frameworkExportsPackage(bundleProject, pd)) {
+        IPath path = new Path(FrameworkContainer.CONTAINER_PATH);
+        BuildPath buildPath = new BuildPath(path, pd, null, "Framework");
+        proposals.add(new BuildPathCompletionProposal(bundleProject, buildPath));
       }
-
-      IBundleProject[] projects = PackageUtil.findExportingProjects(pkg);
-      for (int j=0; projects != null && j<projects.length; j++) {
-        proposals.add(new ProjectImportCompletionProposal(project, pkg, projects[j]));
+      
+      // Add import from bundle proposal
+      BuildPath[] buildPaths = PackageUtil.getExportingProjectBundles(pd);
+      for (int j=0; j<buildPaths.length;j++) {
+        proposals.add(new BuildPathCompletionProposal(bundleProject, buildPaths[j]));
       }
-      */
+      buildPaths = PackageUtil.getExportingRepositoryBundles(pd);
+      for (int j=0; j<buildPaths.length;j++) {
+        proposals.add(new BuildPathCompletionProposal(bundleProject, buildPaths[j]));
+      }
     }
     
     return (IJavaCompletionProposal[]) proposals.toArray(new IJavaCompletionProposal[proposals.size()]);

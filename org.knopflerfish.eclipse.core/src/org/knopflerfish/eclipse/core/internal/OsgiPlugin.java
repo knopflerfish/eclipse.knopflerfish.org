@@ -57,7 +57,7 @@ import org.eclipse.jdt.launching.IVMInstallChangedListener;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.PropertyChangeEvent;
 import org.knopflerfish.eclipse.core.OsgiLibrary;
-import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
 import org.osgi.framework.BundleContext;
@@ -98,14 +98,14 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener, IVMIn
     super.start(context);
     
     // Check if execution environments shall be added
-    ExecutionEnvironment defaultEnvironment = OsgiPreferences.getDefaultExecutionEnvironment();
+    EnvironmentPreference defaultEnvironment = OsgiPreferences.getDefaultExecutionEnvironment();
     ArrayList environments = new ArrayList(Arrays.asList(OsgiPreferences.getExecutionEnvironments()));
     boolean changed = false;
     // Default JRE environment
     if (OsgiPreferences.getExecutionEnvironment(JRE_ENVIRONMENT) == null) {
-      ExecutionEnvironment environment = new ExecutionEnvironment();
+      EnvironmentPreference environment = new EnvironmentPreference();
       environment.setName(JRE_ENVIRONMENT);
-      environment.setType(ExecutionEnvironment.TYPE_JRE);
+      environment.setType(EnvironmentPreference.TYPE_JRE);
       if (defaultEnvironment == null) {
         environment.setDefaultEnvironment(true);
         defaultEnvironment = environment;
@@ -115,9 +115,9 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener, IVMIn
     }
     // CDC Foundation environment
     if (OsgiPreferences.getExecutionEnvironment(CDC_FOUNDATION_ENVIRONMENT) == null) {
-      ExecutionEnvironment environment = new ExecutionEnvironment();
+      EnvironmentPreference environment = new EnvironmentPreference();
       environment.setName(CDC_FOUNDATION_ENVIRONMENT);
-      environment.setType(ExecutionEnvironment.TYPE_OSGI);
+      environment.setType(EnvironmentPreference.TYPE_OSGI);
       // Copy libraries to state location
       File file = new File(getStateLocation().toFile(), "ee.foundation.jar");
       if (!file.exists()) {
@@ -135,9 +135,9 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener, IVMIn
     }
     // OSGi Minimum environment
     if (OsgiPreferences.getExecutionEnvironment(OSGI_MINIMUM_ENVIRONMENT) == null) {
-      ExecutionEnvironment environment = new ExecutionEnvironment();
+      EnvironmentPreference environment = new EnvironmentPreference();
       environment.setName(OSGI_MINIMUM_ENVIRONMENT);
-      environment.setType(ExecutionEnvironment.TYPE_OSGI);
+      environment.setType(EnvironmentPreference.TYPE_OSGI);
       // Copy libraries to state location
       File file = new File(getStateLocation().toFile(), "ee.minimum.jar");
       if (!file.exists()) {
@@ -153,18 +153,9 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener, IVMIn
       environments.add(environment);
       changed = true;
     }
-    /*
-    String bundleLocation = getBundle().getLocation();
-    System.err.println("Bundle location :"+bundleLocation);
-    System.err.println("Configuration location :"+Platform.getConfigurationLocation().getURL());
-    System.err.println("Install location :"+Platform.getInstallLocation().getURL());
-    System.err.println("Instance location :"+Platform.getInstanceLocation().getURL());
-    System.err.println("User location :"+Platform.getUserLocation().getURL());
-    System.err.println("State location :"+getStateLocation().toString());
-    */
     
     if (changed) {
-      OsgiPreferences.setExecutionEnvironment((ExecutionEnvironment[]) environments.toArray(new ExecutionEnvironment[environments.size()]));
+      OsgiPreferences.setExecutionEnvironment((EnvironmentPreference[]) environments.toArray(new EnvironmentPreference[environments.size()]));
     }
 
     // Register vm change listener

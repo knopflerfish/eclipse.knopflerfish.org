@@ -37,6 +37,7 @@ package org.knopflerfish.eclipse.core.project;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
+import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
@@ -49,6 +50,8 @@ public interface IBundleProject {
   public IJavaProject getJavaProject();
   
   public BundleManifest getBundleManifest();
+  
+  public BundleIdentity getId();
 
   public BundlePackDescription getBundlePackDescription();
   

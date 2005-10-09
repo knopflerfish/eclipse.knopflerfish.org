@@ -59,7 +59,7 @@ import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.IBundleRepositoryType;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.preferences.BundleRepository;
+import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -86,10 +86,10 @@ public class BundleRepositoryDialog extends Dialog {
   private Label   wErrorImgLabel;
   
   private ArrayList usedNames;
-  private BundleRepository repository;
+  private RepositoryPreference repository;
   private TreeMap repositories = new TreeMap();
   
-  protected BundleRepositoryDialog(Shell parentShell, ArrayList usedNames, BundleRepository repository) {
+  protected BundleRepositoryDialog(Shell parentShell, ArrayList usedNames, RepositoryPreference repository) {
     super(parentShell);
   
     this.usedNames = usedNames;
@@ -103,7 +103,7 @@ public class BundleRepositoryDialog extends Dialog {
     }
   }
 
-  public BundleRepository getBundleRespository() {
+  public RepositoryPreference getBundleRespository() {
     return repository;
   }
   
@@ -155,7 +155,7 @@ public class BundleRepositoryDialog extends Dialog {
   protected void okPressed() {
     if (repository == null) {
       // Create bundle repository
-      repository = new BundleRepository();
+      repository = new RepositoryPreference();
     }
 
     repository.setName(wNameText.getText());
@@ -331,7 +331,7 @@ public class BundleRepositoryDialog extends Dialog {
     }
   }
   
-  private void setValues(BundleRepository settings) {
+  private void setValues(RepositoryPreference settings) {
     
     // Name
     if (settings != null) { 

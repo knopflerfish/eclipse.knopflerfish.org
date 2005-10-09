@@ -55,6 +55,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IAccessRule;
 import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -68,13 +69,18 @@ import org.eclipse.jdt.core.JavaConventions;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
+import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
-import org.knopflerfish.eclipse.core.pkg.IPackage;
-import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.knopflerfish.eclipse.core.project.classpath.BundleContainer;
+import org.knopflerfish.eclipse.core.project.classpath.BundleContainerInitializer;
 import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
+import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -85,6 +91,7 @@ public class BundleProject implements IBundleProject {
   public static final String MARKER_MANIFEST = "manifest";
   public static final String MARKER_BUNDLE_ACTIVATOR = "org.knopflerfish.eclipse.core.activator";
   public static final String MARKER_BUNDLE_NAME = "org.knopflerfish.eclipse.core.name";
+  public static final String MARKER_BUNDLE_VERSION = "org.knopflerfish.eclipse.core.version";
   public static final String MARKER_BUNDLE_UPDATELOCATION = "org.knopflerfish.eclipse.core.updateLocation";
   public static final String MARKER_BUNDLE_DOCURL = "org.knopflerfish.eclipse.core.docUrl";
   public static final String MARKER_BUNDLE_EXEC_ENV = "org.knopflerfish.eclipse.core.execEnv";
@@ -120,6 +127,15 @@ public class BundleProject implements IBundleProject {
    */
   public IJavaProject getJavaProject() {
     return javaProject;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getId()
+   */
+  public BundleIdentity getId() {
+    BundleManifest bm = getBundleManifest();
+    return new BundleIdentity(bm.getSymbolicName(), bm.getVersion());
   }
   
   /****************************************************************************
@@ -338,47 +354,128 @@ public class BundleProject implements IBundleProject {
    */
   public String getFileName() {
     StringBuffer buf = new StringBuffer(javaProject.getProject().getName());
-    String version = getBundleManifest().getVersion();
-    if (version != null && version.trim().length() > 0) {
+    Version version = getBundleManifest().getVersion();
+    if (version != null) {
       buf.append("-");
-      buf.append(version.trim());
+      buf.append(version.toString());
     }
     buf.append(".jar");
     
     return buf.toString();
   }
+
+  /****************************************************************************
+   * Buildpath methods
+   ***************************************************************************/
+  public BuildPath[] getBuildPaths() {
+    ArrayList paths = new ArrayList();
+
+    try {
+      IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
+      for(int i=0; i<rawClasspath.length; i++) {
+        IPath path = rawClasspath[i].getPath();
+        if (path.toString().startsWith(FrameworkContainer.CONTAINER_PATH)) { 
+          IAccessRule[] rules = rawClasspath[i].getAccessRules();
+          for (int j=0; j<rules.length; j++) {
+            if (rules[j].getKind() == IAccessRule.K_ACCESSIBLE) {
+              PackageDescription pd = ClasspathUtil.createPackageDescription(rules[j]);
+              paths.add(new BuildPath(path, pd, null, "Framework"));
+            }
+          }
+        } else if (path.toString().startsWith(BundleContainer.CONTAINER_PATH)) {
+          IAccessRule[] rules = rawClasspath[i].getAccessRules();
+          for (int j=0; j<rules.length; j++) {
+            if (rules[j].getKind() == IAccessRule.K_ACCESSIBLE) {
+              PackageDescription pd = ClasspathUtil.createPackageDescription(rules[j]);
+              // Get bundle identity from classpath entry
+              BundleIdentity id = BundleContainerInitializer.getBundleIdentity(rawClasspath[i].getPath());
+              String name = ClasspathUtil.getClasspathAttribute(rawClasspath[i], ClasspathUtil.ATTR_BUNDLENAME);
+              paths.add(new BuildPath(path, pd, id, name));
+            }
+          }
+        }
+      }
+    } catch (Throwable t) {
+    }
+    return (BuildPath[]) paths.toArray(new BuildPath[paths.size()]);
+  }
+
+  public BuildPath getBuildPath(PackageDescription pd) {
+    if (pd == null) return null;
+    
+    IClasspathEntry entry = ClasspathUtil.getClasspathEntry(pd, javaProject);
+    IPath path = null;
+    BundleIdentity id = null;
+    String name = null;
+    if (entry != null) {
+      path = entry.getPath();
+      name = "Framework";
+      if (path.toString().startsWith(BundleContainer.CONTAINER_PATH)) {
+        id = BundleContainerInitializer.getBundleIdentity(entry.getPath());
+        name = ClasspathUtil.getClasspathAttribute(entry, ClasspathUtil.ATTR_BUNDLENAME); 
+      }
+    }
+    return new BuildPath(path, pd, id, name);
+  }
+  
+  public void addBuildPath(BuildPath path, boolean updateManifest) {
+    if (path == null || path.getContainerPath() == null || 
+        path.getPackageDescription() == null) return;
+    
+    // Check type of path
+    if (path.getContainerPath().toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
+      importFrameworkPackage(path.getPackageDescription(), updateManifest);
+    } else if (path.getContainerPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
+      importBundlePackage(path, updateManifest);
+    } 
+  }
+  
+  public void removeBuildPath(BuildPath path, boolean updateManifest) {
+    if (path == null || path.getContainerPath() == null || 
+        path.getPackageDescription() == null) return;
+    
+    // Check type of path
+    if (path.getContainerPath().toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
+      removeFrameworkPackage(path.getPackageDescription(), updateManifest);
+    } else if (path.getContainerPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
+      removeBundlePackage(path, updateManifest);
+    } 
+  }
+  
   
   /****************************************************************************
    * Classpath package methods
    ***************************************************************************/
-  public void importPackage(IPackage pkg,boolean updateManifest) {
-    if (pkg == null) return;
-    
-    if (pkg.getType() == IPackage.FRAMEWORK) {
-      importFrameworkPackage(pkg.getPackageDescription(), updateManifest);
-    } else if (pkg.getType() == IPackage.BUNDLE) {
-      // TODO
-    } else if (pkg.getType() == IPackage.PROJECT) {
-      // TODO
+  public FrameworkPreference getFramework() throws JavaModelException {
+    IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
+    for(int i=0; i<rawClasspath.length; i++) {
+      // Find container exporting this package
+      if (rawClasspath[i].getEntryKind() != IClasspathEntry.CPE_CONTAINER) {
+        continue;
+      }
+      IPath containerPath = rawClasspath[i].getPath();
+      String hint = containerPath.lastSegment();
+      if (containerPath.toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
+        // Find framework distribution
+        FrameworkPreference distribution = null;
+        if (hint != null) {
+          distribution = OsgiPreferences.getFramework(hint);
+        }
+        if (distribution == null) {
+          distribution = OsgiPreferences.getDefaultFramework();
+        }
+        
+        return distribution;
+      }
     }
+    return null;
   }
+
+  /****************************************************************************
+   * Update Classpath methods
+   ***************************************************************************/
   
-  private void importFrameworkPackage(PackageDescription pd, boolean updateManifest){
-    if (updateManifest) {
-      // Add package to manifest
-      BundleManifest manifest = getBundleManifest();
-      ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
-      boolean changed = false;
-      if (!importedPackages.contains(pd)) {
-        importedPackages.add(pd);
-        changed = true;
-      }
-      
-      if(changed) {
-        manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
-        setBundleManifest(manifest);
-      }
-    }
+  private void importFrameworkPackage(PackageDescription pd, boolean updateManifest) {
     
     // Update access rules for framework container
     try {
@@ -387,7 +484,7 @@ public class BundleProject implements IBundleProject {
       for(int i=0;i<entries.size();i++) {
         // Find framework container
         IClasspathEntry entry = (IClasspathEntry) entries.get(i);
-        if (ClasspathUtil.FRAMEWORK.equals(ClasspathUtil.getClasspathType(entry))) {
+        if (entry.getPath().toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
           idx = i;
           break;
         }
@@ -412,9 +509,9 @@ public class BundleProject implements IBundleProject {
         if (!exist) {
           rules.add(0, rule);
           IClasspathEntry newEntry = JavaCore.newContainerEntry(
-              ((IClasspathEntry) entries.get(idx)).getPath(),
+              new Path(FrameworkContainer.CONTAINER_PATH),
               (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-              new IClasspathAttribute[] {JavaCore.newClasspathAttribute(ClasspathUtil.TYPE, ClasspathUtil.FRAMEWORK)},
+              new IClasspathAttribute[] {},
               false
           );
           entries.remove(idx);
@@ -425,30 +522,258 @@ public class BundleProject implements IBundleProject {
               null);
         }
       }
+
+      // Update manifest
+      if (updateManifest) {
+        // Add package to manifest
+        BundleManifest manifest = getBundleManifest();
+        ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+        boolean changed = false;
+        if (!importedPackages.contains(pd)) {
+          importedPackages.add(pd);
+          changed = true;
+        }
+        
+        if(changed) {
+          manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+          setBundleManifest(manifest);
+        }
+      }
     } catch (JavaModelException e) {
     }
   }
   
-  public void removeFrameworkPackage(PackageDescription packageDescription){
-    // TODO: TBI
-    
-  }
-  
-  public void importBundlePackage(PackageDescription packageDescription){
-    // TODO: TBI
-    
-    // Add package to manifest
-    
-    // Add bundle container if container does not exist
+  public void removeFrameworkPackage(PackageDescription pd, boolean updateManifest) {
     
     // Update access rules for framework container
+    try {
+      ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+      int idx = -1;
+      for(int i=0;i<entries.size();i++) {
+        // Find framework container
+        IClasspathEntry entry = (IClasspathEntry) entries.get(i);
+        if (entry.getPath().toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
+          idx = i;
+          break;
+        }
+      }
+      
+      // Check if access rule exist
+      IAccessRule rule = ClasspathUtil.createAccessRule(pd);
+      if (idx != -1) {
+        boolean exist = false;
+        IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
+        
+        ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+        // Check if rule exists
+        for(int i=0;i<rules.size();i++) {
+          if (rule.equals(rules.get(i))) {
+            exist = true;
+            break;
+          }
+        }
+        
+        // Update classpath
+        if (exist) {
+          rules.remove(rule);
+          IClasspathEntry newEntry = JavaCore.newContainerEntry(
+              new Path(FrameworkContainer.CONTAINER_PATH),
+              (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
+              new IClasspathAttribute[] {},
+              false
+          );
+          entries.remove(idx);
+          entries.add(idx, newEntry);
+          
+          javaProject.setRawClasspath(
+              (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
+              null);
+        }
+      }
+      
+      // Update manifest
+      if (updateManifest) {
+        // Add package to manifest
+        BundleManifest manifest = getBundleManifest();
+        ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+        boolean changed = false;
+        if (importedPackages.contains(pd)) {
+          importedPackages.remove(pd);
+          changed = true;
+        }
+        
+        if(changed) {
+          manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+          setBundleManifest(manifest);
+        }
+      }
+    } catch (JavaModelException e) {
+    }
+  }
+  
+  public void importBundlePackage(BuildPath bp, boolean updateManifest) {
     
+    // Update access rules for bundle container
+    try {
+      ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+      int idx = -1;
+      for(int i=0;i<entries.size();i++) {
+        // Find bundle container
+        IClasspathEntry entry = (IClasspathEntry) entries.get(i);
+        if (entry.getPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
+          if (bp.getBundleIdentity().equals(BundleContainerInitializer.getBundleIdentity(entry.getPath()))) {
+            idx = i;
+            break;
+          }
+        }
+      }
+      
+      // Check if access rule aleady exist
+      IAccessRule rule = ClasspathUtil.createAccessRule(bp.getPackageDescription());
+      if (idx != -1) {
+        boolean exist = false;
+        IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
+        
+        ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+        // Check if rule exists
+        for(int i=0;i<rules.size();i++) {
+          if (rule.equals(rules.get(i))) {
+            exist = true;
+            break;
+          }
+        }
+        
+        // Update classpath
+        if (!exist) {
+          rules.add(0, rule);
+          IClasspathEntry newEntry = JavaCore.newContainerEntry(
+              new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().toString()),
+              (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
+              new IClasspathAttribute[] {
+                JavaCore.newClasspathAttribute(ClasspathUtil.ATTR_BUNDLENAME, bp.getBundleName())},
+              false
+          );
+          entries.remove(idx);
+          entries.add(idx, newEntry);
+          
+          javaProject.setRawClasspath(
+              (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
+              null);
+        }
+      } else {
+        // Add new entry
+        IAccessRule defaultRule = JavaCore.newAccessRule(new Path("**/*"), IAccessRule.K_NON_ACCESSIBLE);
+        IClasspathEntry newEntry = JavaCore.newContainerEntry(
+            new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().toString()),
+            new IAccessRule[] {rule, defaultRule},
+            new IClasspathAttribute[] {
+              JavaCore.newClasspathAttribute(ClasspathUtil.ATTR_BUNDLENAME, bp.getBundleName())},
+            false
+        );
+        entries.add(newEntry);
+        
+        javaProject.setRawClasspath(
+            (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
+            null);
+      }
+
+      // Update manifest
+      if (updateManifest) {
+        // Add package to manifest
+        BundleManifest manifest = getBundleManifest();
+        ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+        boolean changed = false;
+        if (!importedPackages.contains(bp.getPackageDescription())) {
+          importedPackages.add(bp.getPackageDescription());
+          changed = true;
+        }
+        
+        if(changed) {
+          manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+          setBundleManifest(manifest);
+        }
+      }
+      
+    } catch (JavaModelException e) {
+      e.printStackTrace();
+    }
   }
   
   
-  public void removeBundlePackage(PackageDescription packageDescription){
-    // TODO: TBI
+  public void removeBundlePackage(BuildPath bp, boolean updateManifest) {
     
+    // Update access rules for bundle container
+    try {
+      ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+      int idx = -1;
+      for(int i=0;i<entries.size();i++) {
+        // Find bundle container
+        IClasspathEntry entry = (IClasspathEntry) entries.get(i);
+        if (entry.getPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
+          if (bp.getBundleIdentity().equals(BundleContainerInitializer.getBundleIdentity(entry.getPath()))) {
+            idx = i;
+            break;
+          }
+        }
+      }
+      
+      // Check if access rule aleady exist
+      IAccessRule rule = ClasspathUtil.createAccessRule(bp.getPackageDescription());
+      if (idx != -1) {
+        boolean exist = false;
+        IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
+        
+        ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+        // Check if rule exists
+        for(int i=0;i<rules.size();i++) {
+          if (rule.equals(rules.get(i))) {
+            exist = true;
+            break;
+          }
+        }
+        
+        // Update classpath
+        if (exist) {
+          rules.remove(rule);
+          entries.remove(idx);
+          if (rules.size() > 1) {
+            // Update entry
+            IClasspathEntry newEntry = JavaCore.newContainerEntry(
+                new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().toString()),
+                (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
+                new IClasspathAttribute[] {
+                    JavaCore.newClasspathAttribute(ClasspathUtil.ATTR_BUNDLENAME, bp.getBundleName())},
+                false
+            );
+            entries.add(idx, newEntry);
+          }
+          
+          javaProject.setRawClasspath(
+              (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
+              null);
+        }
+      }
+      
+      // Update manifest
+      if (updateManifest) {
+        // Add package to manifest
+        BundleManifest manifest = getBundleManifest();
+        ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+        boolean changed = false;
+        if (importedPackages.contains(bp.getPackageDescription())) {
+          importedPackages.remove(bp.getPackageDescription());
+          changed = true;
+        }
+        
+        if(changed) {
+          manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+          setBundleManifest(manifest);
+        }
+      }
+      
+    } catch (JavaModelException e) {
+      e.printStackTrace();
+    }
   }
   
   /****************************************************************************
@@ -492,6 +817,13 @@ public class BundleProject implements IBundleProject {
         ManifestUtil.findAttributeLine(manifestContents, BundleManifest.BUNDLE_NAME), 
         checkManifestBundleName(manifest), 
         IMarker.SEVERITY_WARNING,
+        manifestFile);
+
+    // Check Bundle version
+    updateMarker(MARKER_BUNDLE_VERSION, 
+        ManifestUtil.findAttributeLine(manifestContents, BundleManifest.BUNDLE_VERSION), 
+        checkManifestBundleVersion(manifest), 
+        IMarker.SEVERITY_ERROR,
         manifestFile);
     
     // Check Bundle update location
@@ -565,6 +897,16 @@ public class BundleProject implements IBundleProject {
     }
   }
   
+  public String checkManifestBundleVersion(BundleManifest manifest) {
+    // Check that bundle name is set
+    try {
+      manifest.getVersion();
+      return null;
+    } catch (Exception e) {
+      return "Version improperly formatted, format major('.'minor('.'micro('.'qualifier)?)?)?";
+    }
+  }
+  
   public String checkManifestDocUrl(BundleManifest manifest) {
     // Check that documentation URL is valid
     String url = manifest.getDocumentationUrl();
@@ -582,7 +924,7 @@ public class BundleProject implements IBundleProject {
   public String checkManifestExecutionEnvironment(BundleManifest manifest) {
     // Check that execution environments are valid
     String[] environments = manifest.getExecutionEnvironments();
-    ExecutionEnvironment[] prefEnv = OsgiPreferences.getExecutionEnvironments();
+    EnvironmentPreference[] prefEnv = OsgiPreferences.getExecutionEnvironments();
     ArrayList list = new ArrayList();
     for(int i=0; i<prefEnv.length; i++) {
       list.add(prefEnv[i].getName());

@@ -60,8 +60,8 @@ import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
-import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 
 /**
@@ -250,8 +250,8 @@ public class ProjectWizardPage extends WizardPage {
     wExecutionEnvironmentLabel.setText("Execution Environment:");
     wExecutionEnvironmentLabel.setEnabled(false);
     wExecutionEnvironmentCombo = new Combo(wBuildPathGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
-    ExecutionEnvironment[] environments = OsgiPreferences.getExecutionEnvironments();
-    ExecutionEnvironment defaultEnvironment = null;
+    EnvironmentPreference[] environments = OsgiPreferences.getExecutionEnvironments();
+    EnvironmentPreference defaultEnvironment = null;
     if (environments.length > 0) {
       for(int i=0; i<environments.length;i++) {
         wExecutionEnvironmentCombo.add(environments[i].getName());
@@ -291,8 +291,8 @@ public class ProjectWizardPage extends WizardPage {
     wFrameworkLabel.setText("Framework:");
     wFrameworkLabel.setEnabled(false);
     wFrameworkCombo = new Combo(wBuildPathGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
-    Framework[] distribution = OsgiPreferences.getFrameworks();
-    Framework defaultDistribution = null;
+    FrameworkPreference[] distribution = OsgiPreferences.getFrameworks();
+    FrameworkPreference defaultDistribution = null;
     if (distribution.length > 0) {
       for(int i=0; i<distribution.length;i++) {
         wFrameworkCombo.add(distribution[i].getName());

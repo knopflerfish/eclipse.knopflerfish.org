@@ -32,65 +32,78 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.repository.framework;
+package org.knopflerfish.eclipse.core.ui.dialogs;
 
-import java.util.ArrayList;
-
-import org.knopflerfish.eclipse.core.IBundleRepository;
-import org.knopflerfish.eclipse.core.IBundleRepositoryType;
-import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
-import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.viewers.ILabelProvider;
+import org.eclipse.jface.viewers.ILabelProviderListener;
+import org.eclipse.swt.graphics.Image;
+import org.knopflerfish.eclipse.core.project.BuildPath;
+import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class BundleRepositoryType implements IBundleRepositoryType {
+public class BuildPathLabelProvider implements ILabelProvider {
 
   /****************************************************************************
-   * org.knopflerfish.eclipse.core.IBundleRepositoryType methods
+   * org.eclipse.jface.viewers.ILabelProvider methods
    ***************************************************************************/
-
   /*
    *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#isValidConfig(java.lang.String)
+   * @see org.eclipse.jface.viewers.ILabelProvider#getImage(java.lang.Object)
    */
-  public boolean isValidConfig(String config) {
-    // Check that config is a valid framework name
-    return (OsgiPreferences.getFramework(config) != null);
+  public Image getImage(Object element) {
+    return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
   }
 
   /*
    *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#getConfigSuggestions()
+   * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
    */
-  public String[] getConfigSuggestions() {
-    ArrayList names = new ArrayList();
-    FrameworkPreference[] frameworks = OsgiPreferences.getFrameworks();
-    for(int i=0; i<frameworks.length;i++) {
-      names.add(frameworks[i].getName());
-    }
-    return (String[]) names.toArray(new String[names.size()]);
-  }
+  public String getText(Object element) {
+    BuildPath bp = (BuildPath) element;
 
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#createRepository(java.lang.String)
-   */
-  public IBundleRepository createRepository(String config) {
-    IBundleRepository repository = (IBundleRepository) RepositoryPlugin.repositoriesCache.get(config);
-    if (repository == null) {
-      repository = new BundleRepository(config);
-      RepositoryPlugin.repositoriesCache.put(config, repository);
+    if (FrameworkContainer.CONTAINER_PATH.equals(bp.getContainerPath().toString())) {
+      return "Framework";
     } 
-    return repository;
+    
+    StringBuffer buf = new StringBuffer(bp.getBundleName());
+    buf.append(" - ");
+    buf.append(bp.getBundleIdentity().getSymbolicName().toString());
+    buf.append(" ");
+    buf.append(bp.getBundleIdentity().getBundleVersion().toString());
+    
+    return buf.toString();
   }
 
   /*
    *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#refreshRepositories()
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
    */
-  public void refreshRepositories() {
-    RepositoryPlugin.repositoriesCache.clear();
+  public void addListener(ILabelProviderListener listener) {
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
+   */
+  public void dispose() {
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
+   */
+  public boolean isLabelProperty(Object element, String property) {
+    return false;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
+   */
+  public void removeListener(ILabelProviderListener listener) {
   }
 }

@@ -77,7 +77,7 @@ import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.ui.dialogs.ImportLibrariesDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
@@ -132,13 +132,13 @@ public class FrameworkDialog extends Dialog {
   
   LibraryElementRoot frameworkLibraryModel = new LibraryElementRoot();
   ArrayList usedNames;
-  private Framework distribution;
+  private FrameworkPreference distribution;
   private TreeMap distributions = new TreeMap();
   
   /**
    * @param parentShell
    */
-  protected FrameworkDialog(Shell parentShell, ArrayList usedNames, Framework distribution) {
+  protected FrameworkDialog(Shell parentShell, ArrayList usedNames, FrameworkPreference distribution) {
     super(parentShell);
     this.usedNames = usedNames;
     this.distribution = distribution;
@@ -199,7 +199,7 @@ public class FrameworkDialog extends Dialog {
   protected void okPressed() {
     if (distribution == null) {
       // Create definition
-      distribution = new Framework();
+      distribution = new FrameworkPreference();
     }
 
     distribution.setName(wNameText.getText());
@@ -511,7 +511,7 @@ public class FrameworkDialog extends Dialog {
         
         if (dialog.open() == Window.OK) {
           String name = dialog.getFrameworkName();
-          Framework framework = OsgiPreferences.getFramework(name);
+          FrameworkPreference framework = OsgiPreferences.getFramework(name);
           boolean onlyUserDefined = dialog.isOnlyUserDefined();
           
           // Import runtime libraries
@@ -618,7 +618,7 @@ public class FrameworkDialog extends Dialog {
   /**
    * @return
    */
-  public Framework getFrameworkDistribution() {
+  public FrameworkPreference getFrameworkDistribution() {
     return distribution;
   }
 
@@ -800,7 +800,7 @@ public class FrameworkDialog extends Dialog {
     wLibraryTreeViewer.refresh();
   }
   
-  private void setValues(Framework settings) {
+  private void setValues(FrameworkPreference settings) {
     
     // Name
     if (settings != null) { 

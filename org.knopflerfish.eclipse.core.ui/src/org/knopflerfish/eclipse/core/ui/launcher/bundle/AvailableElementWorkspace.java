@@ -43,6 +43,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -121,8 +122,8 @@ public class AvailableElementWorkspace implements IAvailableTreeElement {
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getVersion()
    */
-  public String getVersion() {
-    return "";
+  public Version getVersion() {
+    return null;
   }
   
   /*

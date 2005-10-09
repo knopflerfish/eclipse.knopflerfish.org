@@ -36,6 +36,7 @@ package org.knopflerfish.eclipse.core.ui.editors.packaging;
 
 import java.io.IOException;
 
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -45,6 +46,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.ui.forms.SectionPart;
+import org.eclipse.ui.forms.editor.FormEditor;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
@@ -63,14 +65,16 @@ public class ExportSection extends SectionPart {
     "Packages and exports the bundle";
 
   final BundleProject project;
+  final FormEditor editor;
   
   // SWT Widgets
   private Button    wExportButton;
 
-  public ExportSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
+  public ExportSection(Composite parent, FormToolkit toolkit, int style, BundleProject project, FormEditor editor) {
     super(parent, toolkit, style);
     
     this.project = project;
+    this.editor = editor;
     
     Section section = getSection();
     createClient(section, toolkit);
@@ -125,6 +129,27 @@ public class ExportSection extends SectionPart {
     wExportButton = toolkit.createButton(container, "Export...", SWT.PUSH);
     wExportButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent event) {
+        // Check if editor is dirty
+        if (editor.isDirty()) {
+          // Prompt user to save
+          MessageDialog msgDialog = new MessageDialog(
+              Display.getCurrent().getActiveShell(),
+              "Save manifest",
+              null,
+              "Manifest has changed, do you want to save it before exporting bundle?",
+              MessageDialog.QUESTION,
+              new String[] {"Yes","No", "Cancel"},
+              0);
+          msgDialog.setBlockOnOpen(true);
+          int ret = msgDialog.open();
+          if (ret == 0) {
+            // Ok, save manifest
+            editor.doSave(null);
+          } else if (ret == 2) {
+            // Cancel
+            return;
+          }
+        }
         
         FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.SAVE);
         dialog.setFileName(project.getFileName());

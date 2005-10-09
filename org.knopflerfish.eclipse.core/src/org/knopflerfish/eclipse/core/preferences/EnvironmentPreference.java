@@ -47,7 +47,7 @@ import org.osgi.service.prefs.Preferences;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class ExecutionEnvironment {
+public class EnvironmentPreference {
   
   // Preferences keys
   private static final String PREF_DEFAULT_ENVIRONMENT = "DefaultEnvironment"; // true, false
@@ -68,10 +68,10 @@ public class ExecutionEnvironment {
   private boolean defaultEnvironment;
   private ArrayList libraries = new ArrayList();  
   
-  public ExecutionEnvironment() {
+  public EnvironmentPreference() {
   }
   
-  public ExecutionEnvironment(Preferences node) throws BackingStoreException {
+  public EnvironmentPreference(Preferences node) throws BackingStoreException {
     load(node);
   }
   
@@ -179,10 +179,10 @@ public class ExecutionEnvironment {
    * @see java.lang.Object#equals(java.lang.Object)
    */
   public boolean equals(Object o) {
-    if (o == null || !(o instanceof ExecutionEnvironment)) {
+    if (o == null || !(o instanceof EnvironmentPreference)) {
       return false;
     }
-    ExecutionEnvironment env = (ExecutionEnvironment) o;
+    EnvironmentPreference env = (EnvironmentPreference) o;
     
     if (name == null) {
       return false;

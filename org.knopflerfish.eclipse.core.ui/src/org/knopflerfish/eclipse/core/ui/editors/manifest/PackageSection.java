@@ -41,30 +41,22 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.jdt.core.IClasspathEntry;
-import org.eclipse.jdt.core.JavaConventions;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ICellModifier;
-import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.ITableColorProvider;
-import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TextCellEditor;
-import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
@@ -73,6 +65,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.forms.SectionPart;
 import org.eclipse.ui.forms.widgets.FormText;
 import org.eclipse.ui.forms.widgets.FormToolkit;
@@ -82,13 +75,14 @@ import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
-import org.knopflerfish.eclipse.core.pkg.IPackage;
 import org.knopflerfish.eclipse.core.pkg.PackageUtil;
+import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.SharedImages;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
-import org.knopflerfish.eclipse.core.ui.dialogs.PackageListSelectionDialog;
+import org.knopflerfish.eclipse.core.ui.dialogs.PackageLabelProvider;
 import org.knopflerfish.eclipse.core.ui.dialogs.PropertyDialog;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
 
@@ -98,8 +92,8 @@ import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
  */
 public class PackageSection extends SectionPart {
 
-  private static final int NUM_EXPORT_TABLE_ROWS = 5;
-  private static final int NUM_IMPORT_TABLE_ROWS = 5;
+  private static final int NUM_EXPORT_TABLE_ROWS = 4;
+  private static final int NUM_IMPORT_TABLE_ROWS = 6;
   private static final int NUM_DYNAMIC_IMPORT_TABLE_ROWS = 4;
 
   // Dialog titles
@@ -110,7 +104,6 @@ public class PackageSection extends SectionPart {
   public static String PROP_PACKAGE_VERSION    = "version";
   public static String PROP_PACKAGE_CONTAINER  = "container";
   public static String NO_VERSION_STR = "[No version]";
-
   
   // Section title and description
   private static final String TITLE = 
@@ -129,6 +122,7 @@ public class PackageSection extends SectionPart {
   TableViewer   wExportPackageTableViewer;
   TableViewer   wImportPackageTableViewer;
   TableViewer   wDynamicImportPackageTableViewer;
+  ImportDialogEditor containerEditor;
   
   BundleManifest manifest = null;
   ImportPackageModel importPackageModel = null;
@@ -281,12 +275,13 @@ public class PackageSection extends SectionPart {
     wExportPackageTable.setData(FormToolkit.KEY_DRAW_BORDER, FormToolkit.TEXT_BORDER);
     
     wExportPackageTableViewer = new TableViewer(wExportPackageTable);
-    ExportProvider exportProvider = new ExportProvider();
+    ExportProvider exportProvider = new ExportProvider(project);
     wExportPackageTableViewer.setContentProvider(exportProvider);
     wExportPackageTableViewer.setLabelProvider(exportProvider);
     wExportPackageTableViewer.setSorter(exportProvider);
     wExportPackageTableViewer.setColumnProperties(new String[] {PROP_PACKAGE_NAME, PROP_PACKAGE_VERSION});
-    wExportPackageTableViewer.setCellModifier(exportProvider);
+    ExportCellModifier exportCellModifier = new ExportCellModifier();
+    wExportPackageTableViewer.setCellModifier(exportCellModifier);
     TextCellEditor packageVersionEditor = new TextCellEditor(wExportPackageTable, SWT.NONE);
     wExportPackageTableViewer.setCellEditors(
         new CellEditor[] {null, packageVersionEditor});
@@ -358,8 +353,9 @@ public class PackageSection extends SectionPart {
           map.remove(pd.getPackageName());
         }
         
-        PackageListSelectionDialog dialog = new PackageListSelectionDialog(
-            Display.getCurrent().getActiveShell());
+        ElementListSelectionDialog dialog = new ElementListSelectionDialog(
+            Display.getCurrent().getActiveShell(),
+            new PackageLabelProvider());
         dialog.setElements(map.values().toArray(new PackageDescription[map.size()]));
         dialog.setMultipleSelection(true);
         dialog.setTitle("Select package");
@@ -415,8 +411,9 @@ public class PackageSection extends SectionPart {
     wImportPackageTableViewer.setContentProvider(importProvider);
     wImportPackageTableViewer.setLabelProvider(importProvider);
     wImportPackageTableViewer.setColumnProperties(new String[] {PROP_PACKAGE_NAME, PROP_PACKAGE_VERSION, PROP_PACKAGE_CONTAINER});
-    wImportPackageTableViewer.setCellModifier(importProvider);
-    ContainerEditor containerEditor = new ContainerEditor(wImportPackageTable, SWT.NONE); 
+    ImportCellModifier importCellModifier = new ImportCellModifier();
+    wImportPackageTableViewer.setCellModifier(importCellModifier);
+    containerEditor = new ImportDialogEditor(wImportPackageTable);
     wImportPackageTableViewer.setCellEditors(
         new CellEditor[] {null, null, containerEditor});
     wImportPackageTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
@@ -459,11 +456,11 @@ public class PackageSection extends SectionPart {
 
         List packages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
         for (Iterator i = selection.iterator(); i.hasNext(); ) {
-          ImportPackageModelElement element = (ImportPackageModelElement) i.next();
-          packages.remove(element.getPackageDescription());
+          BuildPath path = (BuildPath) i.next();
+          packages.remove(path.getPackageDescription());
         }
         manifest.setImportedPackages((PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]));
-        importPackageModel.setManifest(manifest);
+        importPackageModel.updateManifest(manifest);
         wImportPackageTableViewer.refresh();
         UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
         markDirty();
@@ -476,13 +473,13 @@ public class PackageSection extends SectionPart {
     wImportPackageAddButton = toolkit.createButton(wImportComposite, "Add...", SWT.PUSH);
     wImportPackageAddButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        IPackage[] importablePackages = PackageUtil.getPackages(IPackage.ALL);
+        PackageDescription[] importablePackages = PackageUtil.getExportedPackages(project);
         ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
         
         // Remove already imported packages from list of importable
         TreeMap map = new TreeMap();
         for (int i=0; i<importablePackages.length; i++) {
-          PackageDescription packageDescription = importablePackages[i].getPackageDescription();
+          PackageDescription packageDescription = importablePackages[i];
           packageDescription.setSpecificationVersion(null);
           map.put(packageDescription.getPackageName(), packageDescription);
         }
@@ -491,9 +488,8 @@ public class PackageSection extends SectionPart {
           map.remove(pd.getPackageName());
         }
         
-        
-        PackageListSelectionDialog dialog = new PackageListSelectionDialog(
-            Display.getCurrent().getActiveShell());
+        ElementListSelectionDialog dialog = new ElementListSelectionDialog(
+            Display.getCurrent().getActiveShell(), new PackageLabelProvider());
         dialog.setElements(map.values().toArray(new PackageDescription[map.size()]));
         dialog.setMultipleSelection(true);
         dialog.setTitle("Select package");
@@ -510,7 +506,7 @@ public class PackageSection extends SectionPart {
             }
           }
           manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
-          importPackageModel.setManifest(manifest);
+          importPackageModel.updateManifest(manifest);
           wImportPackageTableViewer.refresh();
           UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
           markDirty();
@@ -646,91 +642,44 @@ public class PackageSection extends SectionPart {
   }
   
   /****************************************************************************
-   * ExportProvider Inner classes
+   * ExportCellModifier Inner classes
    ***************************************************************************/
-  class ExportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider, ITableColorProvider, ICellModifier {
+  class ExportCellModifier implements ICellModifier {
     
-    public int compare(Viewer viewer, Object o1, Object o2) {
-      PackageDescription pd1 = (PackageDescription) o1;
-      PackageDescription pd2 = (PackageDescription) o2;
-      
-      return pd1.getPackageName().compareTo(pd2.getPackageName());
-    }
-    
-    public Object[] getElements(Object inputElement) {
-      if ( !(inputElement instanceof BundleManifest)) return null;
-      
-      BundleManifest manifest = (BundleManifest) inputElement; 
-      return manifest.getExportedPackages();
-    }
-    
-    public void dispose() {
-    }
-    
-    public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-    }
-
-    
-    public Image getColumnImage(Object element, int columnIndex) {
-      if (columnIndex == 0) {
-        PackageDescription desc = (PackageDescription) element;
-        List packages = Arrays.asList(project.getExportablePackages());
-        if (packages.contains(desc)) {
-          return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
-        }
-        return imgPackageError;
-      }
-      return null;
-    }
-
-    public String getColumnText(Object element, int columnIndex) {
-      PackageDescription desc = (PackageDescription) element;
-      
-      switch(columnIndex){
-      case 0:
-        return desc.getPackageName();
-      case 1:
-        String version = desc.getSpecificationVersion();
-        if (version == null) {
-          version = NO_VERSION_STR;
-        }
-        return version;
-      }
-      return "";
-    }
-
-    public void addListener(ILabelProviderListener listener) {
-    }
-
-    public boolean isLabelProperty(Object element, String property) {
-      return false;
-    }
-
-    public void removeListener(ILabelProviderListener listener) {
-    }
-
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.ICellModifier#canModify(java.lang.Object, java.lang.String)
+     */
     public boolean canModify(Object element, String property) {
-      return PROP_PACKAGE_VERSION.equals(property);
+      return PackageSection.PROP_PACKAGE_VERSION.equals(property);
     }
-
+    
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.ICellModifier#getValue(java.lang.Object, java.lang.String)
+     */
     public Object getValue(Object element, String property) {
       PackageDescription pd = (PackageDescription) element;
-      if (PROP_PACKAGE_VERSION.equals(property)) {
+      if (PackageSection.PROP_PACKAGE_VERSION.equals(property)) {
         String version = pd.getSpecificationVersion();
         if (version == null) {
           version = "";
         }
         return version;
-      } else if (PROP_PACKAGE_NAME.equals(property)) {
+      } else if (PackageSection.PROP_PACKAGE_NAME.equals(property)) {
         return pd.getPackageName();
       } else {
         return null;
       }
     }
-
+    
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.ICellModifier#modify(java.lang.Object, java.lang.String, java.lang.Object)
+     */
     public void modify(Object element, String property, Object value) {
       if (element instanceof Item && ((Item) element).getData() instanceof PackageDescription) {
-        if (PROP_PACKAGE_VERSION.equals(property)) {
+        if (PackageSection.PROP_PACKAGE_VERSION.equals(property)) {
           List packages = new ArrayList(Arrays.asList(manifest.getExportedPackages()));
           PackageDescription pdElement = (PackageDescription) ((Item) element).getData();
           int idx = packages.indexOf(pdElement);
@@ -754,164 +703,84 @@ public class PackageSection extends SectionPart {
         }
       }
     }
-
-    public Color getForeground(Object element, int columnIndex) {
-      PackageDescription desc = (PackageDescription) element;
-      List packages = Arrays.asList(project.getExportablePackages());
-      if (packages.contains(desc)) {
-        return null;
-      }
-      return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
-    }
-
-    public Color getBackground(Object element, int columnIndex) {
-      return null;
-    }
   }
-  
+
   /****************************************************************************
-   * ImportProvider Inner classes
+   * ImportCellModifier Inner classes
    ***************************************************************************/
-  class ImportProvider implements IStructuredContentProvider, ITableLabelProvider, ICellModifier {
+
+  class ImportCellModifier implements ICellModifier {
     
-    public Object[] getElements(Object inputElement) {
-      if ( !(inputElement instanceof ImportPackageModel)) return null;
-      
-      ImportPackageModel model = (ImportPackageModel) inputElement; 
-      
-      return model.getElements();
-    }
-    
-    public void dispose() {
-    }
-    
-    public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-    }
-
-    public Image getColumnImage(Object element, int columnIndex) {
-      if (columnIndex == 0) {
-        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
-      }
-      return null;
-    }
-
-    public String getColumnText(Object o, int columnIndex) {
-      ImportPackageModelElement element = (ImportPackageModelElement) o;
-      
-      switch(columnIndex){
-      case 0:
-        return element.getPackageDescription().getPackageName();
-      case 1:
-        String version = element.getPackageDescription().getSpecificationVersion();
-        if (version == null) {
-          version = "";
-        }
-        return version;
-      case 2:
-        IClasspathEntry container = element.getContainer();
-        if (container == null) {
-          return "Unknown";
-        }
-        return container.getPath().toString();
-      }
-      return "";
-    }
-
-    public void addListener(ILabelProviderListener listener) {
-    }
-
-    public boolean isLabelProperty(Object element, String property) {
-      return false;
-    }
-
-    public void removeListener(ILabelProviderListener listener) {
-    }
-
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.ICellModifier#canModify(java.lang.Object, java.lang.String)
+     */
     public boolean canModify(Object element, String property) {
-      return PROP_PACKAGE_CONTAINER.equals(property);
+      boolean canModify = PackageSection.PROP_PACKAGE_CONTAINER.equals(property);
+      return canModify;
     }
+    
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.ICellModifier#getValue(java.lang.Object, java.lang.String)
+     */
+    public Object getValue(Object o, String property) {
+      BuildPath element = (BuildPath) o;
+      
+      // Update cell editor
+      PackageDescription pd = element.getPackageDescription();
 
-    public Object getValue(Object element, String property) {
-      // TODO Auto-generated method stub
-      return null;
+      ArrayList items = new ArrayList();
+      
+      // Add framework entry
+      if (PackageUtil.frameworkExportsPackage(project, pd)) {
+        IPath path = new Path(FrameworkContainer.CONTAINER_PATH);
+        items.add(new BuildPath(path, pd, null, "Framework"));
+      }
+      
+      // Add bundle entries from projects
+      items.addAll(Arrays.asList(PackageUtil.getExportingProjectBundles(pd)));
+
+      // Add bundle entries from repositories
+      items.addAll(Arrays.asList(PackageUtil.getExportingRepositoryBundles(pd)));
+      
+      // Set elements to show in dialog box
+      containerEditor.setElements((BuildPath[]) items.toArray(new BuildPath[items.size()]));
+      
+      // Return current selected bundle
+      if (element.getContainerPath() == null) {
+        return "[None selected]";
+      } else if (FrameworkContainer.CONTAINER_PATH.equals(element.getContainerPath().toString())) {
+        return "Framework";
+      } 
+      
+      String name= element.getBundleName();
+      if (name == null || name.trim().length() == 0) {
+        name = element.getBundleIdentity().getSymbolicName().toString();
+      }
+      return name;
     }
-
+    
+    /*
+     *  (non-Javadoc)
+     * @see org.eclipse.jface.viewers.ICellModifier#modify(java.lang.Object, java.lang.String, java.lang.Object)
+     */
     public void modify(Object element, String property, Object value) {
-      // TODO Auto-generated method stub
-      
-    }
-  }
-  
-  /****************************************************************************
-   * DynamicImportProvider Inner classes
-   ***************************************************************************/
-  class DynamicImportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider, ITableColorProvider {
-    
-    public int compare(Viewer viewer, Object o1, Object o2) {
-      String s1 = (String) o1;
-      String s2 = (String) o2;
-      
-      return s1.compareTo(s2);
-    }
-    
-    public Object[] getElements(Object inputElement) {
-      if ( !(inputElement instanceof BundleManifest)) return null;
-      
-      BundleManifest manifest = (BundleManifest) inputElement; 
-      
-      return manifest.getDynamicImportedPakages();
-    }
-    
-    public void dispose() {
-    }
-    
-    public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-    }
+      if (element instanceof Item && ((Item) element).getData() instanceof BuildPath && 
+          value instanceof BuildPath) {
+        if (PackageSection.PROP_PACKAGE_CONTAINER.equals(property)) {
+          BuildPath oldBuildPath = (BuildPath) ((Item) element).getData();
+          BuildPath newBuildPath = (BuildPath) value;
 
-    public Image getColumnImage(Object element, int columnIndex) {
-      String name = (String) element;
-      if (checkPackageName(name)) {
-        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
+          oldBuildPath.setBundleIdentity(newBuildPath.getBundleIdentity());
+          oldBuildPath.setContainerPath(newBuildPath.getContainerPath());
+          oldBuildPath.setBundleName(newBuildPath.getBundleName());
+
+          wImportPackageTableViewer.refresh();
+          UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
+          markDirty();
+        }
       }
-      return imgPackageError;
-    }
-
-    public String getColumnText(Object element, int columnIndex) {
-      return (String) element;
-    }
-
-    public void addListener(ILabelProviderListener listener) {
-    }
-
-    public boolean isLabelProperty(Object element, String property) {
-      return false;
-    }
-
-    public void removeListener(ILabelProviderListener listener) {
-    }
-
-    public Color getForeground(Object element, int columnIndex) {
-      String name = (String) element;
-      if (checkPackageName(name)) {
-        return null;
-      }
-      return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
-    }
-
-    public Color getBackground(Object element, int columnIndex) {
-      return null;
-    }
-    
-    private boolean checkPackageName(String name) {
-      if (name == null) return false;
-      
-      if ("*".equals(name)) return true;
-      
-      if (name.endsWith(".*")) {
-        name = name.substring(0, name.length()-2);
-      }
-      IStatus status = JavaConventions.validatePackageName(name);
-      return (status.getCode() == IStatus.OK);
     }
   }
 }

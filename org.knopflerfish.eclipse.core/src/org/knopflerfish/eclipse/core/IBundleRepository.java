@@ -34,10 +34,40 @@
 
 package org.knopflerfish.eclipse.core;
 
+import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public interface IBundleRepository {
 
+  /**
+   * Returns all exported packages found in this repository
+   * 
+   * @return array of exported packages
+   */
+  PackageDescription[] getExportedPackages();
+
+  /**
+   * Returns manifests for all bundles in the repository
+   * which exports the given package.
+   * 
+   * @param pd exported package
+   * 
+   * @return array of bundle manifests
+   */
+  BundleManifest[] getExportingBundles(PackageDescription pd);
+
+  /**
+   * Returns libraries containing the exported packages for the
+   * given bundle.
+   * 
+   * @param id bundle identity
+   * 
+   * @return array of libraries
+   */
+  IOsgiLibrary[] getBundleLibraries(BundleIdentity id);
 }
