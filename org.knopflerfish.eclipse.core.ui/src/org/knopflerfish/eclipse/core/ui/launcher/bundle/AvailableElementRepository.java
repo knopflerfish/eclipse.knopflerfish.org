@@ -36,26 +36,41 @@ package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
 import java.util.ArrayList;
 
+import org.knopflerfish.eclipse.core.IBundleRepository;
+import org.knopflerfish.eclipse.core.IBundleRepositoryType;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
+import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class AvailableElementDistribution implements IAvailableTreeElement {
+public class AvailableElementRepository implements IAvailableTreeElement {
 
   private final IAvailableTreeElement parent;
   private final ArrayList children = new ArrayList();
-  private final FrameworkPreference distribution;
+  private final RepositoryPreference repositoryPref;
 
-  AvailableElementDistribution(IAvailableTreeElement parent, FrameworkPreference distribution) {
+  AvailableElementRepository(IAvailableTreeElement parent, RepositoryPreference repositoryPref) {
     this.parent = parent;
-    this.distribution = distribution;
+    this.repositoryPref = repositoryPref;
 
-    // Add knopflerfish bundles
-    IOsgiBundle[] bundles = distribution.getBundles();
+    if (!repositoryPref.isActive()) {
+      return;
+    }
+    
+    // Add repository bundles
+    IBundleRepositoryType repositoryType = 
+      Osgi.getBundleRepositoryType(repositoryPref.getType());
+    if (repositoryType == null) return;
+    
+    IBundleRepository repository = 
+      repositoryType.createRepository(repositoryPref.getConfig());
+    if (repository == null) return;
+    
+    IOsgiBundle[] bundles = repository.getBundles();
     if (bundles != null) {
       for(int i=0; i<bundles.length; i++) {
         children.add(new AvailableElementBundle(this, bundles[i]));
@@ -63,8 +78,8 @@ public class AvailableElementDistribution implements IAvailableTreeElement {
     }
   }
   
-  public FrameworkPreference getFrameworkDistribution() {
-    return distribution;
+  public RepositoryPreference getRepositoryPreference() {
+    return repositoryPref;
   }
   
 
@@ -100,7 +115,7 @@ public class AvailableElementDistribution implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getType()
    */
   public int getType() {
-    return TYPE_DISTRIBUTION;
+    return TYPE_REPOSITORY;
   }
   
   /*
@@ -108,7 +123,11 @@ public class AvailableElementDistribution implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getName()
    */
   public String getName() {
-    return distribution.getName();
+    StringBuffer buf = new StringBuffer(repositoryPref.getName());
+    if (!repositoryPref.isActive()) {
+      buf.append(" (inactive)");
+    }
+    return buf.toString();
   }
   
   /*
@@ -132,7 +151,7 @@ public class AvailableElementDistribution implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getData()
    */
   public Object getData() {
-    return distribution;
+    return repositoryPref;
   }
 
   /****************************************************************************

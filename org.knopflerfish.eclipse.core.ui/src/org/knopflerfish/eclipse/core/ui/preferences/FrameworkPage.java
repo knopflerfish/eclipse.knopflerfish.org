@@ -98,7 +98,7 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
         id = AbstractUIPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
       } else {
         id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
-        "icons/obj16/_knopflerfish_obj.gif");
+        "icons/obj16/knopflerfish_obj.gif");
       }      
       if (id != null) {
         Image image = id.createImage();

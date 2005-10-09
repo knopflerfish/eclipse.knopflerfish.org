@@ -835,7 +835,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
             return 0;
           case IAvailableTreeElement.TYPE_WORKSPACE:
             return 1;
-          case IAvailableTreeElement.TYPE_DISTRIBUTION:
+          case IAvailableTreeElement.TYPE_REPOSITORY:
             return 2;
           case IAvailableTreeElement.TYPE_BUNDLE:
             return 3;

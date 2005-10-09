@@ -70,4 +70,11 @@ public interface IBundleRepository {
    * @return array of libraries
    */
   IOsgiLibrary[] getBundleLibraries(BundleIdentity id);
+
+  /**
+   * Returns all bundles found in this repository
+   * 
+   * @return array of exported packages
+   */
+  IOsgiBundle[] getBundles();
 }

@@ -36,12 +36,10 @@ package org.knopflerfish.eclipse.core.ui.preferences;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.jface.preference.PreferencePage;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.ICheckStateListener;
@@ -53,7 +51,6 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -65,10 +62,8 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
 /**
@@ -83,7 +78,6 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
     "Installed bundle repositories:";
   
   List repositories;
-  private HashMap images = new HashMap();
   
   // Widgets
   private Button    wEditRepositoryButton;
@@ -95,26 +89,6 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
 
   public BundleRepositoryPage() {
     noDefaultAndApplyButton();
-    
-    String[] names = Osgi.getBundleRepositoryTypeNames();
-    for (int i=0;i<names.length; i++) {
-      String imagePath = Osgi.getBundleRepositoryTypeImage(names[i]);
-      String pluginId = Osgi.getBundleRepositoryTypeId(names[i]);
-      
-      ImageDescriptor id = null;
-      if (imagePath != null) {
-        id = AbstractUIPlugin.imageDescriptorFromPlugin(pluginId, imagePath);
-      } else {
-        id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
-        "icons/obj16/_knopflerfish_obj.gif");
-      }      
-      if (id != null) {
-        Image image = id.createImage();
-        if (image != null) {
-          images.put(names[i], image);
-        }
-      }
-    }
     
     // Load preferences
     repositories = new ArrayList(Arrays.asList(OsgiPreferences.getBundleRepositories()));
@@ -139,10 +113,6 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
    * @see org.eclipse.jface.dialogs.IDialogPage#dispose()
    */
   public void dispose() {
-    for (Iterator i=images.values().iterator(); i.hasNext();){
-     Image image = (Image) i.next();
-     image.dispose();
-    }
   }
   
   /****************************************************************************

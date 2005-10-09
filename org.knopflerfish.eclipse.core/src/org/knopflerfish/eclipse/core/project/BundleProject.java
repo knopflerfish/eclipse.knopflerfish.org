@@ -403,7 +403,8 @@ public class BundleProject implements IBundleProject {
   public BuildPath getBuildPath(PackageDescription pd) {
     if (pd == null) return null;
     
-    IClasspathEntry entry = ClasspathUtil.getClasspathEntry(pd, javaProject);
+    IAccessRule rule = ClasspathUtil.createAccessRule(pd);
+    IClasspathEntry entry = ClasspathUtil.findClasspathEntry(javaProject, rule);
     IPath path = null;
     BundleIdentity id = null;
     String name = null;

@@ -59,17 +59,8 @@ import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
  * @see http://www.gatespacetelematics.com/
  */
 public class ClasspathUtil {
-  /*
-  public static final String ATTR_SYMBOLICNAME = "symbolic-name";
-  public static final String ATTR_BUNDLEVERSION = "bundle-version";
-  */
+
   public static final String ATTR_BUNDLENAME = "bundle-name";
-  /*
-  public static final String TYPE      = "type";
-  public static final String FRAMEWORK = "framework";
-  public static final String BUNDLE    = "bundle";
-  public static final String PROJECT   = "project";
-  */
   
   public static IAccessRule createAccessRule(PackageDescription packageDescription){
     String pattern = packageDescription.getPackageName().replace('.', '/');
@@ -92,36 +83,7 @@ public class ClasspathUtil {
     return new PackageDescription(packageName, null);
   }
 
-  public static IClasspathEntry getClasspathEntry(PackageDescription packageDescription, IJavaProject project) {
-    IClasspathEntry entry;
-    
-    // Check if entry already exist
-    IAccessRule rule = ClasspathUtil.createAccessRule(packageDescription);
-    entry = findClasspathEntry(packageDescription, project, rule);
-    if (entry != null) {
-      return entry;
-    }
-    /*
-    // Loop through existing entries and find containers capable of exporting package
-    Map map = findClasspathEntry(packageDescription, project);
-    List entries = (List) map.get(ClasspathUtil.FRAMEWORK);
-    if (entries.size() > 0) {
-      return (IClasspathEntry) entries.get(0);
-    }
-    entries = (List) map.get(ClasspathUtil.PROJECT);
-    if (entries.size() > 0) {
-      return (IClasspathEntry) entries.get(0);
-    }
-    entries = (List) map.get(ClasspathUtil.BUNDLE);
-    if (entries.size() > 0) {
-      return (IClasspathEntry) entries.get(0);
-    }
-    */
-    
-    return null;
-  }
-  
-  public static IClasspathEntry findClasspathEntry(PackageDescription packageDescription, IJavaProject project, IAccessRule rule) {
+  public static IClasspathEntry findClasspathEntry(IJavaProject project, IAccessRule rule) {
     try {
       IClasspathEntry[] entries = project.getRawClasspath();
       for(int i=0; i<entries.length; i++) {
@@ -143,77 +105,6 @@ public class ClasspathUtil {
     return null;
   }
 
-  /*
-  public static Map findClasspathEntry(PackageDescription packageDescription, IJavaProject project) {
-    HashMap entries = new HashMap();
-    ArrayList frameworkEntries = new ArrayList(); 
-    ArrayList bundleEntries = new ArrayList(); 
-    ArrayList projectEntries = new ArrayList();
-    entries.put(ClasspathUtil.FRAMEWORK, frameworkEntries);
-    entries.put(ClasspathUtil.BUNDLE, bundleEntries);
-    entries.put(ClasspathUtil.PROJECT, projectEntries);
-    try {
-      IClasspathEntry[] rawClasspath = project.getRawClasspath();
-      for(int i=0; i<rawClasspath.length; i++) {
-        // Find container exporting this package
-        if (rawClasspath[i].getEntryKind() != IClasspathEntry.CPE_CONTAINER) {
-          continue;
-        }
-        IPath containerPath = rawClasspath[i].getPath();
-        String hint = containerPath.lastSegment();
-        if (containerPath.toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
-          // Find framework distribution
-          FrameworkPreference distribution = null;
-          if (hint != null) {
-            distribution = OsgiPreferences.getFramework(hint);
-          }
-          if (distribution == null) {
-            distribution = OsgiPreferences.getDefaultFramework();
-          }
-          
-          IFrameworkDefinition framework = Osgi.getFrameworkDefinition(distribution.getType());
-          PackageDescription[] exportedPackages = framework.getExportedPackages(distribution.getRuntimeLibraries());
-          for (int j=0; j<exportedPackages.length; j++) {
-            if (exportedPackages[j].isCompatible(packageDescription)) {
-              frameworkEntries.add(rawClasspath[i]);
-              break;
-            }
-          }
-        } else if (containerPath.toString().startsWith(BundleContainer.CONTAINER_PATH)) {
-          // Find bundle
-          OsgiBundle bundle = new OsgiBundle(new File(hint));
-          if (bundle.hasExportedPackage(packageDescription)) {
-            bundleEntries.add(rawClasspath[i]);
-          }
-        }
-      }
-    } catch (Throwable t) {}
-    
-    return entries;
-  }
-  */
-  
-  /*
-  public static String getClasspathType(IClasspathEntry entry) {
-    return getClasspathAttribute(entry, TYPE);
-  }
-  */
-  
-  /*
-  public static BundleIdentity getClasspathBundle(IClasspathEntry entry) {
-    BundleIdentity bundleIdentity = null;
-    
-    String symbolicName  = getClasspathAttribute(entry, ATTR_SYMBOLICNAME);
-    if (symbolicName != null) {
-      Version version = Version.parseVersion(getClasspathAttribute(entry, ATTR_BUNDLEVERSION));
-      String name = getClasspathAttribute(entry, ATTR_BUNDLENAME);
-      bundleIdentity = new BundleIdentity(new SymbolicName(symbolicName), version, name);
-    }
-    
-    return bundleIdentity;
-  }
-  */
-  
   public static String getClasspathAttribute(IClasspathEntry entry, String attribute) {
     if (entry == null || attribute == null) return null;
     
@@ -228,6 +119,10 @@ public class ClasspathUtil {
     
     return null;
   }
+
+  /****************************************************************************
+   * Methods for updating classpath containers
+   ***************************************************************************/
   
   public static void updateEnvironmentContainers() {
     try {

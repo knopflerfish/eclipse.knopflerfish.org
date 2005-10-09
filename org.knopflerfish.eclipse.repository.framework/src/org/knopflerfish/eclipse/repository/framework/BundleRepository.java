@@ -61,12 +61,16 @@ import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
  */
 public class BundleRepository implements IBundleRepository {
 
+  private final String name;
+  
   private ArrayList packages = new ArrayList();
   private HashMap bundles = new HashMap(); // BundleIdentity, String
   private HashMap libraries = new HashMap(); // BundleIdentity, ArrayList of String
   private ArrayList manifests = new ArrayList(); // BundleIdentity, String
   
   public BundleRepository(String name) {
+
+    this.name = name;
     
     // Initialize caches
     FrameworkPreference frameworkPreference = OsgiPreferences.getFramework(name);
@@ -168,6 +172,15 @@ public class BundleRepository implements IBundleRepository {
       }
     }
     return (IOsgiLibrary[]) libs.toArray(new IOsgiLibrary[libs.size()]);
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleRepository#getBundles()
+   */
+  public IOsgiBundle[] getBundles() {
+    FrameworkPreference frameworkPreference = OsgiPreferences.getFramework(name);
+    return frameworkPreference.getBundles();
   }
 
 }
