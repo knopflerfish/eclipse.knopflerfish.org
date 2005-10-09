@@ -34,6 +34,8 @@
 
 package org.knopflerfish.eclipse.core.ui.wizards;
 
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.jdt.core.JavaConventions;
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.wizard.WizardPage;
@@ -50,6 +52,8 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.knopflerfish.eclipse.core.manifest.SymbolicName;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -149,6 +153,7 @@ public class BundleWizardPage extends WizardPage {
     wBundleVersionText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
         verifyBundleVersion();
+        updateStatus();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -373,7 +378,15 @@ public class BundleWizardPage extends WizardPage {
   }
 
   void verifyBundleVersion() {
-    //String version = getBundleVersion();
+    String version = wBundleVersionText.getText();
+    try { 
+      Version.parseVersion(version);
+      wBundleVersionText.setData(ERROR, null);
+      wBundleVersionText.setData(WARNING, null);
+    } catch (IllegalArgumentException e) {
+      wBundleVersionText.setData(ERROR, "Version improperly formatted, format major('.'minor('.'micro('.'qualifier)?)?)?");
+      wBundleVersionText.setData(WARNING, null);
+    }
   }
   
   void verifyBundleDescription() {
@@ -390,15 +403,22 @@ public class BundleWizardPage extends WizardPage {
       if (packageName == null || packageName.trim().length() == 0) {
         wBundleActivatorPackageText.setData(WARNING, "The use of default package is discouraged.");
         wBundleActivatorPackageText.setData(ERROR, null);
-      } else if (packageName.startsWith(".") || packageName.endsWith(".")){
-        wBundleActivatorPackageText.setData(WARNING, null);
-        wBundleActivatorPackageText.setData(ERROR, "Package name is not valid. A package name cannot start or end with a dot.");
-      } else if (Character.isUpperCase(packageName.charAt(0))) { 
-        wBundleActivatorPackageText.setData(WARNING, "Package name is discouraged. By convention, package names usually start with a lowercase letter.");
-        wBundleActivatorPackageText.setData(ERROR, null);
       } else {
-        wBundleActivatorPackageText.setData(WARNING, null);
-        wBundleActivatorPackageText.setData(ERROR, null);
+        IStatus status = JavaConventions.validatePackageName(packageName);
+        switch (status.getSeverity()) {
+        case IStatus.ERROR:
+          wBundleActivatorPackageText.setData(ERROR, status.getMessage());
+          wBundleActivatorPackageText.setData(WARNING, null);
+          break;
+        case IStatus.WARNING:
+          wBundleActivatorPackageText.setData(ERROR, null);
+          wBundleActivatorPackageText.setData(WARNING, status.getMessage());
+          break;
+        default:
+          wBundleActivatorPackageText.setData(ERROR, null);
+          wBundleActivatorPackageText.setData(WARNING, null);
+          break;
+        }
       }
     } else {
       wBundleActivatorPackageText.setData(WARNING, null);
@@ -409,18 +429,20 @@ public class BundleWizardPage extends WizardPage {
   void verifyActivatorClassName() {
     String className = getActivatorClassName();
     if (isCreateBundleActivator()) {
-      if (className == null || className.trim().length() == 0) {
+      IStatus status = JavaConventions.validateJavaTypeName(className);
+      switch (status.getSeverity()) {
+      case IStatus.ERROR:
+        wBundleActivatorClassText.setData(ERROR, status.getMessage());
         wBundleActivatorClassText.setData(WARNING, null);
-        wBundleActivatorClassText.setData(ERROR, "Name is empty.");
-      } else if (className.indexOf(".") != -1){
-        wBundleActivatorClassText.setData(WARNING, null);
-        wBundleActivatorClassText.setData(ERROR, "Name must not be qualified.");
-      } else if (Character.isLowerCase(className.charAt(0))){
-        wBundleActivatorClassText.setData(WARNING, "Name is discouraged. By convention, Java type names usually start with an uppercase letter.");
+        break;
+      case IStatus.WARNING:
         wBundleActivatorClassText.setData(ERROR, null);
-      } else {
-        wBundleActivatorClassText.setData(WARNING, null);
+        wBundleActivatorClassText.setData(WARNING, status.getMessage());
+        break;
+      default:
         wBundleActivatorClassText.setData(ERROR, null);
+        wBundleActivatorClassText.setData(WARNING, null);
+        break;
       }
     } else {
       wBundleActivatorClassText.setData(WARNING, null);
@@ -431,7 +453,7 @@ public class BundleWizardPage extends WizardPage {
   /****************************************************************************
    * Getters/Setters
    ***************************************************************************/
-  public String getBundleSymbolicName() {
+  public SymbolicName getBundleSymbolicName() {
     String val = null;
     if (!((Boolean) wBundleSymbolicNameText.getData(PROP_INITIALIZED)).booleanValue()) {
       val=projectPage.getProjectName();
@@ -442,7 +464,7 @@ public class BundleWizardPage extends WizardPage {
     if (val == null || val.trim().length()==0) {
       return null;
     }
-    return val.trim();
+    return new SymbolicName(val.trim());
   }
   
   public String getBundleName() {
@@ -459,12 +481,12 @@ public class BundleWizardPage extends WizardPage {
     return val.trim();
   }
   
-  public String getBundleVersion() {
+  public Version getBundleVersion() {
     String val = wBundleVersionText.getText();
     if (val == null || val.trim().length()==0) {
       return null;
     }
-    return val.trim();
+    return Version.parseVersion(val.trim());
   }
 
   public String getBundleDescription() {

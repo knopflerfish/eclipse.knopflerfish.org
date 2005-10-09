@@ -34,6 +34,7 @@
 
 package org.knopflerfish.eclipse.repository.obr;
 
+import org.knopflerfish.eclipse.core.IBundleRepository;
 import org.knopflerfish.eclipse.core.IBundleRepositoryType;
 
 /**
@@ -65,5 +66,23 @@ public class BundleRepositoryType implements IBundleRepositoryType {
    */
   public String[] getConfigSuggestions() {
     return OBR_URLS;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#createRepository(java.lang.String)
+   */
+  public IBundleRepository createRepository(String config) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#refreshRepositories()
+   */
+  public void refreshRepositories() {
+    // TODO Auto-generated method stub
+    
   }
 }

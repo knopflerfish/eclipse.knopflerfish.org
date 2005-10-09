@@ -55,7 +55,7 @@ public class OsgiPreferences {
   /****************************************************************************
    * Bundle repository preferences methods
    ***************************************************************************/
-  public static BundleRepository[] getBundleRepositories() {
+  public static RepositoryPreference[] getBundleRepositories() {
 
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_REPOSITORIES_NODE);
     ArrayList repos = new ArrayList();
@@ -64,17 +64,17 @@ public class OsgiPreferences {
       int idx = 0;
       while (node.nodeExists("Repository "+idx)) {
         Preferences repoNode = node.node("Repository "+idx);
-        repos.add(new BundleRepository(repoNode));
+        repos.add(new RepositoryPreference(repoNode));
         idx++;
       }
     } catch (BackingStoreException e) {
       e.printStackTrace();
     }
     
-    return (BundleRepository[]) repos.toArray(new BundleRepository[repos.size()]);
+    return (RepositoryPreference[]) repos.toArray(new RepositoryPreference[repos.size()]);
   }
 
-  public static BundleRepository getBundleRepository(String name) {
+  public static RepositoryPreference getBundleRepository(String name) {
     if (name == null || name.length() == 0) return null;
     
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_REPOSITORIES_NODE);
@@ -82,8 +82,8 @@ public class OsgiPreferences {
       int idx = 0;
       while (node.nodeExists("Repository "+idx)) {
         Preferences repoNode = node.node("Repository "+idx);
-        if (name.equals(repoNode.get(BundleRepository.PREF_NAME,""))) {
-          return new BundleRepository(repoNode);
+        if (name.equals(repoNode.get(RepositoryPreference.PREF_NAME,""))) {
+          return new RepositoryPreference(repoNode);
         }
         idx++;
       }
@@ -93,7 +93,7 @@ public class OsgiPreferences {
     return null;
   }
 
-  public static void setBundleRepositories(BundleRepository[] repos) throws BackingStoreException {
+  public static void setBundleRepositories(RepositoryPreference[] repos) throws BackingStoreException {
     // Remove previous repositories
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_REPOSITORIES_NODE);
     String [] names = node.childrenNames();
@@ -116,7 +116,7 @@ public class OsgiPreferences {
   /****************************************************************************
    * Framework preferences methods
    ***************************************************************************/
-  public static Framework[] getFrameworks() {
+  public static FrameworkPreference[] getFrameworks() {
 
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_FRAMEWORKS_NODE);
     ArrayList frameworks = new ArrayList();
@@ -124,22 +124,22 @@ public class OsgiPreferences {
     try {
       String [] children = node.childrenNames();
       for (int i=0; i<children.length; i++) {
-        frameworks.add(new Framework(node.node(children[i])));
+        frameworks.add(new FrameworkPreference(node.node(children[i])));
       }
     } catch (BackingStoreException e) {
       e.printStackTrace();
     }
     
-    return (Framework[]) frameworks.toArray(new Framework[frameworks.size()]);
+    return (FrameworkPreference[]) frameworks.toArray(new FrameworkPreference[frameworks.size()]);
   }
 
-  public static Framework getFramework(String name) {
+  public static FrameworkPreference getFramework(String name) {
     if (name == null || name.length() == 0) return null;
     
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_FRAMEWORKS_NODE);
     try  {
       if (node.nodeExists(name)) {
-        return new Framework(node.node(name));
+        return new FrameworkPreference(node.node(name));
       }
     } catch (BackingStoreException e) {
       e.printStackTrace();
@@ -147,8 +147,8 @@ public class OsgiPreferences {
     return null;
   }
 
-  public static Framework getDefaultFramework() {
-    Framework[] frameworks = getFrameworks();
+  public static FrameworkPreference getDefaultFramework() {
+    FrameworkPreference[] frameworks = getFrameworks();
     for (int i=0; i<frameworks.length; i++) {
       if (frameworks[i].isDefaultDefinition()) {
         return frameworks[i];
@@ -157,7 +157,7 @@ public class OsgiPreferences {
     return null;
   }
 
-  public static void setFrameworks(Framework[] frameworks) throws BackingStoreException {
+  public static void setFrameworks(FrameworkPreference[] frameworks) throws BackingStoreException {
     // Remove previous distributions
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_FRAMEWORKS_NODE);
     String [] names = node.childrenNames();
@@ -178,7 +178,7 @@ public class OsgiPreferences {
   /****************************************************************************
    * Environment preferences methods
    ***************************************************************************/
-  public static ExecutionEnvironment[] getExecutionEnvironments() {
+  public static EnvironmentPreference[] getExecutionEnvironments() {
     // Load all osgi install definitions from preferences
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_ENVIRONMENTS_NODE);
     ArrayList environments = new ArrayList();
@@ -186,16 +186,16 @@ public class OsgiPreferences {
     try {
       String [] children = node.childrenNames();
       for (int i=0; i<children.length; i++) {
-        environments.add(new ExecutionEnvironment(node.node(children[i])));
+        environments.add(new EnvironmentPreference(node.node(children[i])));
       }
     } catch (BackingStoreException e) {
       e.printStackTrace();
     }
     
-    return (ExecutionEnvironment[]) environments.toArray(new ExecutionEnvironment[environments.size()]);
+    return (EnvironmentPreference[]) environments.toArray(new EnvironmentPreference[environments.size()]);
   }
 
-  public static ExecutionEnvironment getExecutionEnvironment(String name) {
+  public static EnvironmentPreference getExecutionEnvironment(String name) {
     if (name == null || name.length() == 0) return null;
     
     name = name.replace('/','_');
@@ -203,7 +203,7 @@ public class OsgiPreferences {
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_ENVIRONMENTS_NODE);
     try  {
       if (node.nodeExists(name)) {
-        return new ExecutionEnvironment(node.node(name));
+        return new EnvironmentPreference(node.node(name));
       }
     } catch (BackingStoreException e) {
       e.printStackTrace();
@@ -211,8 +211,8 @@ public class OsgiPreferences {
     return null;
   }
 
-  public static ExecutionEnvironment getDefaultExecutionEnvironment() {
-    ExecutionEnvironment[] environments = getExecutionEnvironments();
+  public static EnvironmentPreference getDefaultExecutionEnvironment() {
+    EnvironmentPreference[] environments = getExecutionEnvironments();
     for (int i=0; i<environments.length; i++) {
       if (environments[i].isDefaultEnvironment()) {
         return environments[i];
@@ -221,7 +221,7 @@ public class OsgiPreferences {
     return null;
   }
 
-  public static void setExecutionEnvironment(ExecutionEnvironment[] environments) throws BackingStoreException {
+  public static void setExecutionEnvironment(EnvironmentPreference[] environments) throws BackingStoreException {
     // Remove previous environments
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_ENVIRONMENTS_NODE);
     String [] names = node.childrenNames();

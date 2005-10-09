@@ -79,7 +79,7 @@ import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
-import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
@@ -153,6 +153,7 @@ public class GeneralSection extends SectionPart {
   
   // SWT Widgets
   private Text wSymbolicNameText;
+  private StatusLabel wVersionStatusLabel;
   private Text wVersionText;
   private StatusLabel wNameStatusLabel;
   private Text wNameText;
@@ -207,6 +208,8 @@ public class GeneralSection extends SectionPart {
     updateStatus(marker, wDocUrlStatusLabel, wDocUrlText);
     marker = (IMarker) errors.get(BundleManifest.BUNDLE_NAME);
     updateStatus(marker, wNameStatusLabel, wNameText);
+    marker = (IMarker) errors.get(BundleManifest.BUNDLE_VERSION);
+    updateStatus(marker, wVersionStatusLabel, wVersionText);
     
     wEnvironmentTableViewer.refresh();
   }
@@ -356,7 +359,8 @@ public class GeneralSection extends SectionPart {
     
     createLabel(container, toolkit, BUNDLE_SYMBOLIC_NAME_LABEL, BUNDLE_SYMBOLIC_NAME_TOOLTIP);
     wSymbolicNameText = createText(container, toolkit, 2);
-    createLabel(container, toolkit, BUNDLE_VERSION_LABEL, BUNDLE_VERSION_TOOLTIP);
+    wVersionStatusLabel = 
+      createLabel(container, toolkit, BUNDLE_VERSION_LABEL, BUNDLE_VERSION_TOOLTIP);
     wVersionText = createText(container, toolkit, 2);
     wNameStatusLabel = 
       createLabel(container, toolkit, BUNDLE_NAME_LABEL, BUNDLE_NAME_TOOLTIP);
@@ -611,10 +615,10 @@ public class GeneralSection extends SectionPart {
     wEnvironmentAddButton = toolkit.createButton(wEnvironmentComposite, "Add...", SWT.PUSH);
     wEnvironmentAddButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        ExecutionEnvironment[] prefEnvironments = OsgiPreferences.getExecutionEnvironments();
+        EnvironmentPreference[] prefEnvironments = OsgiPreferences.getExecutionEnvironments();
         TreeSet dialogEnvironments = new TreeSet();
         for (int i=0; i<prefEnvironments.length;i++){
-          if (prefEnvironments[i].getType() != ExecutionEnvironment.TYPE_JRE) {
+          if (prefEnvironments[i].getType() != EnvironmentPreference.TYPE_JRE) {
             dialogEnvironments.add(prefEnvironments[i].getName());
           }
         }
@@ -758,7 +762,7 @@ public class GeneralSection extends SectionPart {
      * @see org.eclipse.jface.viewers.ILabelProvider#getImage(java.lang.Object)
      */
     public Image getImage(Object element) {
-      ExecutionEnvironment[] prefEnv = OsgiPreferences.getExecutionEnvironments();
+      EnvironmentPreference[] prefEnv = OsgiPreferences.getExecutionEnvironments();
       ArrayList list = new ArrayList();
       for(int i=0; i<prefEnv.length; i++) {
         list.add(prefEnv[i].getName());

@@ -45,7 +45,7 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 
 /**
@@ -55,12 +55,12 @@ import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 public class FrameworkContainer extends ClasspathContainerInitializer  implements IClasspathContainer {
   public static final String CONTAINER_PATH = "org.knopflerfish.eclipse.core.FRAMEWORK_CONTAINER";
   
-  private Framework distribution;
+  private FrameworkPreference distribution;
   
   public FrameworkContainer() {
   }
   
-  public FrameworkContainer(Framework distribution) {
+  public FrameworkContainer(FrameworkPreference distribution) {
     this.distribution = distribution;
   }
   

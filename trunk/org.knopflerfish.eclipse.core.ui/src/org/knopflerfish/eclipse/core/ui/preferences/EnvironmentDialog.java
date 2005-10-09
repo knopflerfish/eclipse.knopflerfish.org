@@ -63,7 +63,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
-import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
 
@@ -99,10 +99,10 @@ public class EnvironmentDialog extends Dialog {
   TableViewer    wLibraryTableViewer;
   
   private ArrayList usedNames;
-  private ExecutionEnvironment environment;
+  private EnvironmentPreference environment;
   ArrayList libraries = new ArrayList(); 
   
-  protected EnvironmentDialog(Shell parentShell, ArrayList usedNames, ExecutionEnvironment environment) {
+  protected EnvironmentDialog(Shell parentShell, ArrayList usedNames, EnvironmentPreference environment) {
     super(parentShell);
 
     this.usedNames = usedNames;
@@ -112,7 +112,7 @@ public class EnvironmentDialog extends Dialog {
     }
   }
 
-  public ExecutionEnvironment getExecutionEnvironment() {
+  public EnvironmentPreference getExecutionEnvironment() {
     return environment;
   }
 
@@ -164,10 +164,10 @@ public class EnvironmentDialog extends Dialog {
   protected void okPressed() {
     if (environment == null) {
       // Create execution environment
-      environment = new ExecutionEnvironment();
+      environment = new EnvironmentPreference();
     }
 
-    environment.setType(ExecutionEnvironment.TYPE_USER);
+    environment.setType(EnvironmentPreference.TYPE_USER);
     environment.setName(wNameText.getText());
     environment.setLibraries( (IOsgiLibrary[]) libraries.toArray(new IOsgiLibrary[libraries.size()]));
     
@@ -448,7 +448,7 @@ public class EnvironmentDialog extends Dialog {
     }
   }
   
-  private void setValues(ExecutionEnvironment settings) {
+  private void setValues(EnvironmentPreference settings) {
     
     // Name
     if (settings != null) { 

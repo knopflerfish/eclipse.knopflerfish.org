@@ -36,7 +36,7 @@ package org.knopflerfish.eclipse.core.pkg;
 
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -45,16 +45,16 @@ import org.knopflerfish.eclipse.core.preferences.Framework;
 public class BundlePackage implements IPackage {
   
   private final PackageDescription packageDescription;
-  private final Framework framework;
+  private final FrameworkPreference framework;
   private final IOsgiBundle bundle;
   
-  public BundlePackage(PackageDescription packageDescription, Framework framework, IOsgiBundle bundle) {
+  public BundlePackage(PackageDescription packageDescription, FrameworkPreference framework, IOsgiBundle bundle) {
     this.packageDescription = packageDescription;
     this.framework = framework;
     this.bundle = bundle;
   }
 
-  public Framework getFramework() {
+  public FrameworkPreference getFramework() {
     return framework;
   }
   

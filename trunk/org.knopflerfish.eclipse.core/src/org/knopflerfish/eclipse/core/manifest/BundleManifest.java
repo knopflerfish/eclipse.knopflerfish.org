@@ -41,6 +41,7 @@ import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -93,12 +94,21 @@ public class BundleManifest extends Manifest {
    * Setters and getters for OSGi attributes
    ***************************************************************************/
   
-  public String getSymbolicName() {
-    return getAttribute(BUNDLE_SYMBOLIC_NAME);
+  public SymbolicName getSymbolicName() {
+    String name = getAttribute(BUNDLE_SYMBOLIC_NAME);
+    if (name == null) {
+      return null;
+    }
+    // Replace ':' with '_' in order work as hint in classpath container 
+    return new SymbolicName(name.replace(':','_'));
   }
   
-  public void setSymbolicName(String value) {
-    setAttribute(BUNDLE_SYMBOLIC_NAME, value);
+  public void setSymbolicName(SymbolicName value) {
+    if(value == null) {
+      setAttribute(BUNDLE_SYMBOLIC_NAME, null);
+    } else {
+      setAttribute(BUNDLE_SYMBOLIC_NAME, value.toString());
+    }
   }
   
   public String getName() {
@@ -109,12 +119,20 @@ public class BundleManifest extends Manifest {
     setAttribute(BUNDLE_NAME, value);
   }
   
-  public String getVersion() {
-    return getAttribute(BUNDLE_VERSION);
+  public Version getVersion() {
+    String version = getAttribute(BUNDLE_VERSION);
+    if (version == null) {
+      return null;
+    }
+    return new Version(version);
   }
   
-  public void setVersion(String value) {
-    setAttribute(BUNDLE_VERSION, value);
+  public void setVersion(Version value) {
+    if(value == null) {
+      setAttribute(BUNDLE_VERSION, null);
+    } else {
+      setAttribute(BUNDLE_VERSION, value.toString());
+    }
   }
   
   public String getVendor() {
@@ -381,6 +399,17 @@ public class BundleManifest extends Manifest {
       }
       setAttribute(BUNDLE_EXEC_ENV, buf.toString());
     }
+  }
+  
+  /****************************************************************************
+   * Public utility methods
+   ***************************************************************************/
+  public boolean hasExportedPackage(PackageDescription pd) {
+    PackageDescription [] exportedPackages = getExportedPackages();
+    for (int i=0; i<exportedPackages.length; i++) {
+      if (exportedPackages[i].isCompatible(pd)) return true;
+    }
+    return false;
   }
   
   /****************************************************************************

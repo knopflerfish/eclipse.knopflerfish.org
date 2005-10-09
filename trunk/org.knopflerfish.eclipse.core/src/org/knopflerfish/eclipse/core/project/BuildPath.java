@@ -32,81 +32,97 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core;
+package org.knopflerfish.eclipse.core.project;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.knopflerfish.eclipse.core.manifest.BundleManifest;
+import org.eclipse.core.runtime.IPath;
+import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class OsgiBundle extends OsgiLibrary implements IOsgiBundle {
-
-  private BundleManifest bundleManifest;
-
-  public OsgiBundle(File jar) throws IOException {
-    super(jar);
-
-    if (getManifest() != null) {
-      bundleManifest = new BundleManifest(getManifest());
-    }
+public class BuildPath {
+  
+  private IPath containerPath;
+  private PackageDescription packageName;
+  private BundleIdentity bundleIdentity;
+  private String bundleName;
+  
+  public BuildPath(IPath path, PackageDescription pd, BundleIdentity id, String name) {
+    containerPath = path;
+    packageName = pd;
+    bundleIdentity = id;
+    bundleName = name;
   }
   
   /****************************************************************************
-   * org.knopflerfish.eclipse.core.IOsgiBundle methods
+   * Getters and setters
    ***************************************************************************/
-
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#getBundleManifest()
-   */
-  public BundleManifest getBundleManifest() {
-    return bundleManifest;
+  
+  public IPath getContainerPath() {
+    return containerPath;
   }
   
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#hasExportedPackage(org.knopflerfish.eclipse.core.PackageDescription)
-   */
-  public boolean hasExportedPackage(PackageDescription pd) {
-    return bundleManifest.hasExportedPackage(pd);
-  }
-
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IOsgiBundle#hasCategory(java.lang.String)
-   */
-  public boolean hasCategory(String cat) {
-    String [] categories = null;
-    if (bundleManifest != null) {
-      categories = bundleManifest.getCategories();
-    }
-    if (cat == null || categories == null) return false;
-
-    for (int i=0; i<categories.length; i++) {
-      if (cat.equals(categories[i])) return true;
-    }
-
-    return false;
+  public void setContainerPath(IPath path) {
+    containerPath = path;
   }
   
-  public String getDescription()
-  {
-  	return bundleManifest.getDescription();
+  public PackageDescription getPackageDescription() {
+    return packageName;
+  }
+  
+  public BundleIdentity getBundleIdentity() {
+    return bundleIdentity;
+  }
+  
+  public void setBundleIdentity(BundleIdentity id) {
+    bundleIdentity = id; 
+  }
+  
+  public String getBundleName() {
+    return bundleName;
+  }
+  
+  public void setBundleName(String name) {
+    bundleName = name;
   }
   
   /****************************************************************************
    * java.lang.Object methods
    ***************************************************************************/
-
+  
   /*
    *  (non-Javadoc)
    * @see java.lang.Object#equals(java.lang.Object)
    */
-  public boolean equals(Object obj) {
-    if(obj == null || !(obj instanceof OsgiBundle)) return false;
+  public boolean equals(Object o) {
+    if (o == null || !(o instanceof BuildPath)) return false;
     
-    return ((OsgiBundle) obj).getPath().equals(getPath());
+    BuildPath bp = (BuildPath) o;
+    boolean equal = ((containerPath == null && bp.containerPath == null ) || 
+        (containerPath != null && containerPath.equals(bp.containerPath))) &&
+        ((packageName == null && bp.packageName == null ) || 
+            (packageName != null && packageName.equals(bp.packageName)));
+    
+    return equal;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#toString()
+   */
+  public String toString() {
+    StringBuffer buf = new StringBuffer();
+    buf.append("Path [");
+    if (containerPath != null) {
+      buf.append(containerPath.toString());
+    }
+    buf.append("] Package [");
+    if (packageName != null) {
+      buf.append(packageName);
+    }
+    buf.append("]");
+    return buf.toString();
   }
 }

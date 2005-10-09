@@ -85,6 +85,9 @@
 		<classpathContainerInitializer 
 		  id="org.knopflerfish.eclipse.core.FRAMEWORK_CONTAINER"
 		  class="org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer"/>
+		<classpathContainerInitializer 
+		  id="org.knopflerfish.eclipse.core.BUNDLE_CONTAINER"
+		  class="org.knopflerfish.eclipse.core.project.classpath.BundleContainerInitializer"/>
    </extension>
    <extension
       id="activator"
@@ -95,6 +98,13 @@
    </extension>
    <extension
       id="name"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="myAttribute" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="version"
       point="org.eclipse.core.resources.markers">
       <super type="org.eclipse.core.resources.problemmarker"/>
       <!--attribute name="myAttribute" /-->

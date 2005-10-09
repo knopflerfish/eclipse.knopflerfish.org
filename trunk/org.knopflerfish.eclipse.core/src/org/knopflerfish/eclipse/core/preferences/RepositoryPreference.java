@@ -40,7 +40,7 @@ import org.osgi.service.prefs.Preferences;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class BundleRepository {
+public class RepositoryPreference {
 
   // Preferences keys
   protected static final String PREF_NAME             = "Name";
@@ -53,10 +53,10 @@ public class BundleRepository {
   private String config;
   private boolean active;
   
-  public BundleRepository() {
+  public RepositoryPreference() {
   }
   
-  public BundleRepository(Preferences node) {
+  public RepositoryPreference(Preferences node) {
     load(node);
   }
   
@@ -146,10 +146,10 @@ public class BundleRepository {
    * @see java.lang.Object#equals(java.lang.Object)
    */
   public boolean equals(Object o) {
-    if (o == null || !(o instanceof BundleRepository)) {
+    if (o == null || !(o instanceof RepositoryPreference)) {
       return false;
     }
-    BundleRepository repository = (BundleRepository) o;
+    RepositoryPreference repository = (RepositoryPreference) o;
     
     if (name == null) {
       return false;

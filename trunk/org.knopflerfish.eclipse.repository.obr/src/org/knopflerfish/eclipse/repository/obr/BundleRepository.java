@@ -32,30 +32,49 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.editors.manifest;
+package org.knopflerfish.eclipse.repository.obr;
 
-import org.eclipse.jdt.core.IClasspathEntry;
+import org.knopflerfish.eclipse.core.IBundleRepository;
+import org.knopflerfish.eclipse.core.IOsgiLibrary;
+import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class ImportPackageModelElement {
+public class BundleRepository implements IBundleRepository {
 
-  private PackageDescription pkg;
-  private IClasspathEntry container;
+  /****************************************************************************
+   * org.knopflerfish.eclipse.core.IBundleRepositoryType methods
+   ***************************************************************************/
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleRepository#getExportedPackages()
+   */
+  public PackageDescription[] getExportedPackages() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-  public ImportPackageModelElement(PackageDescription pkg, IClasspathEntry container) {
-    this.pkg = pkg;
-    this.container = container;
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleRepository#getExportingBundles(org.knopflerfish.eclipse.core.manifest.PackageDescription)
+   */
+  public BundleManifest[] getExportingBundles(PackageDescription pd) {
+    // TODO Auto-generated method stub
+    return null;
   }
-  
-  public PackageDescription getPackageDescription() {
-    return pkg;
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleRepository#getBundleLibraries(org.knopflerfish.eclipse.core.manifest.BundleIdentity)
+   */
+  public IOsgiLibrary[] getBundleLibraries(BundleIdentity id) {
+    // TODO Auto-generated method stub
+    return null;
   }
-  
-  public IClasspathEntry getContainer() {
-    return container;
-  }
+
 }

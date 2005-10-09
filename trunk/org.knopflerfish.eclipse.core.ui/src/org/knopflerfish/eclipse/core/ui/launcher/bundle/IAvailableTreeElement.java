@@ -34,6 +34,8 @@
 
 package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
+import org.osgi.framework.Version;
+
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
@@ -57,7 +59,7 @@ public interface IAvailableTreeElement {
   
   public String getName();
   
-  public String getVersion();
+  public Version getVersion();
   
   public String getPath();
   

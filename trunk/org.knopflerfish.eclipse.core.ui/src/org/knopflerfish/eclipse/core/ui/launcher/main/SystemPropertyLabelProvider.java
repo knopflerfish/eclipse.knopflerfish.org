@@ -44,7 +44,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 import org.knopflerfish.eclipse.core.SystemProperty;
 import org.knopflerfish.eclipse.core.SystemPropertyGroup;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -83,8 +83,8 @@ public class SystemPropertyLabelProvider implements ITableLabelProvider, IFontPr
   public String getColumnText(Object o, int columnIndex) {
     
     if (columnIndex == 0) {
-      if (o instanceof Framework) {
-        Framework distribution = (Framework) o;
+      if (o instanceof FrameworkPreference) {
+        FrameworkPreference distribution = (FrameworkPreference) o;
         return distribution.getName();
       } else if (o instanceof SystemPropertyGroup) {
         SystemPropertyGroup group = (SystemPropertyGroup) o;
@@ -96,7 +96,7 @@ public class SystemPropertyLabelProvider implements ITableLabelProvider, IFontPr
         return "";
       }
     } else if (columnIndex == 1) {
-      if (o instanceof Framework) {
+      if (o instanceof FrameworkPreference) {
         return "";
       } else if (o instanceof SystemPropertyGroup) {
         return "";

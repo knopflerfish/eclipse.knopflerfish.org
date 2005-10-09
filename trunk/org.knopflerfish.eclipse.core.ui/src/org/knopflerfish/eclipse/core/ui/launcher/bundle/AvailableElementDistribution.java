@@ -37,7 +37,8 @@ package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 import java.util.ArrayList;
 
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -47,9 +48,9 @@ public class AvailableElementDistribution implements IAvailableTreeElement {
 
   private final IAvailableTreeElement parent;
   private final ArrayList children = new ArrayList();
-  private final Framework distribution;
+  private final FrameworkPreference distribution;
 
-  AvailableElementDistribution(IAvailableTreeElement parent, Framework distribution) {
+  AvailableElementDistribution(IAvailableTreeElement parent, FrameworkPreference distribution) {
     this.parent = parent;
     this.distribution = distribution;
 
@@ -62,7 +63,7 @@ public class AvailableElementDistribution implements IAvailableTreeElement {
     }
   }
   
-  public Framework getFrameworkDistribution() {
+  public FrameworkPreference getFrameworkDistribution() {
     return distribution;
   }
   
@@ -114,8 +115,8 @@ public class AvailableElementDistribution implements IAvailableTreeElement {
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getVersion()
    */
-  public String getVersion() {
-    return "";
+  public Version getVersion() {
+    return null;
   }
   
   /*

@@ -67,7 +67,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.preferences.BundleRepository;
+import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
@@ -212,7 +212,7 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
           new BundleRepositoryDialog(Display.getDefault().getActiveShell(), getRepositoryNames(), null);
         
         if (dialog.open() == Window.OK) {
-          BundleRepository repository = dialog.getBundleRespository();
+          RepositoryPreference repository = dialog.getBundleRespository();
           repositories.add(repository);
           wRepositoryTableViewer.refresh();
           // Set active
@@ -236,7 +236,7 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
         
         if (selection == null || selection.size() != 1) return;
         
-        BundleRepository repository = (BundleRepository) selection.getFirstElement();
+        RepositoryPreference repository = (RepositoryPreference) selection.getFirstElement();
 
         BundleRepositoryDialog dialog = 
           new BundleRepositoryDialog(Display.getDefault().getActiveShell(), getRepositoryNames(), repository);
@@ -266,7 +266,7 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
         
         if (selection == null || selection.size() != 1) return;
         
-        BundleRepository repository = (BundleRepository) selection.getFirstElement();
+        RepositoryPreference repository = (RepositoryPreference) selection.getFirstElement();
         repositories.remove(repository);
         wRepositoryTableViewer.refresh();
         updateButtons();
@@ -287,7 +287,7 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
         
         if (selection == null || selection.size() != 1) return;
 
-        BundleRepository repository = (BundleRepository) selection.getFirstElement();
+        RepositoryPreference repository = (RepositoryPreference) selection.getFirstElement();
         int idx = repositories.indexOf(repository);
         if (idx > 0) {
           repositories.remove(repository);
@@ -312,7 +312,7 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
         
         if (selection == null || selection.size() != 1) return;
 
-        BundleRepository repository = (BundleRepository) selection.getFirstElement();
+        RepositoryPreference repository = (RepositoryPreference) selection.getFirstElement();
         int idx = repositories.indexOf(repository);
         if (idx < repositories.size()-1) {
           repositories.remove(repository);
@@ -326,7 +326,7 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
     
     wRepositoryTableViewer.setInput(repositories);
     for (int i=0; i< repositories.size(); i++) {
-      BundleRepository repository = (BundleRepository) repositories.get(i);
+      RepositoryPreference repository = (RepositoryPreference) repositories.get(i);
       wRepositoryTableViewer.setChecked(repository, repository.isActive());
     }
     UiUtils.packTableColumns(wRepositoryTableViewer.getTable());
@@ -347,7 +347,7 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
     // Save bundle repositories to preference store
     try {
       OsgiPreferences.setBundleRepositories(
-          (BundleRepository[]) repositories.toArray(new BundleRepository[repositories.size()]));
+          (RepositoryPreference[]) repositories.toArray(new RepositoryPreference[repositories.size()]));
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -363,7 +363,7 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
    * @see org.eclipse.jface.viewers.ICheckStateListener#checkStateChanged(org.eclipse.jface.viewers.CheckStateChangedEvent)
    */
   public void checkStateChanged(CheckStateChangedEvent event) {
-    BundleRepository repository = (BundleRepository) event.getElement();
+    RepositoryPreference repository = (RepositoryPreference) event.getElement();
     repository.setActive(event.getChecked());
   }
   
@@ -396,7 +396,7 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
     ArrayList names = new ArrayList();
     
     for (Iterator i=repositories.iterator(); i.hasNext();) {
-      BundleRepository repository = (BundleRepository) i.next();
+      RepositoryPreference repository = (RepositoryPreference) i.next();
       names.add(repository.getName());
     }
     

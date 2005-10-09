@@ -32,83 +32,51 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.knopflerfish.eclipse.core.ui.preferences;
+package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
-import java.util.List;
-
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.graphics.Image;
-import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
+import org.knopflerfish.eclipse.core.project.BuildPath;
+import org.knopflerfish.eclipse.core.project.classpath.BundleContainer;
+import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class RepositoryContentProvider implements IStructuredContentProvider, ITableLabelProvider {
+public class ImportProvider implements IStructuredContentProvider, ITableLabelProvider {
+  
   
   /****************************************************************************
    * org.eclipse.jface.viewers.IStructuredContentProvider methods
    ***************************************************************************/
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
-   */
-  public Object[] getElements(Object inputElement) {
-    List repositories = (List) inputElement;
-    return (RepositoryPreference[]) repositories.toArray(new RepositoryPreference[repositories.size()]);
-  }
-  
-  /****************************************************************************
-   * org.eclipse.jface.viewers.IContentProvider methods
-   ***************************************************************************/
-  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
    */
   public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
   }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
+   */
+  public Object[] getElements(Object inputElement) {
+    if ( !(inputElement instanceof ImportPackageModel)) return null;
+    
+    ImportPackageModel model = (ImportPackageModel) inputElement; 
+    
+    return model.getPaths();
+  }
   
   /****************************************************************************
    * org.eclipse.jface.viewers.ITableLabelProvider methods
    ***************************************************************************/
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.Object, int)
-   */
-  public Image getColumnImage(Object element, int columnIndex) {
-    if (columnIndex == 0) {
-      return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_LIBRARY);
-    }
-    return null;
-  }
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object, int)
-   */
-  public String getColumnText(Object element, int columnIndex) {
-    RepositoryPreference repository = (RepositoryPreference) element;
-    switch (columnIndex) {
-    case 0:
-      return repository.getName();
-    case 1:
-      return repository.getType();
-    default:
-      return "";
-    }
-  }
-  
-  /****************************************************************************
-   * org.eclipse.jface.viewers.IBaseLabelProvider methods
-   ***************************************************************************/
-  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
@@ -136,5 +104,51 @@ public class RepositoryContentProvider implements IStructuredContentProvider, IT
    * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
    */
   public void removeListener(ILabelProviderListener listener) {
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.Object, int)
+   */
+  public Image getColumnImage(Object element, int columnIndex) {
+    if (columnIndex == 0) {
+      return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
+    }
+    return null;
+  }
+  
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object, int)
+   */
+  public String getColumnText(Object o, int columnIndex) {
+    BuildPath path = (BuildPath) o;
+    
+    switch(columnIndex){
+    case 0:
+      return path.getPackageDescription().getPackageName();
+    case 1:
+      String version = path.getPackageDescription().getSpecificationVersion();
+      if (version == null) {
+        version = "";
+      }
+      return version;
+    case 2:
+      IPath containerPath = path.getContainerPath();
+      if (containerPath == null) {
+        return "[None selected]";
+      } else if (containerPath.toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
+        return "Framework";
+      } else if (containerPath.toString().startsWith(BundleContainer.CONTAINER_PATH)) {
+        String name= path.getBundleName();
+        if (name == null || name.trim().length() == 0) {
+          name = path.getBundleIdentity().getSymbolicName().toString();
+        }
+        return name;
+      } else {
+        return "Huh?";
+      }
+    }
+    return "";
   }
 }

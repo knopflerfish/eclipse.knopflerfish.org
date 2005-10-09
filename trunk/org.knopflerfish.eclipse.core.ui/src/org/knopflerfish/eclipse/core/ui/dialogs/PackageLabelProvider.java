@@ -47,53 +47,52 @@ import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 public class PackageLabelProvider implements ILabelProvider {
 
   /****************************************************************************
-   * org.eclipse.ui.forms.IFormPart methods
+   * org.eclipse.jface.viewers.ILabelProvider methods
    ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ILabelProvider#getImage(java.lang.Object)
+   */
   public Image getImage(Object element) {
     return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
   }
 
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
+   */
   public String getText(Object element) {
     PackageDescription pkgDescription = (PackageDescription) element;
     return pkgDescription.getPackageName();
-    /*
-    if (element instanceof PackageDescription) {
-    } else if (element instanceof IPackage) {
-      IPackage pkg = (IPackage) element;
-      StringBuffer buf = new StringBuffer(pkg.getPackageDescription().getPackageName());
-      if (pkg instanceof FrameworkPackage) {
-        FrameworkPackage fwPkg = (FrameworkPackage) pkg;
-        buf.append(" [Framework ");
-        buf.append(fwPkg.getFramework().getType());
-        buf.append("]");
-      } else if (pkg instanceof BundlePackage) {
-        BundlePackage bundlePkg = (BundlePackage) pkg;
-        buf.append(" [Bundle ");
-        buf.append(bundlePkg.getBundle().getName());
-        buf.append("]");
-      } else if (pkg instanceof ProjectPackage) {
-        ProjectPackage projectPkg = (ProjectPackage) pkg;
-        buf.append(" [Project ");
-        buf.append(projectPkg.getProject().getJavaProject().getProject().getName());
-        buf.append("]");
-      }
-      return buf.toString();
-    } else {
-      return "";
-    }
-    */
   }
 
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
+   */
   public void addListener(ILabelProviderListener listener) {
   }
 
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
+   */
   public void dispose() {
   }
 
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
+   */
   public boolean isLabelProperty(Object element, String property) {
     return false;
   }
 
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
+   */
   public void removeListener(ILabelProviderListener listener) {
   }
+
 }

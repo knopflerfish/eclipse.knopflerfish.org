@@ -63,7 +63,7 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
-import org.knopflerfish.eclipse.core.preferences.Framework;
+import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
@@ -82,7 +82,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
       ILaunch launch, IProgressMonitor monitor) throws CoreException {
 
     // Verify framework distribution
-    Framework distribution = verifyFrameworkDistribution(configuration);
+    FrameworkPreference distribution = verifyFrameworkDistribution(configuration);
     
     // Verify directory used for this OSGi configuration
     File instanceDir =  verifyInstanceDirectory(configuration);
@@ -175,14 +175,14 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     runner.run(runConfig, launch, monitor);
   }
 
-  public Framework verifyFrameworkDistribution(ILaunchConfiguration configuration) throws CoreException {
+  public FrameworkPreference verifyFrameworkDistribution(ILaunchConfiguration configuration) throws CoreException {
     String name = getFrameworkDistributionName(configuration);
     if (name == null) {
       abort("Framework name not specified.", null,
           IOsgiLaunchConfigurationConstants.ERR_UNSPECIFIED_INSTALL_NAME);
     }
     
-    Framework distribution = OsgiPreferences.getFramework(name);
+    FrameworkPreference distribution = OsgiPreferences.getFramework(name);
     if (distribution == null) {
       abort("Could not find framework '"+name+"'", null,
           IOsgiLaunchConfigurationConstants.ERR_INSTALL_NOT_FOUND);

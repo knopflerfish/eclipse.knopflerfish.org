@@ -66,12 +66,9 @@ import org.eclipse.ui.IWorkbench;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
-import org.knopflerfish.eclipse.core.pkg.IPackage;
-import org.knopflerfish.eclipse.core.pkg.PackageUtil;
-import org.knopflerfish.eclipse.core.preferences.Framework;
-import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.project.classpath.ClasspathUtil;
 import org.knopflerfish.eclipse.core.project.classpath.ExecutionEnvironmentContainer;
 import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
@@ -240,7 +237,7 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
     IClasspathEntry frameworkContainer = JavaCore.newContainerEntry(
         containerPath,
         new IAccessRule[] {rule},
-        new IClasspathAttribute[] {JavaCore.newClasspathAttribute(ClasspathUtil.TYPE, ClasspathUtil.FRAMEWORK)},
+        new IClasspathAttribute[] {},
         false
         );
     classPath.add(frameworkContainer);
@@ -260,12 +257,10 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
           bundleProject.getJavaProject().getProject().getFolder(projectPage.getSourceFolder()),
           packageName, 
           className);
-      
-      Framework distribution = OsgiPreferences.getFramework(projectPage.getFrameworkName());
-      IPackage[] pkgs = PackageUtil.findPackage("org.osgi.framework", distribution, IPackage.FRAMEWORK);
-      if (pkgs != null && pkgs.length > 0) {
-        bundleProject.importPackage(pkgs[0], true);
-      }
+      IPath path = new Path(FrameworkContainer.CONTAINER_PATH);
+      PackageDescription pd = new PackageDescription("org.osgi.framework", null);
+      BuildPath bp = new BuildPath(path, pd, null, "Framework");
+      bundleProject.addBuildPath(bp, true);
     }
   }
   

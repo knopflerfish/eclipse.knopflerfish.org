@@ -34,7 +34,13 @@
 
 package org.knopflerfish.eclipse.repository.framework;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.HashMap;
+
 import org.eclipse.core.runtime.Plugin;
+import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -46,6 +52,8 @@ public class RepositoryPlugin extends Plugin {
 	//The shared instance.
 	private static RepositoryPlugin plugin;
 	
+    static HashMap repositoriesCache = new HashMap();
+      
 	/**
 	 * The constructor.
 	 */
@@ -75,4 +83,43 @@ public class RepositoryPlugin extends Plugin {
 		return plugin;
 	}
 
+    public String storeFile(InputStream is, String name, BundleIdentity id) {
+
+      // Copy file to state location
+      StringBuffer buf = new StringBuffer(id.getSymbolicName().getSymbolicName());
+      buf.append("_");
+      buf.append(id.getBundleVersion().toString());
+      File stateDir = new File(getStateLocation().toFile(), buf.toString());
+      File file = new File(stateDir, name);
+      File parentDir = file.getParentFile();
+      if (!parentDir.exists()) {
+        parentDir.mkdirs();
+      }
+      
+      // Check that parent directory exist
+      if (!file.exists()) {
+        copyFile(is, file);
+      }
+      return file.getAbsolutePath();
+    }
+
+    private void copyFile(InputStream is, File dst) {
+      // Read bundle activator template
+      try {
+        FileOutputStream fos = new FileOutputStream(dst);
+        try {
+          
+          byte [] buf = new byte[256];
+          int numRead = 0;
+          while( (numRead = is.read(buf)) != -1) {
+            fos.write(buf, 0, numRead);
+          }
+        } finally {
+          fos.flush();
+          fos.close();
+        }
+      } catch (Throwable t) {
+        t.printStackTrace();
+      }
+    }
 }

@@ -331,30 +331,6 @@ public class Osgi {
   }
   
   /****************************************************************************
-   * Package methods
-   ***************************************************************************/
-  /*
-  public static PackageDescription[] getExportedFrameworkPackages(IFrameworkDefinition framework) {
-    if (framework == null) return null;
-    
-    return null;
-  }
-  
-  public static PackageDescription[] getExportedBundlePackages(IFrameworkDefinition framework) {
-    if (framework == null) return null;
-
-    return null;
-  }
-  
-  public static PackageDescription[] findExportedPackage(String packageName, IFrameworkDefinition framework) {
-    if (packageName == null || framework == null) return null;
-
-    return null;
-  }
-  */
-  
-  
-  /****************************************************************************
    * Project methods
    ***************************************************************************/
   public static boolean isBundleProject(IJavaProject project) {

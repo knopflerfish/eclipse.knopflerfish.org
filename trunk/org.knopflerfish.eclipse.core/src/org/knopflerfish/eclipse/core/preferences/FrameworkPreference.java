@@ -52,7 +52,7 @@ import org.osgi.service.prefs.Preferences;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class Framework {
+public class FrameworkPreference {
 
   private static String PREF_LOCATION               = "Location";
   private static String PREF_SPECIFICATION_VERISION = "SpecificationVersion";
@@ -81,10 +81,10 @@ public class Framework {
   private ArrayList bundles = new ArrayList();
   private ArrayList propertyGroups = new ArrayList();
   
-  public Framework() {
+  public FrameworkPreference() {
   }
   
-  public Framework(Preferences node) throws BackingStoreException {
+  public FrameworkPreference(Preferences node) throws BackingStoreException {
     load(node);
   }
   

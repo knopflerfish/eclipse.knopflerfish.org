@@ -15,6 +15,7 @@ public class BundleFilesVisitor implements IResourceDeltaVisitor {
   private boolean packDescriptionChanged = false;
   private boolean manifestRemoved = false;
   private boolean packDescriptionRemoved = false;
+  private boolean projectRemoved = false;
   private IFile manifestFile = null;
   private IFile packDescriptionFile = null;
 
@@ -53,6 +54,9 @@ public class BundleFilesVisitor implements IResourceDeltaVisitor {
     case IResource.PROJECT:
       String name = ((IProject) res).getName();
       if (project.getName().equals(name)) {
+        if (delta.getKind() == IResourceDelta.REMOVED) {
+          projectRemoved = true;
+        }
         return true;
       }
       return false;
@@ -66,6 +70,10 @@ public class BundleFilesVisitor implements IResourceDeltaVisitor {
   /****************************************************************************
    * Public getters
    ***************************************************************************/
+  public boolean isProjectRemoved() {
+    return projectRemoved;
+  }
+  
   public boolean isManifestRemoved() {
     return manifestRemoved;
   }

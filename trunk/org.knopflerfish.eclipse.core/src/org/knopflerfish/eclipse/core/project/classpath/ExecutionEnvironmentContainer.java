@@ -48,7 +48,7 @@ import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.LibraryLocation;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
-import org.knopflerfish.eclipse.core.preferences.ExecutionEnvironment;
+import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 
 /**
@@ -59,12 +59,12 @@ public class ExecutionEnvironmentContainer extends ClasspathContainerInitializer
 
   public static final String CONTAINER_PATH = "org.knopflerfish.eclipse.core.EXECUTION_ENVIRONMENT_CONTAINER";
   
-  private ExecutionEnvironment environment;
+  private EnvironmentPreference environment;
   
   public ExecutionEnvironmentContainer() {
   }
   
-  public ExecutionEnvironmentContainer(ExecutionEnvironment environment) {
+  public ExecutionEnvironmentContainer(EnvironmentPreference environment) {
     this.environment = environment;
   }
   
@@ -106,7 +106,7 @@ public class ExecutionEnvironmentContainer extends ClasspathContainerInitializer
     ArrayList classPath = new ArrayList();
 
     if (environment != null) {
-      if (environment.getType() == ExecutionEnvironment.TYPE_JRE) {
+      if (environment.getType() == EnvironmentPreference.TYPE_JRE) {
         // TODO: Return classpath for default JRE
         IVMInstall vmInstall = JavaRuntime.getDefaultVMInstall();
         if (vmInstall != null) {

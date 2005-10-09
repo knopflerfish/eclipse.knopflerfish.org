@@ -7,7 +7,7 @@
           class="org.knopflerfish.eclipse.repository.framework.BundleRepositoryType"
           configDescription="Name of framework"
           id="org.knopflerfish.eclipse.repository.framework.BundleRepositoryType"
-          image="icons/obj16/knopflerfish_obj.gif"
+          image="icons/obj16/fldr_obj.gif"
           name="Framework Repository"/>
    </extension>
 

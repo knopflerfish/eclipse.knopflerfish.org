@@ -34,6 +34,10 @@
 
 package org.knopflerfish.eclipse.core.ui.editors;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
@@ -55,7 +59,9 @@ import org.eclipse.ui.forms.editor.FormEditor;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.texteditor.DocumentProviderRegistry;
 import org.eclipse.ui.texteditor.IDocumentProvider;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
+import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ImportPackageModel;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestFormEditor;
@@ -183,12 +189,38 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
         manifestFormEditor.doSave(monitor);
         buildFormEditor.doSave(monitor);
         // Save documents
-        provider.saveDocument(monitor, manifestInput, buildFormEditor.getDocument().getManifestDocument(), true);
-        provider.saveDocument(monitor, bundlePackInput, buildFormEditor.getDocument().getPackDocument(), true);
-        // TODO: Update containers
-        System.err.println("Update containers");
-        ImportPackageModel model = buildFormEditor.getDocument().getImportPackageModel();
-        model.getElements();
+        IDocument manifestDoc = buildFormEditor.getDocument().getManifestDocument();
+        IDocument packDoc = buildFormEditor.getDocument().getPackDocument();
+        provider.saveDocument(monitor, manifestInput, manifestDoc, true);
+        provider.saveDocument(monitor, bundlePackInput, packDoc, true);
+
+        // Update project buildpath
+        ImportPackageModel model = manifestFormEditor.getDocument().getImportPackageModel();
+        BundleManifest manifest = ManifestUtil.createManifest(manifestDoc.get().getBytes());
+        model.updateManifest(manifest);
+        ArrayList newPaths = new ArrayList(Arrays.asList(model.getPaths()));
+        ArrayList oldPaths = new ArrayList(Arrays.asList(project.getBuildPaths()));
+
+        // Remove overlapping paths
+        for (Iterator i=newPaths.iterator(); i.hasNext();) {
+          BuildPath bp = (BuildPath) i.next();
+          if (oldPaths.remove(bp)) {
+            i.remove();
+          }
+        }
+        
+        // Add new paths
+        for (Iterator i=newPaths.iterator(); i.hasNext();) {
+          BuildPath bp = (BuildPath) i.next();
+          project.addBuildPath(bp, false);
+        }
+        
+        // Remove old paths
+        for (Iterator i=oldPaths.iterator(); i.hasNext();) {
+          BuildPath bp = (BuildPath) i.next();
+          project.removeBuildPath(bp, false);
+        }
+        
         firePropertyChange(PROP_DIRTY);
       }
     };
@@ -246,7 +278,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
       delta.accept(visitor);
       
       // Check if project is closed or removed or manifest file was  deleted
-      if (visitor.isManifestRemoved()) {
+      if (visitor.isManifestRemoved() || visitor.isProjectRemoved()) {
         // Close editor
         close(false); 
         return;

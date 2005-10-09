@@ -59,4 +59,18 @@ public interface IBundleRepositoryType {
    */
   public String[] getConfigSuggestions();
 
+  /**
+   * Create a bundle repository from the given configuration.
+   * 
+   * @param config configuration
+   * 
+   * @return bundle repository
+   */
+  public IBundleRepository createRepository(String config);
+
+  /**
+   * Refreshes all cached repositories refreshing any 
+   * cached data.
+   */
+  public void refreshRepositories();
 }
