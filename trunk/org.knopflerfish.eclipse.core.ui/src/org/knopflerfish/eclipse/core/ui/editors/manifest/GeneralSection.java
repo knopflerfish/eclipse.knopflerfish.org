@@ -152,6 +152,7 @@ public class GeneralSection extends SectionPart {
     "Copyright specification for this bundle.";
   
   // SWT Widgets
+  private StatusLabel wSymbolicNameStatusLabel;
   private Text wSymbolicNameText;
   private StatusLabel wVersionStatusLabel;
   private Text wVersionText;
@@ -210,6 +211,8 @@ public class GeneralSection extends SectionPart {
     updateStatus(marker, wNameStatusLabel, wNameText);
     marker = (IMarker) errors.get(BundleManifest.BUNDLE_VERSION);
     updateStatus(marker, wVersionStatusLabel, wVersionText);
+    marker = (IMarker) errors.get(BundleManifest.BUNDLE_SYMBOLIC_NAME);
+    updateStatus(marker, wSymbolicNameStatusLabel, wSymbolicNameText);
     
     wEnvironmentTableViewer.refresh();
   }
@@ -357,7 +360,8 @@ public class GeneralSection extends SectionPart {
     td.colspan = 3;
     basicText.setLayoutData(td);
     
-    createLabel(container, toolkit, BUNDLE_SYMBOLIC_NAME_LABEL, BUNDLE_SYMBOLIC_NAME_TOOLTIP);
+    wSymbolicNameStatusLabel = 
+      createLabel(container, toolkit, BUNDLE_SYMBOLIC_NAME_LABEL, BUNDLE_SYMBOLIC_NAME_TOOLTIP);
     wSymbolicNameText = createText(container, toolkit, 2);
     wVersionStatusLabel = 
       createLabel(container, toolkit, BUNDLE_VERSION_LABEL, BUNDLE_VERSION_TOOLTIP);

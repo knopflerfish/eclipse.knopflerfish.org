@@ -73,6 +73,7 @@ import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.manifest.SymbolicName;
 import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
@@ -91,6 +92,7 @@ public class BundleProject implements IBundleProject {
   public static final String MARKER_MANIFEST = "manifest";
   public static final String MARKER_BUNDLE_ACTIVATOR = "org.knopflerfish.eclipse.core.activator";
   public static final String MARKER_BUNDLE_NAME = "org.knopflerfish.eclipse.core.name";
+  public static final String MARKER_BUNDLE_SYMBOLICNAME = "org.knopflerfish.eclipse.core.symbolicName";
   public static final String MARKER_BUNDLE_VERSION = "org.knopflerfish.eclipse.core.version";
   public static final String MARKER_BUNDLE_UPDATELOCATION = "org.knopflerfish.eclipse.core.updateLocation";
   public static final String MARKER_BUNDLE_DOCURL = "org.knopflerfish.eclipse.core.docUrl";
@@ -820,6 +822,27 @@ public class BundleProject implements IBundleProject {
         IMarker.SEVERITY_WARNING,
         manifestFile);
 
+    // Check Bundle symbolic name
+    SymbolicName symbolicName = manifest.getSymbolicName();
+    String error = null;
+    int severity = IMarker.SEVERITY_WARNING;
+    manifestFile.deleteMarkers(MARKER_BUNDLE_SYMBOLICNAME, false, IResource.DEPTH_INFINITE);
+    if (symbolicName == null || symbolicName.getSymbolicName().trim().length() == 0) {
+      error = "Symbolic name must be set.";
+      severity = IMarker.SEVERITY_ERROR;
+    } else {
+      IStatus status = JavaConventions.validatePackageName(symbolicName.getSymbolicName());
+      if (status.getSeverity() == IStatus.ERROR) {
+        error = "Symbolic name is not a valid package name.";
+        severity = IMarker.SEVERITY_WARNING;
+      }
+    }
+    updateMarker(MARKER_BUNDLE_SYMBOLICNAME, 
+        ManifestUtil.findAttributeLine(manifestContents, BundleManifest.BUNDLE_SYMBOLIC_NAME), 
+        error, 
+        severity,
+        manifestFile);
+    
     // Check Bundle version
     updateMarker(MARKER_BUNDLE_VERSION, 
         ManifestUtil.findAttributeLine(manifestContents, BundleManifest.BUNDLE_VERSION), 

@@ -140,6 +140,7 @@ public class BundleWizardPage extends WizardPage {
           wBundleActivatorPackageText.setData(PROP_INITIALIZED, new Boolean(false));
         }
         verifyBundleSymbolicName();
+        updateStatus();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -363,7 +364,20 @@ public class BundleWizardPage extends WizardPage {
   }
   
   void verifyBundleSymbolicName() {
-    //String name = getBundleSymbolicName();
+    String name = wBundleSymbolicNameText.getText();
+    if (name == null || name.trim().length()== 0) {
+      wBundleSymbolicNameText.setData(ERROR, "Symbolic name must be set.");
+      wBundleSymbolicNameText.setData(WARNING, null);
+    } else {
+      IStatus status = JavaConventions.validatePackageName(name);
+      if (status.getSeverity() == IStatus.ERROR) {
+        wBundleSymbolicNameText.setData(ERROR, null);
+        wBundleSymbolicNameText.setData(WARNING, "Symbolic name should be based on the reverse domain name convention.");
+      } else {
+        wBundleSymbolicNameText.setData(ERROR, null);
+        wBundleSymbolicNameText.setData(WARNING, null);
+      }
+    }
   }
   
   void verifyBundleName() {
