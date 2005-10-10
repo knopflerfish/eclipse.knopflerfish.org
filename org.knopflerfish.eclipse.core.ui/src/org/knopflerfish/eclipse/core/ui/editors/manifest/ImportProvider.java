@@ -136,7 +136,7 @@ public class ImportProvider implements IStructuredContentProvider, ITableLabelPr
     case 2:
       IPath containerPath = path.getContainerPath();
       if (containerPath == null) {
-        return "[None selected]";
+        return "";
       } else if (containerPath.toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
         return "Framework";
       } else if (containerPath.toString().startsWith(BundleContainer.CONTAINER_PATH)) {

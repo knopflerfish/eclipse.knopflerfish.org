@@ -72,12 +72,14 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
+import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.pkg.PackageUtil;
 import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.project.classpath.BundleContainer;
 import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.SharedImages;
@@ -715,9 +717,13 @@ public class PackageSection extends SectionPart {
      *  (non-Javadoc)
      * @see org.eclipse.jface.viewers.ICellModifier#canModify(java.lang.Object, java.lang.String)
      */
-    public boolean canModify(Object element, String property) {
-      boolean canModify = PackageSection.PROP_PACKAGE_CONTAINER.equals(property);
-      return canModify;
+    public boolean canModify(Object o, String property) {
+      if (!PackageSection.PROP_PACKAGE_CONTAINER.equals(property)) {
+        return false;
+      }
+      BuildPath element = (BuildPath) o;
+      PackageDescription pd = element.getPackageDescription();
+      return !project.hasExportedPackage(pd);
     }
     
     /*
@@ -749,7 +755,7 @@ public class PackageSection extends SectionPart {
       
       // Return current selected bundle
       if (element.getContainerPath() == null) {
-        return "[None selected]";
+        return "";
       } else if (FrameworkContainer.CONTAINER_PATH.equals(element.getContainerPath().toString())) {
         return "Framework";
       } 

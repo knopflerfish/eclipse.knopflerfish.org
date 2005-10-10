@@ -104,6 +104,13 @@
       <persistent value="true" />
    </extension>
    <extension
+      id="symbolicName"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="myAttribute" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
       id="version"
       point="org.eclipse.core.resources.markers">
       <super type="org.eclipse.core.resources.problemmarker"/>
