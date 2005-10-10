@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Eclipse 3.1 OSGi framework definition
+Bundle-SymbolicName: org.knopflerfish.eclipse.framework.eclipse31; singleton:=true
+Bundle-Version: 1.0.0
+Bundle-Activator: org.knopflerfish.eclipse.framework.eclipse31.Eclipse31Plugin
+Bundle-Vendor: Knopflerfish
+Bundle-Localization: plugin
+Require-Bundle: org.eclipse.core.runtime,
+ org.knopflerfish.eclipse.core
+Eclipse-AutoStart: true

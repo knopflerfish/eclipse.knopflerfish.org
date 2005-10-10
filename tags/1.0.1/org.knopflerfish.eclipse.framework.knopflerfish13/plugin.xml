@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension
+         point="org.knopflerfish.eclipse.core.frameworkDefinition">
+    <frameworkDefinition
+          class="org.knopflerfish.eclipse.framework.knopflerfish.FrameworkDefinition"
+          id="org.knopflerfish.eclipse.framework.knopflerfish13.frameworkDefinition"
+          image="icons/obj16/knopflerfish_obj.gif"
+          name="Knopflerfish 1.3"/>
+   </extension>
+
+</plugin>
