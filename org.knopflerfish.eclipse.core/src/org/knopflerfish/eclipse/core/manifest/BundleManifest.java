@@ -96,7 +96,7 @@ public class BundleManifest extends Manifest {
   
   public SymbolicName getSymbolicName() {
     String name = getAttribute(BUNDLE_SYMBOLIC_NAME);
-    if (name == null) {
+    if (name == null || name.trim().length() == 0) {
       return null;
     }
     // Replace ':' with '_' in order work as hint in classpath container 
@@ -120,11 +120,13 @@ public class BundleManifest extends Manifest {
   }
   
   public Version getVersion() {
-    String version = getAttribute(BUNDLE_VERSION);
-    if (version == null) {
-      return null;
+    String s = getAttribute(BUNDLE_VERSION);
+    Version version = Version.emptyVersion;
+    try {
+      version = Version.parseVersion(s);
+    } catch (IllegalArgumentException e) {
     }
-    return new Version(version);
+    return version;
   }
   
   public void setVersion(Version value) {

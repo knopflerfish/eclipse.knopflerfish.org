@@ -39,6 +39,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import org.osgi.framework.Version;
+
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
@@ -50,10 +52,10 @@ public class PackageDescription {
   private String packageName;
   private Map attributes = new HashMap();
   
-  public PackageDescription(String name, String version) {
+  public PackageDescription(String name, Version version) {
     this.packageName = name;
-    if (version != null) {
-      attributes.put(SPECIFICATION_VERSION, version);
+    if (version != null && !version.equals(Version.emptyVersion)) {
+      attributes.put(SPECIFICATION_VERSION, version.toString());
     }
   }
   
@@ -77,18 +79,28 @@ public class PackageDescription {
         attributes.put(attr, value);
       }
     }
+    
+    
   }
   
   public String getPackageName() {
     return packageName;
   }
   
-  public String getSpecificationVersion() {
-    return getAttribute(SPECIFICATION_VERSION);
+  public Version getSpecificationVersion() {
+    try {
+      return Version.parseVersion(getAttribute(SPECIFICATION_VERSION));
+    } catch (IllegalArgumentException e) {
+      return Version.emptyVersion;
+    }
   }
   
-  public void setSpecificationVersion(String version) {
-    setAttribute(SPECIFICATION_VERSION, version);
+  public void setSpecificationVersion(Version version) {
+    if (version != null && !version.equals(Version.emptyVersion)) {
+      setAttribute(SPECIFICATION_VERSION, version.toString());
+    } else {
+      setAttribute(SPECIFICATION_VERSION, null);
+    }
   }
   
   public String getAttribute(String attr) {
@@ -105,20 +117,18 @@ public class PackageDescription {
     }
   }
 
-  public boolean isCompatible(PackageDescription pkg) {
+  public boolean isCompatible(PackageDescription pd) {
     // Check package name
-    if (pkg == null || pkg.getPackageName() == null) return false;
-    if (!packageName.equals(pkg.getPackageName())) return false;
+    if (pd == null || pd.getPackageName() == null) return false;
+    if (!packageName.equals(pd.getPackageName())) return false;
 
     // Package name the same, check specification version
-    if (pkg.getSpecificationVersion() == null) return true;
-    String version = getSpecificationVersion();
+    if (pd.getSpecificationVersion() == null) return true;
+    Version version = getSpecificationVersion();
     if (version == null) return false;
     
-    return true;
-    // TODO: Check if versions are compatible
-    //StringTokenizer st1 = new StringTokenizer(version);
-    //StringTokenize
+    // Check if versions are compatible
+    return (version.compareTo(pd.getSpecificationVersion()) >= 0);
   }
 
   /****************************************************************************
@@ -132,12 +142,21 @@ public class PackageDescription {
     if (obj == null || !(obj instanceof PackageDescription)) {
       return false;
     }
-    
+
     PackageDescription pd = (PackageDescription) obj;
     
-    return packageName.equals(pd.packageName);
+    // Check package name
+    if (!packageName.equals(pd.getPackageName())) return false;
+
+    // Package name the same, check specification version
+    Version version = getSpecificationVersion();
+    return version.equals(pd.getSpecificationVersion());
   }
   
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#toString()
+   */
   public String toString() {
     StringBuffer buf = new StringBuffer(packageName);
     

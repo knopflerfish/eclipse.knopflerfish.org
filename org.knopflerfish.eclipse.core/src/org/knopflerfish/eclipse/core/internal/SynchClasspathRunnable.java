@@ -212,7 +212,8 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
     IClasspathEntry libEntry = JavaCore.newLibraryEntry(
         path,
         null,
-        null);
+        null,
+        true);
     
     return libEntry;
     

@@ -266,8 +266,8 @@ public class BundleProject implements IBundleProject {
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.project.IBundleProject#getExportablePackages()
    */
-  public PackageDescription[] getExportablePackages() {
-    ArrayList packages = new ArrayList();
+  public String[] getExportablePackageNames() {
+    ArrayList packageNames = new ArrayList();
     IProject project = javaProject.getProject();
     try {
       IPackageFragmentRoot[] fragmentRoot = javaProject.getAllPackageFragmentRoots();
@@ -290,7 +290,7 @@ public class BundleProject implements IBundleProject {
                 // Check if package fragment has any classes to export
                 IPackageFragment fragment = (IPackageFragment) elements[j];
                 if (fragment.containsJavaResources()) {
-                  packages.add(new PackageDescription(fragment.getElementName(), null));
+                  packageNames.add(fragment.getElementName());
                 }
               }
             }
@@ -302,7 +302,7 @@ public class BundleProject implements IBundleProject {
     } catch (CoreException e) {
       e.printStackTrace();
     }
-    return (PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]);
+    return (String[]) packageNames.toArray(new String[packageNames.size()]);
   }
   
   /*
@@ -380,7 +380,7 @@ public class BundleProject implements IBundleProject {
           IAccessRule[] rules = rawClasspath[i].getAccessRules();
           for (int j=0; j<rules.length; j++) {
             if (rules[j].getKind() == IAccessRule.K_ACCESSIBLE) {
-              PackageDescription pd = ClasspathUtil.createPackageDescription(rules[j]);
+              PackageDescription pd = ClasspathUtil.createPackageDescription(rawClasspath[i], rules[j]);
               paths.add(new BuildPath(path, pd, null, "Framework"));
             }
           }
@@ -388,7 +388,7 @@ public class BundleProject implements IBundleProject {
           IAccessRule[] rules = rawClasspath[i].getAccessRules();
           for (int j=0; j<rules.length; j++) {
             if (rules[j].getKind() == IAccessRule.K_ACCESSIBLE) {
-              PackageDescription pd = ClasspathUtil.createPackageDescription(rules[j]);
+              PackageDescription pd = ClasspathUtil.createPackageDescription(rawClasspath[i], rules[j]);
               // Get bundle identity from classpath entry
               BundleIdentity id = BundleContainerInitializer.getBundleIdentity(rawClasspath[i].getPath());
               String name = ClasspathUtil.getClasspathAttribute(rawClasspath[i], ClasspathUtil.ATTR_BUNDLENAME);
@@ -495,11 +495,14 @@ public class BundleProject implements IBundleProject {
       
       // Check if access rule aleady exist
       IAccessRule rule = ClasspathUtil.createAccessRule(pd);
+      IClasspathAttribute attr =
+        JavaCore.newClasspathAttribute(pd.getPackageName(), pd.getSpecificationVersion().toString());
       if (idx != -1) {
         boolean exist = false;
         IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
         
         ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+        ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
         // Check if rule exists
         for(int i=0;i<rules.size();i++) {
           if (rule.equals(rules.get(i))) {
@@ -511,10 +514,12 @@ public class BundleProject implements IBundleProject {
         // Update classpath
         if (!exist) {
           rules.add(0, rule);
+          attributes.add(attr);
+              
           IClasspathEntry newEntry = JavaCore.newContainerEntry(
               new Path(FrameworkContainer.CONTAINER_PATH),
               (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-              new IClasspathAttribute[] {},
+              (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
               false
           );
           entries.remove(idx);
@@ -563,11 +568,14 @@ public class BundleProject implements IBundleProject {
       
       // Check if access rule exist
       IAccessRule rule = ClasspathUtil.createAccessRule(pd);
+      IClasspathAttribute attr =
+        JavaCore.newClasspathAttribute(pd.getPackageName(), pd.getSpecificationVersion().toString());
       if (idx != -1) {
         boolean exist = false;
         IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
         
         ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+        ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
         // Check if rule exists
         for(int i=0;i<rules.size();i++) {
           if (rule.equals(rules.get(i))) {
@@ -579,10 +587,11 @@ public class BundleProject implements IBundleProject {
         // Update classpath
         if (exist) {
           rules.remove(rule);
+          attributes.remove(attr);
           IClasspathEntry newEntry = JavaCore.newContainerEntry(
               new Path(FrameworkContainer.CONTAINER_PATH),
               (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-              new IClasspathAttribute[] {},
+              (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
               false
           );
           entries.remove(idx);
@@ -624,7 +633,7 @@ public class BundleProject implements IBundleProject {
         // Find bundle container
         IClasspathEntry entry = (IClasspathEntry) entries.get(i);
         if (entry.getPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
-          if (bp.getBundleIdentity().equals(BundleContainerInitializer.getBundleIdentity(entry.getPath()))) {
+          if (bp.getBundleIdentity().getSymbolicName().equals(BundleContainerInitializer.getBundleIdentity(entry.getPath()).getSymbolicName())) {
             idx = i;
             break;
           }
@@ -633,11 +642,16 @@ public class BundleProject implements IBundleProject {
       
       // Check if access rule aleady exist
       IAccessRule rule = ClasspathUtil.createAccessRule(bp.getPackageDescription());
+      IClasspathAttribute attr =
+        JavaCore.newClasspathAttribute(
+            bp.getPackageDescription().getPackageName(), 
+            bp.getPackageDescription().getSpecificationVersion().toString());
       if (idx != -1) {
         boolean exist = false;
         IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
         
         ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+        ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
         // Check if rule exists
         for(int i=0;i<rules.size();i++) {
           if (rule.equals(rules.get(i))) {
@@ -649,11 +663,11 @@ public class BundleProject implements IBundleProject {
         // Update classpath
         if (!exist) {
           rules.add(0, rule);
+          attributes.add(attr);
           IClasspathEntry newEntry = JavaCore.newContainerEntry(
-              new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().toString()),
+              new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().getSymbolicName().toString()),
               (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-              new IClasspathAttribute[] {
-                JavaCore.newClasspathAttribute(ClasspathUtil.ATTR_BUNDLENAME, bp.getBundleName())},
+              (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
               false
           );
           entries.remove(idx);
@@ -666,11 +680,13 @@ public class BundleProject implements IBundleProject {
       } else {
         // Add new entry
         IAccessRule defaultRule = JavaCore.newAccessRule(new Path("**/*"), IAccessRule.K_NON_ACCESSIBLE);
+        ArrayList attributes = new ArrayList();
+        attributes.add(JavaCore.newClasspathAttribute(ClasspathUtil.ATTR_BUNDLENAME, bp.getBundleName()));
+        attributes.add(attr);
         IClasspathEntry newEntry = JavaCore.newContainerEntry(
-            new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().toString()),
+            new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().getSymbolicName().toString()),
             new IAccessRule[] {rule, defaultRule},
-            new IClasspathAttribute[] {
-              JavaCore.newClasspathAttribute(ClasspathUtil.ATTR_BUNDLENAME, bp.getBundleName())},
+            (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
             false
         );
         entries.add(newEntry);
@@ -722,11 +738,16 @@ public class BundleProject implements IBundleProject {
       
       // Check if access rule aleady exist
       IAccessRule rule = ClasspathUtil.createAccessRule(bp.getPackageDescription());
+      IClasspathAttribute attr =
+        JavaCore.newClasspathAttribute(
+            bp.getPackageDescription().getPackageName(), 
+            bp.getPackageDescription().getSpecificationVersion().toString());
       if (idx != -1) {
         boolean exist = false;
         IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
         
         ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+        ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
         // Check if rule exists
         for(int i=0;i<rules.size();i++) {
           if (rule.equals(rules.get(i))) {
@@ -737,6 +758,7 @@ public class BundleProject implements IBundleProject {
         
         // Update classpath
         if (exist) {
+          attributes.remove(attr);
           rules.remove(rule);
           entries.remove(idx);
           if (rules.size() > 1) {
@@ -744,8 +766,7 @@ public class BundleProject implements IBundleProject {
             IClasspathEntry newEntry = JavaCore.newContainerEntry(
                 new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().toString()),
                 (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-                new IClasspathAttribute[] {
-                    JavaCore.newClasspathAttribute(ClasspathUtil.ATTR_BUNDLENAME, bp.getBundleName())},
+                (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
                 false
             );
             entries.add(idx, newEntry);
@@ -922,11 +943,12 @@ public class BundleProject implements IBundleProject {
   }
   
   public String checkManifestBundleVersion(BundleManifest manifest) {
-    // Check that bundle name is set
+    
+    String s = manifest.getAttribute(BundleManifest.BUNDLE_VERSION);
     try {
-      manifest.getVersion();
+      Version.parseVersion(s);
       return null;
-    } catch (Exception e) {
+    } catch (IllegalArgumentException e) {
       return "Version improperly formatted, format major('.'minor('.'micro('.'qualifier)?)?)?";
     }
   }
@@ -993,11 +1015,11 @@ public class BundleProject implements IBundleProject {
   }
   
   public String checkPackageExports(BundleManifest manifest) {
-    List exportablePackages = Arrays.asList(getExportablePackages());
+    List exportablePackages = Arrays.asList(getExportablePackageNames());
     
     PackageDescription[] packages = manifest.getExportedPackages();
     for(int i=0; i<packages.length;i++) {
-      if (!exportablePackages.contains(packages[i])) {
+      if (!exportablePackages.contains(packages[i].getPackageName())) {
         return "Bundle exports packages which are not in the bundle classpath.";
       }
     }

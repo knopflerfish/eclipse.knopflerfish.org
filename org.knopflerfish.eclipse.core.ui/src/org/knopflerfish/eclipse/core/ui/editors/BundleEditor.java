@@ -209,16 +209,16 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
           }
         }
         
-        // Add new paths
-        for (Iterator i=newPaths.iterator(); i.hasNext();) {
-          BuildPath bp = (BuildPath) i.next();
-          project.addBuildPath(bp, false);
-        }
-        
         // Remove old paths
         for (Iterator i=oldPaths.iterator(); i.hasNext();) {
           BuildPath bp = (BuildPath) i.next();
           project.removeBuildPath(bp, false);
+        }
+        
+        // Add new paths
+        for (Iterator i=newPaths.iterator(); i.hasNext();) {
+          BuildPath bp = (BuildPath) i.next();
+          project.addBuildPath(bp, false);
         }
         
         firePropertyChange(PROP_DIRTY);

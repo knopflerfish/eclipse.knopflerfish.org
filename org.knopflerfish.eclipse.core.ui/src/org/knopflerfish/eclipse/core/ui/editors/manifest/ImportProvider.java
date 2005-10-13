@@ -40,16 +40,34 @@ import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.graphics.Image;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.classpath.BundleContainer;
 import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class ImportProvider implements IStructuredContentProvider, ITableLabelProvider {
+public class ImportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider {
+  
+  
+  /****************************************************************************
+   * org.eclipse.jface.viewers.ViewerSorter methods
+   ***************************************************************************/
+  /*
+   *  (non-Javadoc)
+   * @see org.eclipse.jface.viewers.ViewerSorter#compare(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+   */
+  public int compare(Viewer viewer, Object o1, Object o2) {
+    PackageDescription pd1 = ((BuildPath) o1).getPackageDescription();
+    PackageDescription pd2 = ((BuildPath) o2).getPackageDescription();
+    
+    return pd1.getPackageName().compareTo(pd2.getPackageName());
+  }
   
   
   /****************************************************************************
@@ -128,11 +146,8 @@ public class ImportProvider implements IStructuredContentProvider, ITableLabelPr
     case 0:
       return path.getPackageDescription().getPackageName();
     case 1:
-      String version = path.getPackageDescription().getSpecificationVersion();
-      if (version == null) {
-        version = "";
-      }
-      return version;
+      Version version = path.getPackageDescription().getSpecificationVersion();
+      return version.toString();
     case 2:
       IPath containerPath = path.getContainerPath();
       if (containerPath == null) {

@@ -44,8 +44,10 @@ import java.util.TreeMap;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.ComboBoxCellEditor;
 import org.eclipse.jface.viewers.ICellModifier;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -72,21 +74,21 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
-import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.pkg.PackageUtil;
 import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.project.classpath.BundleContainer;
 import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.SharedImages;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.PackageLabelProvider;
+import org.knopflerfish.eclipse.core.ui.dialogs.PackageSelectionDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.PropertyDialog;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -124,7 +126,8 @@ public class PackageSection extends SectionPart {
   TableViewer   wExportPackageTableViewer;
   TableViewer   wImportPackageTableViewer;
   TableViewer   wDynamicImportPackageTableViewer;
-  ImportDialogEditor containerEditor;
+  ImportDialogEditor importPackageBundleEditor;
+  ComboBoxCellEditor importPackageVersionEditor;
   
   BundleManifest manifest = null;
   ImportPackageModel importPackageModel = null;
@@ -342,35 +345,29 @@ public class PackageSection extends SectionPart {
     wExportPackageAddButton = toolkit.createButton(wExportComposite, "Add...", SWT.PUSH);
     wExportPackageAddButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        PackageDescription[] exportablePackages = project.getExportablePackages();
+        ArrayList exportablePackageNames = new ArrayList(Arrays.asList(project.getExportablePackageNames()));
         ArrayList exportedPackages = new ArrayList(Arrays.asList(manifest.getExportedPackages()));
         
         // Remove already exported packages from list of exportable
-        TreeMap map = new TreeMap();
-        for (int i=0; i<exportablePackages.length; i++) {
-          map.put(exportablePackages[i].getPackageName(), exportablePackages[i]);
-        }
         for (Iterator i=exportedPackages.iterator(); i.hasNext();) {
           PackageDescription pd = (PackageDescription) i.next();
-          map.remove(pd.getPackageName());
+          exportablePackageNames.remove(pd.getPackageName());
         }
         
         ElementListSelectionDialog dialog = new ElementListSelectionDialog(
             Display.getCurrent().getActiveShell(),
             new PackageLabelProvider());
-        dialog.setElements(map.values().toArray(new PackageDescription[map.size()]));
+        dialog.setElements(exportablePackageNames.toArray(new String[exportablePackageNames.size()]));
         dialog.setMultipleSelection(true);
         dialog.setTitle("Select package");
         dialog.setImage(JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE));
         dialog.setMessage("Select package to export.");
         if (dialog.open() == Window.OK) {
-          Object[] packages = dialog.getResult();
-          for(int i=0; i<packages.length;i++) {
-            if (packages[i] instanceof PackageDescription) {
-              PackageDescription pd = (PackageDescription) packages[i];
-              if (!exportedPackages.contains(pd)) {
-                exportedPackages.add(pd);
-              }
+          Object[] packageNames = dialog.getResult();
+          for(int i=0; i<packageNames.length;i++) {
+            PackageDescription pd = new PackageDescription((String) packageNames[i], null);
+            if (!exportedPackages.contains(pd)) {
+              exportedPackages.add(pd);
             }
           }
           manifest.setExportedPackages((PackageDescription[]) exportedPackages.toArray(new PackageDescription[exportedPackages.size()]));
@@ -412,12 +409,17 @@ public class PackageSection extends SectionPart {
     ImportProvider importProvider = new ImportProvider();
     wImportPackageTableViewer.setContentProvider(importProvider);
     wImportPackageTableViewer.setLabelProvider(importProvider);
+    wImportPackageTableViewer.setSorter(importProvider);
     wImportPackageTableViewer.setColumnProperties(new String[] {PROP_PACKAGE_NAME, PROP_PACKAGE_VERSION, PROP_PACKAGE_CONTAINER});
     ImportCellModifier importCellModifier = new ImportCellModifier();
     wImportPackageTableViewer.setCellModifier(importCellModifier);
-    containerEditor = new ImportDialogEditor(wImportPackageTable);
+    importPackageBundleEditor = new ImportDialogEditor(wImportPackageTable);
+    importPackageVersionEditor = new ComboBoxCellEditor(
+        wImportPackageTable, 
+        new String[] {},
+        SWT.DROP_DOWN);
     wImportPackageTableViewer.setCellEditors(
-        new CellEditor[] {null, null, containerEditor});
+        new CellEditor[] {null, importPackageVersionEditor, importPackageBundleEditor});
     wImportPackageTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
       public void selectionChanged(SelectionChangedEvent event) {
         IStructuredSelection selection = 
@@ -481,30 +483,36 @@ public class PackageSection extends SectionPart {
         // Remove already imported packages from list of importable
         TreeMap map = new TreeMap();
         for (int i=0; i<importablePackages.length; i++) {
-          PackageDescription packageDescription = importablePackages[i];
-          packageDescription.setSpecificationVersion(null);
-          map.put(packageDescription.getPackageName(), packageDescription);
+          PackageDescription pd = importablePackages[i];
+          String name = pd.getPackageName();
+          ArrayList list = (ArrayList) map.get(name);
+          if (list == null) {
+            list = new ArrayList();
+          }
+          if (!list.contains(pd)) {
+            list.add(pd);
+          }
+          map.put(name, list);
         }
         for (Iterator i=importedPackages.iterator(); i.hasNext();) {
           PackageDescription pd = (PackageDescription) i.next();
           map.remove(pd.getPackageName());
         }
         
-        ElementListSelectionDialog dialog = new ElementListSelectionDialog(
+        PackageSelectionDialog dialog = new PackageSelectionDialog(
             Display.getCurrent().getActiveShell(), new PackageLabelProvider());
-        dialog.setElements(map.values().toArray(new PackageDescription[map.size()]));
+        dialog.setPackages(map);
         dialog.setMultipleSelection(true);
         dialog.setTitle("Select package");
         dialog.setImage(JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE));
         dialog.setMessage("Select package to import.");
         if (dialog.open() == Window.OK) {
           Object[] packages = dialog.getResult();
+          Version version = dialog.getVersion();
           for(int i=0; i<packages.length;i++) {
-            if (packages[i] instanceof PackageDescription) {
-              PackageDescription pd = (PackageDescription) packages[i];
-              if (!importedPackages.contains(pd)) {
-                importedPackages.add(pd);
-              }
+            PackageDescription pd = new PackageDescription((String) packages[i], version);
+            if (!importedPackages.contains(pd)) {
+              importedPackages.add(pd);
             }
           }
           manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
@@ -663,11 +671,8 @@ public class PackageSection extends SectionPart {
     public Object getValue(Object element, String property) {
       PackageDescription pd = (PackageDescription) element;
       if (PackageSection.PROP_PACKAGE_VERSION.equals(property)) {
-        String version = pd.getSpecificationVersion();
-        if (version == null) {
-          version = "";
-        }
-        return version;
+        Version version = pd.getSpecificationVersion();
+        return version.toString();
       } else if (PackageSection.PROP_PACKAGE_NAME.equals(property)) {
         return pd.getPackageName();
       } else {
@@ -691,7 +696,21 @@ public class PackageSection extends SectionPart {
             if (value== null || NO_VERSION_STR.equals(value)) {
               pd.setSpecificationVersion(null);
             } else {
-              pd.setSpecificationVersion(value.toString());
+              try {
+                pd.setSpecificationVersion(Version.parseVersion(value.toString()));
+              } catch (IllegalArgumentException e) {
+                MessageDialog msgDialog = new MessageDialog(
+                    Display.getCurrent().getActiveShell(),
+                    "Version Error",
+                    null,
+                    "Version improperly formatted, format major('.'minor('.'micro('.'qualifier)?)?)?",
+                    MessageDialog.ERROR,
+                    new String[] {"Ok"},
+                    0);
+                msgDialog.setBlockOnOpen(true);
+                msgDialog.open();
+                pd.setSpecificationVersion(null);
+              }
             }
             
             packages.remove(idx);
@@ -718,12 +737,15 @@ public class PackageSection extends SectionPart {
      * @see org.eclipse.jface.viewers.ICellModifier#canModify(java.lang.Object, java.lang.String)
      */
     public boolean canModify(Object o, String property) {
-      if (!PackageSection.PROP_PACKAGE_CONTAINER.equals(property)) {
+      BuildPath element = (BuildPath) o;
+      if (PackageSection.PROP_PACKAGE_CONTAINER.equals(property)) {
+        PackageDescription pd = element.getPackageDescription();
+        return !project.hasExportedPackage(pd);
+      } else if (PackageSection.PROP_PACKAGE_VERSION.equals(property)) {
+        return true;
+      } else {
         return false;
       }
-      BuildPath element = (BuildPath) o;
-      PackageDescription pd = element.getPackageDescription();
-      return !project.hasExportedPackage(pd);
     }
     
     /*
@@ -733,38 +755,94 @@ public class PackageSection extends SectionPart {
     public Object getValue(Object o, String property) {
       BuildPath element = (BuildPath) o;
       
-      // Update cell editor
-      PackageDescription pd = element.getPackageDescription();
 
-      ArrayList items = new ArrayList();
-      
-      // Add framework entry
-      if (PackageUtil.frameworkExportsPackage(project, pd)) {
-        IPath path = new Path(FrameworkContainer.CONTAINER_PATH);
-        items.add(new BuildPath(path, pd, null, "Framework"));
-      }
-      
-      // Add bundle entries from projects
-      items.addAll(Arrays.asList(PackageUtil.getExportingProjectBundles(pd)));
+      if (PackageSection.PROP_PACKAGE_CONTAINER.equals(property)) {
+        // Update cell editor
+        PackageDescription pd = element.getPackageDescription();
 
-      // Add bundle entries from repositories
-      items.addAll(Arrays.asList(PackageUtil.getExportingRepositoryBundles(pd)));
-      
-      // Set elements to show in dialog box
-      containerEditor.setElements((BuildPath[]) items.toArray(new BuildPath[items.size()]));
-      
-      // Return current selected bundle
-      if (element.getContainerPath() == null) {
-        return "";
-      } else if (FrameworkContainer.CONTAINER_PATH.equals(element.getContainerPath().toString())) {
-        return "Framework";
-      } 
-      
-      String name= element.getBundleName();
-      if (name == null || name.trim().length() == 0) {
-        name = element.getBundleIdentity().getSymbolicName().toString();
+        ArrayList items = new ArrayList();
+        
+        // Add framework entry
+        if (PackageUtil.frameworkExportsPackage(project, pd)) {
+          IPath path = new Path(FrameworkContainer.CONTAINER_PATH);
+          items.add(new BuildPath(path, pd, null, "Framework"));
+        }
+        
+        // Add bundle entries from projects
+        BuildPath[] projectBuildPaths = PackageUtil.getExportingProjectBundles(pd);
+        for (int i=0; i<projectBuildPaths.length; i++) {
+          if (!items.contains(projectBuildPaths[i])) {
+            items.add(projectBuildPaths[i]);
+          }
+        }
+  
+        // Add bundle entries from repositories
+        BuildPath[] repositoryBuildPaths = PackageUtil.getExportingRepositoryBundles(pd);
+        for (int i=0; i<repositoryBuildPaths.length; i++) {
+          if (!items.contains(repositoryBuildPaths[i])) {
+            items.add(repositoryBuildPaths[i]);
+          }
+        }
+        
+        // Set elements to show in dialog box
+        importPackageBundleEditor.setElements((BuildPath[]) items.toArray(new BuildPath[items.size()]));
+        
+        // Return current selected bundle
+        if (element.getContainerPath() == null) {
+          return "";
+        } else if (FrameworkContainer.CONTAINER_PATH.equals(element.getContainerPath().toString())) {
+          return "Framework";
+        } 
+        
+        String name= element.getBundleName();
+        if (name == null || name.trim().length() == 0) {
+          name = element.getBundleIdentity().getSymbolicName().toString();
+        }
+        return name;
+      } else if (PackageSection.PROP_PACKAGE_VERSION.equals(property)) {
+        // Update cell editor
+        PackageDescription pd = element.getPackageDescription();
+        
+        Version version = pd.getSpecificationVersion();
+        
+        ArrayList versions = new ArrayList();
+        versions.add(Version.emptyVersion.toString());
+        
+        // Add package versions available from framework runtime
+        Version[] frameworkPackageVersions = 
+          PackageUtil.getFrameworkPackageVersions(project, pd.getPackageName());
+        for(int i=0; i<frameworkPackageVersions.length; i++) {
+          if (!versions.contains(frameworkPackageVersions[i].toString())) {
+            versions.add(frameworkPackageVersions[i].toString());
+          }
+        }
+        
+        // Add package versions available from bundle projects
+        Version[] projectPackageVersions = 
+          PackageUtil.getProjectPackageVersions(pd.getPackageName());
+        for(int i=0; i<projectPackageVersions.length; i++) {
+          if (!versions.contains(projectPackageVersions[i].toString())) {
+            versions.add(projectPackageVersions[i].toString());
+          }
+        }
+        
+        // Add package versions available from repositories
+        Version[] repositoryPackageVersions = 
+          PackageUtil.getRepositoryPackageVersions(pd.getPackageName());
+        for(int i=0; i<repositoryPackageVersions.length; i++) {
+          if (!versions.contains(repositoryPackageVersions[i].toString())) {
+            versions.add(repositoryPackageVersions[i].toString());
+          }
+        }
+        
+        // Set elements to show in combo box
+        importPackageVersionEditor.setItems((String[]) versions.toArray(new String[versions.size()]));
+        
+        int idx = versions.indexOf(version.toString());
+        return new Integer(idx);
+      } else {
+        return null;
       }
-      return name;
     }
     
     /*
@@ -772,21 +850,51 @@ public class PackageSection extends SectionPart {
      * @see org.eclipse.jface.viewers.ICellModifier#modify(java.lang.Object, java.lang.String, java.lang.Object)
      */
     public void modify(Object element, String property, Object value) {
-      if (element instanceof Item && ((Item) element).getData() instanceof BuildPath && 
-          value instanceof BuildPath) {
-        if (PackageSection.PROP_PACKAGE_CONTAINER.equals(property)) {
-          BuildPath oldBuildPath = (BuildPath) ((Item) element).getData();
+      
+      if (element instanceof Item && ((Item) element).getData() instanceof BuildPath) {
+        BuildPath oldBuildPath = (BuildPath) ((Item) element).getData();
+        if (PackageSection.PROP_PACKAGE_CONTAINER.equals(property) && value instanceof BuildPath) {
           BuildPath newBuildPath = (BuildPath) value;
-
+  
           oldBuildPath.setBundleIdentity(newBuildPath.getBundleIdentity());
           oldBuildPath.setContainerPath(newBuildPath.getContainerPath());
           oldBuildPath.setBundleName(newBuildPath.getBundleName());
-
-          wImportPackageTableViewer.refresh();
-          UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
-          markDirty();
+        } else if (PackageSection.PROP_PACKAGE_VERSION.equals(property) && value instanceof Integer) {
+          Version version = Version.emptyVersion;
+          try {
+            int idx = ((Integer) value).intValue();
+            String[] items = importPackageVersionEditor.getItems();
+            version = Version.parseVersion(items[idx]);
+          } catch (IllegalArgumentException e) {
+            version = Version.emptyVersion;
+          }
+          String packageName = oldBuildPath.getPackageDescription().getPackageName();
+          List packages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+          int idx = -1;
+          for(int i=0; i<packages.size(); i++) {
+            PackageDescription pd = (PackageDescription) packages.get(i);
+            if (packageName.equals(pd.getPackageName())) {
+              idx = i;
+              break;
+            }
+          }
+          
+          PackageDescription pd = new PackageDescription(packageName, version);
+          if (idx != -1) {
+            packages.remove(idx);
+            packages.add(idx, pd);
+          } else {
+            packages.add(pd);
+          }
+          
+          manifest.setImportedPackages((PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]));
+          importPackageModel.updateManifest(manifest);
         }
+        //wImportPackageTableViewer.update(oldBuildPath, null);
+        wImportPackageTableViewer.refresh();
+        UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
+        markDirty();
       }
-    }
+    }   
   }
 }

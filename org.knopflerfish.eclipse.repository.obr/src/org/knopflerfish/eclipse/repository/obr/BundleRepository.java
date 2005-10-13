@@ -37,9 +37,10 @@ package org.knopflerfish.eclipse.repository.obr;
 import org.knopflerfish.eclipse.core.IBundleRepository;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
-import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.manifest.SymbolicName;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -71,18 +72,28 @@ public class BundleRepository implements IBundleRepository {
 
   /*
    *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepository#getBundleLibraries(org.knopflerfish.eclipse.core.manifest.BundleIdentity)
+   * @see org.knopflerfish.eclipse.core.IBundleRepository#getBundleLibraries(org.knopflerfish.eclipse.core.manifest.SymbolicName, org.knopflerfish.eclipse.core.manifest.PackageDescription[])
    */
-  public IOsgiLibrary[] getBundleLibraries(BundleIdentity id) {
+  public IOsgiLibrary[] getBundleLibraries(SymbolicName symbolicName, PackageDescription[] packages) {
     // TODO Auto-generated method stub
     return null;
   }
+
 
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IBundleRepository#getBundles()
    */
   public IOsgiBundle[] getBundles() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleRepository#getPackageVersions(java.lang.String)
+   */
+  public Version[] getPackageVersions(String packageName) {
     // TODO Auto-generated method stub
     return null;
   }

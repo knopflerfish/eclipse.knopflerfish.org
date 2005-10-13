@@ -57,20 +57,31 @@ public class FrameworkDefinition implements IFrameworkDefinition {
   private static String PATH_PROPERTY_FILE = "resources/framework.props";
   
   private static String [] PATH_FRAMEWORK_LIB = new String [] {
-    "plugins/org.eclipse.osgi_3.1.0.jar"
+    "plugins/org.eclipse.osgi_3.1.0.jar",
+    "plugins/org.eclipse.osgi_3.1.1.jar"
   };
-
-  // Paths relative root directory for definition  
-  private static String PATH_MAINLIB     = "plugins/org.eclipse.osgi_3.1.0.jar";
-  private static String PATH_MAINLIB_SRC =
+  
+  // Paths relative root directory for definition
+  private static String PATH_MAINLIB_3_1_0     = 
+    "plugins/org.eclipse.osgi_3.1.0.jar";
+  private static String PATH_MAINLIB_SRC_3_1_0 =
     "plugins/org.eclipse.rcp.source_3.1.0/src/org.eclipse.osgi_3.1.0/src.zip";
-
+  private static String PATH_MAINLIB_3_1_1     = 
+    "plugins/org.eclipse.osgi_3.1.1.jar";
+  private static String PATH_MAINLIB_SRC_3_1_1 =
+    "plugins/org.eclipse.rcp.source_3.1.0/src/org.eclipse.osgi_3.1.1/src.zip";
+  private static String[][] PATH_MAINLIBS = {
+    new String[] {PATH_MAINLIB_3_1_0, PATH_MAINLIB_SRC_3_1_0},
+    new String[] {PATH_MAINLIB_3_1_1, PATH_MAINLIB_SRC_3_1_1}
+  };
+  
   private static String[] PATH_RUNTIME_LIBRARIES = new String[] {
-    "plugins/org.eclipse.osgi_3.1.0.jar"
+    "plugins/org.eclipse.osgi_3.1.0.jar",
+    "plugins/org.eclipse.osgi_3.1.1.jar"
   };
   
   private static String PATH_BUNDLE_DIR = "plugins";
-
+  
   private final static String EXPORTED_PACKAGE_X_INTERNAL_ATTRIBUTE = "x-internal:";
   private final static String EXPORTED_PACKAGE_X_FRIEND_ATTRIBUTE = "x-friend:";
   
@@ -84,7 +95,7 @@ public class FrameworkDefinition implements IFrameworkDefinition {
   public boolean isValidDir(File dir) {
     return getRootDir(dir) != null;
   }
-
+  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getMainLibrary(java.io.File)
@@ -93,17 +104,21 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     File root = getRootDir(dir);
     if (root == null) return null;
     
-    File file = new File(root, PATH_MAINLIB);
-    OsgiLibrary mainLib = null;
-    try {
-      mainLib = new OsgiLibrary(file);
-      File src = new File(root, PATH_MAINLIB_SRC);
-      if (src.exists()) {
-        mainLib.setSource(src.getAbsolutePath());
+    for (int i=0; i<PATH_MAINLIBS.length; i++) {
+      File file = new File(root, PATH_MAINLIBS[i][0]);
+      if (file.exists() && file.isFile()) {
+        try {
+          OsgiLibrary mainLib = new OsgiLibrary(file);
+          File src = new File(root, PATH_MAINLIBS[i][1]);
+          if (src.exists()) {
+            mainLib.setSource(src.getAbsolutePath());
+          }
+          return mainLib;
+        } catch (IOException e) {}
       }
-    } catch (IOException e) {}
+    }
     
-    return mainLib;
+    return null;
   }
   
   /*
@@ -122,19 +137,19 @@ public class FrameworkDefinition implements IFrameworkDefinition {
         try {
           OsgiLibrary library = new OsgiLibrary(libFile);
           /*File src = new File(root, PATH_MAINLIB_SRC);
-          if (src.exists()) {
-            library.setSource(src.getAbsolutePath());
-          }*/
+           if (src.exists()) {
+           library.setSource(src.getAbsolutePath());
+           }*/
           libraries.add(library);
         } catch (IOException e) {
           e.printStackTrace();
         }
       }
     }
-
+    
     return (IOsgiLibrary[]) libraries.toArray(new IOsgiLibrary[libraries.size()]);
   }
-
+  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getBundles(java.io.File)
@@ -159,14 +174,14 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     
     return (IOsgiBundle[]) bundles.toArray(new IOsgiBundle[bundles.size()]);
   }
-
+  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getSystemPropertyGroups()
    */
   public SystemPropertyGroup[] getSystemPropertyGroups() {
     ArrayList groups = new ArrayList();
-
+    
     // Load and set properties
     InputStream is = null;
     try {
@@ -186,11 +201,11 @@ public class FrameworkDefinition implements IFrameworkDefinition {
             } else {
               groups.add(propertyGroup);
             }
-
+            
             String name = props.getProperty(propBase+".name");
             if (name != null) {
               SystemProperty property = new SystemProperty(name);
-
+              
               String description = props.getProperty(propBase+".description");
               if (description != null) {
                 property.setDescription(description);
@@ -221,10 +236,10 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     } catch (Throwable t) {
       t.printStackTrace();
     }
-
+    
     return (SystemPropertyGroup[]) groups.toArray(new SystemPropertyGroup[groups.size()]);
   }
-
+  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#createConfiguration()
@@ -237,7 +252,7 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     
     return new FrameworkConfiguration(new File(installationPath, PATH_BUNDLE_DIR), dir);
   }
-
+  
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getExportedPackages(org.knopflerfish.eclipse.core.IOsgiLibrary[])
@@ -271,7 +286,7 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     
     return (PackageDescription[]) descriptions.toArray(new PackageDescription[descriptions.size()]);
   }
-
+  
   /****************************************************************************
    * Private utility methods
    ***************************************************************************/
@@ -288,7 +303,7 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     
     return root;
   }
-
+  
   private ArrayList getJars(File f) {
     if (!f.isDirectory())
     {
@@ -305,5 +320,5 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     }
     return jars;
   }
-
+  
 }

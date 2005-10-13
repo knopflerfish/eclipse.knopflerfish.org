@@ -110,21 +110,31 @@ public class ImportQuickFix implements IQuickFixProcessor {
       }
       PackageDescription pd = new PackageDescription(name, null);
 
+      ArrayList items = new ArrayList();
+      
       // Add import from framework proposal
       if (PackageUtil.frameworkExportsPackage(bundleProject, pd)) {
         IPath path = new Path(FrameworkContainer.CONTAINER_PATH);
         BuildPath buildPath = new BuildPath(path, pd, null, "Framework");
+        items.add(buildPath);
         proposals.add(new BuildPathCompletionProposal(bundleProject, buildPath));
       }
       
       // Add import from bundle proposal
-      BuildPath[] buildPaths = PackageUtil.getExportingProjectBundles(pd);
-      for (int j=0; j<buildPaths.length;j++) {
-        proposals.add(new BuildPathCompletionProposal(bundleProject, buildPaths[j]));
+      BuildPath[] projectBuildPaths = PackageUtil.getExportingProjectBundles(pd);
+      for (int j=0; j<projectBuildPaths.length;j++) {
+        if (!items.contains(projectBuildPaths[i])) {
+          items.add(projectBuildPaths[i]);
+          proposals.add(new BuildPathCompletionProposal(bundleProject, projectBuildPaths[j]));
+        }
       }
-      buildPaths = PackageUtil.getExportingRepositoryBundles(pd);
-      for (int j=0; j<buildPaths.length;j++) {
-        proposals.add(new BuildPathCompletionProposal(bundleProject, buildPaths[j]));
+      
+      BuildPath[] repositoryBuildPaths = PackageUtil.getExportingRepositoryBundles(pd);
+      for (int j=0; j<repositoryBuildPaths.length;j++) {
+        if (!items.contains(repositoryBuildPaths[i])) {
+          items.add(repositoryBuildPaths[i]);
+          proposals.add(new BuildPathCompletionProposal(bundleProject, repositoryBuildPaths[j]));
+        }
       }
     }
     

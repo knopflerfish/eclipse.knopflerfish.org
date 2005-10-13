@@ -36,6 +36,8 @@ package org.knopflerfish.eclipse.core.pkg;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -52,6 +54,7 @@ import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.manifest.SymbolicName;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
@@ -59,6 +62,7 @@ import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.IBundleProject;
 import org.knopflerfish.eclipse.core.project.classpath.BundleContainer;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -148,15 +152,19 @@ public class PackageUtil {
    ***************************************************************************/
   
   public static boolean frameworkExportsPackage(BundleProject project, PackageDescription pd) {
-    ArrayList packages = new ArrayList();
     try {
       // Get packages exported by the currently used framework
       FrameworkPreference framework = project.getFramework();
       IFrameworkDefinition definition = Osgi.getFrameworkDefinition(framework.getType());
-      packages.addAll(Arrays.asList(definition.getExportedPackages(framework.getRuntimeLibraries())));
+      PackageDescription[] packages = definition.getExportedPackages(framework.getRuntimeLibraries());
+      for (int i=0; i<packages.length; i++) {
+        if (packages[i].isCompatible(pd)) {
+          return true;
+        }
+      }
     } catch (Throwable t) {
     }
-    return packages.contains(pd);
+    return false;
   }
   
   public static BuildPath[] getExportingProjectBundles(PackageDescription pd) {
@@ -176,7 +184,7 @@ public class PackageUtil {
           if (bundleProject.hasExportedPackage(pd)) {
             BundleIdentity id = bundleProject.getId();
             String  name = bundleProject.getBundleManifest().getName();
-            bundleIds.add(new BuildPath(path.append("/"+id.toString()), pd, id, name));
+            bundleIds.add(new BuildPath(path.append("/"+id.getSymbolicName().toString()), pd, id, name));
           }
         }
       } catch (CoreException e) {
@@ -205,13 +213,90 @@ public class PackageUtil {
       if (manifests == null) continue;
 
       for(int j=0; j<manifests.length; j++) {
-        BundleIdentity id = new BundleIdentity(
-            manifests[j].getSymbolicName(), 
-            manifests[j].getVersion());
-        bundleIds.add(new BuildPath(path.append("/"+id.toString()), pd, id, manifests[j].getName()));
+        SymbolicName symbolicName = manifests[j].getSymbolicName();
+        // Use name if symbolic name is not set
+        if (symbolicName == null && manifests[j].getName() != null) {
+          symbolicName = new SymbolicName(manifests[j].getName());
+        }
+        // Skip if Symbolic name is not set 
+        if (symbolicName == null) continue;
+        BundleIdentity id = new BundleIdentity(symbolicName, manifests[j].getVersion());
+        bundleIds.add(new BuildPath(path.append("/"+id.getSymbolicName().toString()), pd, id, manifests[j].getName()));
       }
     }
     
     return (BuildPath[]) bundleIds.toArray(new BuildPath[bundleIds.size()]);
   }  
+  
+  public static Version[] getFrameworkPackageVersions(BundleProject project, String packageName) {
+    ArrayList versions = new ArrayList();
+    
+    // Framework
+    try {
+      // Get packages exported by the currently used framework
+      FrameworkPreference framework = project.getFramework();
+      IFrameworkDefinition definition = Osgi.getFrameworkDefinition(framework.getType());
+      List packages = Arrays.asList(definition.getExportedPackages(framework.getRuntimeLibraries()));
+      for(Iterator i=packages.iterator(); i.hasNext();) {
+        PackageDescription pd = (PackageDescription) i.next();
+        if (packageName.equals(pd.getPackageName())) {
+          if (!versions.contains(pd.getSpecificationVersion())) {
+            versions.add(pd.getSpecificationVersion());
+          }
+        }
+      }
+    } catch (Throwable t) {}
+
+    return (Version[]) versions.toArray(new Version[versions.size()]);
+  }
+
+  public static Version[] getProjectPackageVersions(String packageName) {
+    ArrayList versions = new ArrayList();
+    
+    // Projects
+    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+    IProject [] projects = root.getProjects();
+    PackageDescription pd = new PackageDescription(packageName, null);
+    for(int i=0; projects != null && i<projects.length; i++) {
+      try {
+        if (projects[i].hasNature(Osgi.NATURE_ID)) {
+          IJavaProject project = JavaCore.create(projects[i]);
+          IBundleProject bundleProject = new BundleProject(project);
+          PackageDescription [] exportedPackages = 
+            bundleProject.getBundleManifest().getExportedPackages();
+          for (int j=0; j<exportedPackages.length; j++) {
+            if (exportedPackages[j].isCompatible(pd)) {
+              versions.add(exportedPackages[j].getSpecificationVersion());
+            }
+          }
+        }
+      } catch (CoreException e) {
+        // Failed to check project nature.
+      }
+    }
+    
+    return (Version[]) versions.toArray(new Version[versions.size()]);
+  }
+
+  public static Version[] getRepositoryPackageVersions(String packageName) {
+    ArrayList versions = new ArrayList();
+    
+    // Repositories
+    RepositoryPreference[] repositoryPref = OsgiPreferences.getBundleRepositories();
+    for (int i=0; i<repositoryPref.length; i++) {
+      if (!repositoryPref[i].isActive()) continue;
+      
+      IBundleRepositoryType repositoryType = Osgi.getBundleRepositoryType(repositoryPref[i].getType());
+      if (repositoryType == null) continue;
+      
+      IBundleRepository repository = repositoryType.createRepository(repositoryPref[i].getConfig());
+      if (repository == null) continue;
+
+      Version[] repositoryVersions = repository.getPackageVersions(packageName);
+      if (repositoryVersions != null) {
+        versions.addAll(Arrays.asList(repositoryVersions));
+      }
+    }
+    return (Version[]) versions.toArray(new Version[versions.size()]);
+  }
 }
