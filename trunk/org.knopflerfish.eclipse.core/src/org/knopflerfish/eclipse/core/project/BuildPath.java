@@ -72,6 +72,10 @@ public class BuildPath {
     return packageName;
   }
   
+  public void setPackageDescription(PackageDescription description) {
+    packageName = description;
+    
+  }
   public BundleIdentity getBundleIdentity() {
     return bundleIdentity;
   }
@@ -103,7 +107,9 @@ public class BuildPath {
     boolean equal = ((containerPath == null && bp.containerPath == null ) || 
         (containerPath != null && containerPath.equals(bp.containerPath))) &&
         ((packageName == null && bp.packageName == null ) || 
-            (packageName != null && packageName.equals(bp.packageName)));
+            (packageName != null && packageName.equals(bp.packageName))) &&
+        ((bundleName == null && bp.bundleName == null ) || 
+            (bundleName != null && bundleName.equals(bp.bundleName)));
     
     return equal;
   }
@@ -125,4 +131,5 @@ public class BuildPath {
     buf.append("]");
     return buf.toString();
   }
+
 }

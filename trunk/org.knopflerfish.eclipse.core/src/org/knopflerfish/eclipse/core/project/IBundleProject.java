@@ -63,7 +63,7 @@ public interface IBundleProject {
    * 
    * @return array of BundleActivator implementations
    */
-  public PackageDescription[] getExportablePackages();
+  public String[] getExportablePackageNames();
   
   /**
    * Returns all implementations of BundleActivator in this

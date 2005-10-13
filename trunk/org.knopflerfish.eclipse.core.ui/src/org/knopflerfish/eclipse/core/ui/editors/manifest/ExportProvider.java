@@ -54,6 +54,7 @@ import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.SharedImages;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -153,9 +154,9 @@ public class ExportProvider extends ViewerSorter implements IStructuredContentPr
    */
   public Image getColumnImage(Object element, int columnIndex) {
     if (columnIndex == 0) {
-      PackageDescription desc = (PackageDescription) element;
-      List packages = Arrays.asList(project.getExportablePackages());
-      if (packages.contains(desc)) {
+      PackageDescription pd = (PackageDescription) element;
+      List packages = Arrays.asList(project.getExportablePackageNames());
+      if (packages.contains(pd.getPackageName())) {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
       }
       return imgPackageError;
@@ -168,17 +169,14 @@ public class ExportProvider extends ViewerSorter implements IStructuredContentPr
    * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object, int)
    */
   public String getColumnText(Object element, int columnIndex) {
-    PackageDescription desc = (PackageDescription) element;
+    PackageDescription pd = (PackageDescription) element;
     
     switch(columnIndex){
     case 0:
-      return desc.getPackageName();
+      return pd.getPackageName();
     case 1:
-      String version = desc.getSpecificationVersion();
-      if (version == null) {
-        version = PackageSection.NO_VERSION_STR;
-      }
-      return version;
+      Version version = pd.getSpecificationVersion();
+      return version.toString();
     }
     return "";
   }
@@ -191,9 +189,9 @@ public class ExportProvider extends ViewerSorter implements IStructuredContentPr
    * @see org.eclipse.jface.viewers.ITableColorProvider#getForeground(java.lang.Object, int)
    */
   public Color getForeground(Object element, int columnIndex) {
-    PackageDescription desc = (PackageDescription) element;
-    List packages = Arrays.asList(project.getExportablePackages());
-    if (packages.contains(desc)) {
+    PackageDescription pd = (PackageDescription) element;
+    List packages = Arrays.asList(project.getExportablePackageNames());
+    if (packages.contains(pd.getPackageName())) {
       return null;
     }
     return Display.getCurrent().getSystemColor(SWT.COLOR_RED);

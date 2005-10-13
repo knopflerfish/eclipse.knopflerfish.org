@@ -62,8 +62,11 @@ public class PackageLabelProvider implements ILabelProvider {
    * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
    */
   public String getText(Object element) {
-    PackageDescription pkgDescription = (PackageDescription) element;
-    return pkgDescription.getPackageName();
+    if (element instanceof PackageDescription) {
+      PackageDescription pkgDescription = (PackageDescription) element;
+      return pkgDescription.getPackageName();
+    }
+    return element.toString();
   }
 
   /*

@@ -34,9 +34,10 @@
 
 package org.knopflerfish.eclipse.core;
 
-import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.manifest.SymbolicName;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -65,11 +66,12 @@ public interface IBundleRepository {
    * Returns libraries containing the exported packages for the
    * given bundle.
    * 
-   * @param id bundle identity
+   * @param symbolicName for bundle
+   * @param packages that shall be exported
    * 
    * @return array of libraries
    */
-  IOsgiLibrary[] getBundleLibraries(BundleIdentity id);
+  IOsgiLibrary[] getBundleLibraries(SymbolicName symbolicName, PackageDescription[] packages);
 
   /**
    * Returns all bundles found in this repository
@@ -77,4 +79,13 @@ public interface IBundleRepository {
    * @return array of exported packages
    */
   IOsgiBundle[] getBundles();
+
+  /**
+   * Returns all exported package versions found in 
+   * this repository
+   * 
+   * @return array of package versions
+   */
+  Version[] getPackageVersions(String packageName);
+
 }

@@ -44,6 +44,7 @@ import org.eclipse.swt.graphics.Point;
 import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -57,6 +58,7 @@ public class BuildPathCompletionProposal implements IJavaCompletionProposal {
   public BuildPathCompletionProposal(BundleProject bundleProject, BuildPath buildPath) {
     this.bundleProject = bundleProject;
     this.buildPath = buildPath;
+    this.buildPath.getPackageDescription().setSpecificationVersion(Version.emptyVersion);
   }
 
   /* (non-Javadoc)
@@ -110,8 +112,6 @@ public class BuildPathCompletionProposal implements IJavaCompletionProposal {
     } else {
       info.append(" from bundle ");
       info.append(buildPath.getBundleIdentity().getSymbolicName().getSymbolicName());
-      info.append("-");
-      info.append(buildPath.getBundleIdentity().getBundleVersion());
     }
     return info.toString();
   }

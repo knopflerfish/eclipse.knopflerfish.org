@@ -50,7 +50,8 @@ import org.knopflerfish.eclipse.core.IBundleRepositoryType;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
+import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.knopflerfish.eclipse.core.manifest.SymbolicName;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.knopflerfish.eclipse.core.project.BundleProject;
@@ -64,12 +65,15 @@ public class BundleContainer implements IClasspathContainer {
   public static final String CONTAINER_PATH = "org.knopflerfish.eclipse.core.BUNDLE_CONTAINER";
 
   private final IPath path;
-  private final BundleIdentity id;
+  private final SymbolicName symbolicName;
   private String name;
+  //private PackageDescription[] packages;
+  private final IJavaProject project;
   
-  public BundleContainer(IPath path, BundleIdentity id) {
+  public BundleContainer(IPath path, SymbolicName symbolicName, IJavaProject project) {
     this.path = path;
-    this.id = id;
+    this.symbolicName = symbolicName;
+    this.project = project;
   }
   
   /****************************************************************************
@@ -82,6 +86,14 @@ public class BundleContainer implements IClasspathContainer {
    */
   public IClasspathEntry[] getClasspathEntries() {
     
+    PackageDescription[] packages = null;
+    try {
+      IClasspathEntry ice = ClasspathUtil.findClasspathEntry(project, path);
+      packages = ClasspathUtil.getPackages(ice);
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
+    
     // Check if workspace contains bundle
     try {
       IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -90,9 +102,21 @@ public class BundleContainer implements IClasspathContainer {
         if (projects[i].isOpen() && projects[i].hasNature(Osgi.NATURE_ID)) {
           IJavaProject javaProject = JavaCore.create(projects[i]);
           BundleProject bundleProject = new BundleProject(javaProject);
-          if (id.equals(bundleProject.getId())) {
+          if (symbolicName.equals(bundleProject.getId().getSymbolicName())) {
+            // Check that project exports the needed packages
+            boolean hasPackages = true;
+            if (packages != null) {
+              for (int j=0; j<packages.length; j++) {
+                if (!bundleProject.hasExportedPackage(packages[j])) {
+                  hasPackages = false;
+                }
+              }
+            }
+            if (!hasPackages) continue;
+            
+            // Found project exporting the needed packages, create
+            // classpath entry
             name = bundleProject.getBundleManifest().getName();
-            // Create classpath for project
             IClasspathEntry entry = 
               JavaCore.newProjectEntry(javaProject.getPath());
             return new IClasspathEntry[] {entry};
@@ -100,6 +124,7 @@ public class BundleContainer implements IClasspathContainer {
         }
       }
     } catch (Throwable t) {
+      t.printStackTrace();
     }
 
     // Check if repository contains bundle
@@ -113,7 +138,7 @@ public class BundleContainer implements IClasspathContainer {
       IBundleRepository repository = repositoryType.createRepository(repositoryPref[i].getConfig());
       if (repository == null) continue;
 
-      IOsgiLibrary[] libraries = repository.getBundleLibraries(id);
+      IOsgiLibrary[] libraries = repository.getBundleLibraries(symbolicName, packages);
       if (libraries == null || libraries.length == 0) continue;
 
       ArrayList entries = new ArrayList();
@@ -156,7 +181,7 @@ public class BundleContainer implements IClasspathContainer {
     if (name != null) {
       buf.append(name);
     } else {
-      buf.append(id.getSymbolicName().toString());
+      buf.append(symbolicName.toString());
     }
     buf.append("]");
     return buf.toString();

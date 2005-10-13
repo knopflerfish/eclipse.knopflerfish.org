@@ -63,6 +63,7 @@ public class BundleContainerInitializer extends ClasspathContainerInitializer {
   public void initialize(IPath path, IJavaProject project) throws CoreException {
     
     BundleIdentity id = getBundleIdentity(path);
+    
     if (id == null) {
       // Remove from entry from project
       try {
@@ -81,7 +82,7 @@ public class BundleContainerInitializer extends ClasspathContainerInitializer {
       return;
     }
 
-    BundleContainer container = new BundleContainer(path, id);
+    BundleContainer container = new BundleContainer(path, id.getSymbolicName(), project);
     JavaCore.setClasspathContainer(
         path, 
         new IJavaProject[] {project}, 

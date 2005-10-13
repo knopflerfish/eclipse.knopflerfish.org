@@ -85,9 +85,14 @@ public class ImportPackageModel {
     }
     
     for(Iterator i=importedPackages.iterator(); i.hasNext();) {
-      BuildPath bp = project.getBuildPath((PackageDescription) i.next());
+      PackageDescription pd = (PackageDescription) i.next();
+      BuildPath bp = project.getBuildPath(pd);
+      boolean hasExportedPackage = project.hasExportedPackage(pd);
+
+      // Get default bundle for package
+      
       // Check if framework exports package
-      if (bp.getContainerPath() == null) {
+      if (!hasExportedPackage && bp.getContainerPath() == null) {
         if (PackageUtil.frameworkExportsPackage(project, bp.getPackageDescription())) {
           bp.setBundleName("Framework");
           bp.setContainerPath(new Path(FrameworkContainer.CONTAINER_PATH));
@@ -95,14 +100,14 @@ public class ImportPackageModel {
       }
       
       // Check bundle entries from projects
-      if (bp.getContainerPath() == null) {
+      if (!hasExportedPackage && bp.getContainerPath() == null) {
         BuildPath [] projectPaths = PackageUtil.getExportingProjectBundles(bp.getPackageDescription());
         if (projectPaths != null && projectPaths.length > 0) {
           bp = projectPaths[0];
         }
       }
       // Check bundle entries from repositories
-      if (bp.getContainerPath() == null) {
+      if (!hasExportedPackage && bp.getContainerPath() == null) {
         BuildPath [] projectPaths = PackageUtil.getExportingRepositoryBundles(bp.getPackageDescription());
         if (projectPaths != null && projectPaths.length > 0) {
           bp = projectPaths[0];

@@ -53,6 +53,7 @@ import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.osgi.framework.Version;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -71,7 +72,8 @@ public class ClasspathUtil {
     return rule;
   }
 
-  public static PackageDescription createPackageDescription(IAccessRule rule) {
+  public static PackageDescription createPackageDescription(IClasspathEntry entry, IAccessRule rule) {
+    // Package name
     String pattern = rule.getPattern().toString();
     String packageName = pattern.replace('/', '.');
     if (packageName.endsWith(".")) {
@@ -80,7 +82,15 @@ public class ClasspathUtil {
     if (packageName.startsWith(".")) {
       packageName = packageName.substring(1);
     }
-    return new PackageDescription(packageName, null);
+    // Version
+    Version version = Version.emptyVersion;
+    try {
+      version = Version.parseVersion(getClasspathAttribute(entry, packageName));
+    } catch (IllegalArgumentException e) {
+      version = Version.emptyVersion;
+    }
+    
+    return new PackageDescription(packageName, version);
   }
 
   public static IClasspathEntry findClasspathEntry(IJavaProject project, IAccessRule rule) {
@@ -105,6 +115,35 @@ public class ClasspathUtil {
     return null;
   }
 
+  public static IClasspathEntry findClasspathEntry(IJavaProject project, IPath path) {
+    try {
+      IClasspathEntry[] entries = project.getRawClasspath();
+      for(int i=0; i<entries.length; i++) {
+        // Find container exporting this package
+        if (path.equals(entries[i].getPath())) {
+          return entries[i];
+        }
+      }
+    } catch (Throwable t) {}
+    
+    return null;
+  }
+  
+  public static PackageDescription[] getPackages(IClasspathEntry entry) {
+    if (entry == null) return null;
+    
+    ArrayList packages = new ArrayList();
+    
+    IAccessRule[] rules = entry.getAccessRules();
+    for (int i=0; i<rules.length; i++) {
+      if (rules[i].getKind() == IAccessRule.K_ACCESSIBLE) {
+        PackageDescription pd = ClasspathUtil.createPackageDescription(entry, rules[i]);
+        packages.add(pd);
+      }
+    }
+    return (PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]);
+  }
+  
   public static String getClasspathAttribute(IClasspathEntry entry, String attribute) {
     if (entry == null || attribute == null) return null;
     
