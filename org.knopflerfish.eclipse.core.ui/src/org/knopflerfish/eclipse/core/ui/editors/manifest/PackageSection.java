@@ -57,12 +57,14 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Table;
@@ -863,8 +865,13 @@ public class PackageSection extends SectionPart {
           Version version = Version.emptyVersion;
           try {
             int idx = ((Integer) value).intValue();
-            String[] items = importPackageVersionEditor.getItems();
-            version = Version.parseVersion(items[idx]);
+            Control control = importPackageVersionEditor.getControl();
+            if (control instanceof CCombo) {
+              version = Version.parseVersion(((CCombo) control).getText());
+            } else if (idx != -1) {
+              String[] items = importPackageVersionEditor.getItems();
+              version = Version.parseVersion(items[idx]);
+            }
           } catch (IllegalArgumentException e) {
             version = Version.emptyVersion;
           }
