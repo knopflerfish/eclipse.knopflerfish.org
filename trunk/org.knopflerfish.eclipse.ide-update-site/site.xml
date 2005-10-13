@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/org.knopflerfish.eclipse.ide-feature_1.0.7.jar" id="org.knopflerfish.eclipse.ide-feature" version="1.0.7"/>
+   <feature url="features/org.knopflerfish.eclipse.ide-feature_1.0.8.jar" id="org.knopflerfish.eclipse.ide-feature" version="1.0.8"/>
    <category-def name="Knopflerfish IDE" label="Knopflerfish IDE"/>
 </site>
