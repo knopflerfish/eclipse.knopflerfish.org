@@ -59,6 +59,8 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IAccessRule;
 import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IImportDeclaration;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
@@ -99,6 +101,7 @@ public class BundleProject implements IBundleProject {
   public static final String MARKER_BUNDLE_EXEC_ENV = "org.knopflerfish.eclipse.core.execEnv";
   public static final String MARKER_BUNDLE_CLASSPATH = "org.knopflerfish.eclipse.core.classpath";
   public static final String MARKER_EXPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageExports";
+  public static final String MARKER_IMPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageImports";
   public static final String MARKER_DYNAMIC_IMPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageDynamicImports";
   
   public static final String CLASSPATH_FILE = ".classpath";
@@ -208,7 +211,7 @@ public class BundleProject implements IBundleProject {
         // Get manifest
         IFile manifestFile = javaProject.getProject().getFile(MANIFEST_FILE);
         if (manifestFile.exists()) {
-          is = manifestFile.getContents();
+          is = manifestFile.getContents(true);
           manifest = new BundleManifest(is);
         } else {
           manifest = new BundleManifest();
@@ -218,7 +221,9 @@ public class BundleProject implements IBundleProject {
           is.close();
         }
       }
-    } catch (Exception e) {}
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     
     return manifest;
   }
@@ -289,14 +294,59 @@ public class BundleProject implements IBundleProject {
               if (elements[j].getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
                 // Check if package fragment has any classes to export
                 IPackageFragment fragment = (IPackageFragment) elements[j];
-                if (fragment.containsJavaResources()) {
-                  packageNames.add(fragment.getElementName());
+                String name = fragment.getElementName();
+                if (fragment.containsJavaResources() && !packageNames.contains(name)) {
+                  packageNames.add(name);
                 }
               }
             }
           }
         } catch (JavaModelException jme) {
-          // Skip this entry
+          jme.printStackTrace();
+        }
+      }
+    } catch (CoreException e) {
+      e.printStackTrace();
+    }
+    return (String[]) packageNames.toArray(new String[packageNames.size()]);
+  }
+  
+  public String[] getNeededPackageNames() {
+    ArrayList packageNames = new ArrayList();
+    List internalPackages = Arrays.asList(getExportablePackageNames());
+    try {
+      IPackageFragmentRoot[] fragmentRoot = javaProject.getAllPackageFragmentRoots();
+      for (int i=0; i<fragmentRoot.length; i++) {
+        try {
+          if (fragmentRoot[i].getKind() != IPackageFragmentRoot.K_SOURCE) continue;
+          IJavaElement[] elements = fragmentRoot[i].getChildren();
+          if (elements == null) continue;
+          for (int j=0; j<elements.length; j++) {
+            if (elements[j].getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
+              IPackageFragment fragment = (IPackageFragment) elements[j];
+              if (fragment.containsJavaResources()) {
+                ICompilationUnit[] units = fragment.getCompilationUnits();
+                if (units == null) continue;
+                for (int k=0; k<units.length; k++) {
+                  IImportDeclaration[] imports = units[k].getImports();
+                  if (imports == null) continue;
+                  for (int l=0; l<imports.length;l++) {
+                    String s = imports[l].getElementName();
+                    if (s.startsWith("java.")) continue;
+                    int idx = s.lastIndexOf('.');
+                    if (idx != -1) {
+                      String name = s.substring(0,idx);
+                      if (!internalPackages.contains(name) && !packageNames.contains(name)) {
+                        packageNames.add(s.substring(0,idx));
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (JavaModelException jme) {
+          jme.printStackTrace();
         }
       }
     } catch (CoreException e) {
@@ -811,7 +861,7 @@ public class BundleProject implements IBundleProject {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try {
       try {
-        is = manifestFile.getContents();
+        is = manifestFile.getContents(true);
         
         byte [] buf = new byte[256];
         int numRead = 0;
@@ -912,6 +962,49 @@ public class BundleProject implements IBundleProject {
         checkPackageDynamicImports(manifest), 
         IMarker.SEVERITY_ERROR,
         manifestFile);
+    
+    // Check Imports, get needed packages and check against manifest
+    // Warn if imports are done that are not needed
+    // Error if imports other to java. are done and are not specified in manifest.
+    List neededPackageNames = Arrays.asList(getNeededPackageNames());
+    PackageDescription[] importedPackages = manifest.getImportedPackages();
+    ArrayList importedPackageNames = new ArrayList();
+    for (int i=0; i<importedPackages.length; i++) {
+      importedPackageNames.add(importedPackages[i].getPackageName());
+    }
+    
+    error = null;
+    severity = IMarker.SEVERITY_WARNING;
+    int line = ManifestUtil.findAttributeLine(manifestContents, BundleManifest.IMPORT_PACKAGE); 
+    manifestFile.deleteMarkers(MARKER_IMPORT_PACKAGES, false, IResource.DEPTH_INFINITE);
+    for(int i=0; i<neededPackageNames.size();i++) {
+      String name = (String) neededPackageNames.get(i);
+      if (!importedPackageNames.contains(name)) {
+        IMarker marker = manifestFile.createMarker(MARKER_IMPORT_PACKAGES);
+        if (marker.exists()) {
+          marker.setAttribute(IMarker.MESSAGE, "The package "+name+" is used but not imported in manifest.");
+          marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+          if (line != -1) {
+            marker.setAttribute(IMarker.LINE_NUMBER, line);
+          }
+        }
+        
+      }
+    }
+    for(int i=0; i<importedPackageNames.size();i++) {
+      String name = (String) importedPackageNames.get(i);
+      if (!neededPackageNames.contains(name)) {
+        IMarker marker = manifestFile.createMarker(MARKER_IMPORT_PACKAGES);
+        if (marker.exists()) {
+          marker.setAttribute(IMarker.MESSAGE, "The package "+name+" is imported in manifest but is never used.");
+          marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_WARNING);
+          if (line != -1) {
+            marker.setAttribute(IMarker.LINE_NUMBER, line);
+          }
+        }
+        
+      }
+    }
   }
   
   public String checkManifestBundleActivator(BundleManifest manifest) {

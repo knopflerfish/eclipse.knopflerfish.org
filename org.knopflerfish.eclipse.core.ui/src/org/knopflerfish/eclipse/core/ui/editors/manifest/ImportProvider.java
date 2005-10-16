@@ -34,6 +34,9 @@
 
 package org.knopflerfish.eclipse.core.ui.editors.manifest;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.viewers.ILabelProviderListener;
@@ -44,8 +47,12 @@ import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.graphics.Image;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.project.BuildPath;
+import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.classpath.BundleContainer;
 import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
+import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
+import org.knopflerfish.eclipse.core.ui.SharedImages;
+import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.osgi.framework.Version;
 
 /**
@@ -54,7 +61,22 @@ import org.osgi.framework.Version;
  */
 public class ImportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider {
   
+  private final BundleProject project;
   
+  // Images 
+  private Image imgPackageWarning;
+  
+  public ImportProvider(BundleProject project) {
+    this.project = project;
+    
+    // Create images
+    imgPackageWarning = UiUtils.ovrImage(
+        JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE),
+        OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_WARNING),
+        UiUtils.LEFT, UiUtils.BOTTOM
+        );
+  }
+
   /****************************************************************************
    * org.eclipse.jface.viewers.ViewerSorter methods
    ***************************************************************************/
@@ -100,6 +122,10 @@ public class ImportProvider extends ViewerSorter implements IStructuredContentPr
    * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
    */
   public void dispose() {
+    if (imgPackageWarning != null) {
+      imgPackageWarning.dispose();
+      imgPackageWarning = null;
+    }
   }
   
   /*
@@ -130,7 +156,12 @@ public class ImportProvider extends ViewerSorter implements IStructuredContentPr
    */
   public Image getColumnImage(Object element, int columnIndex) {
     if (columnIndex == 0) {
-      return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
+      PackageDescription pd = ((BuildPath) element).getPackageDescription();
+      List packages = Arrays.asList(project.getNeededPackageNames());
+      if (packages.contains(pd.getPackageName())) {
+        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
+      }
+      return imgPackageWarning;
     }
     return null;
   }

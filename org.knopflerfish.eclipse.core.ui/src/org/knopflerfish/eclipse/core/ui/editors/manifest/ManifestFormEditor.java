@@ -242,6 +242,8 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
             errorsClasspathSection.add(BundleManifest.BUNDLE_CLASSPATH);
           } else if (type.equals(BundleProject.MARKER_EXPORT_PACKAGES)) {
             errorsPackageSection.add(BundleManifest.EXPORT_PACKAGE);
+          } else if (type.equals(BundleProject.MARKER_IMPORT_PACKAGES)) {
+            errorsPackageSection.add(BundleManifest.IMPORT_PACKAGE);
           } else if (type.equals(BundleProject.MARKER_DYNAMIC_IMPORT_PACKAGES)) {
             errorsPackageSection.add(BundleManifest.DYNAMIC_IMPORT_PACKAGE);
           }
