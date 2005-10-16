@@ -143,7 +143,9 @@ public class ClasspathSection extends SectionPart {
   }
   
   public void setErrors(List errors) {
-    wClassPathTableViewer.refresh();
+    if (wClassPathTableViewer != null) {
+      wClassPathTableViewer.refresh();
+    }
   }
   
   /****************************************************************************

@@ -314,11 +314,20 @@ public class BundleProject implements IBundleProject {
   public String[] getNeededPackageNames() {
     ArrayList packageNames = new ArrayList();
     List internalPackages = Arrays.asList(getExportablePackageNames());
+    IProject project = javaProject.getProject();
     try {
       IPackageFragmentRoot[] fragmentRoot = javaProject.getAllPackageFragmentRoots();
       for (int i=0; i<fragmentRoot.length; i++) {
         try {
           if (fragmentRoot[i].getKind() != IPackageFragmentRoot.K_SOURCE) continue;
+          
+          IResource resource = fragmentRoot[i].getCorrespondingResource();
+          IProject fragmentProject = project;
+          if (resource != null) {
+            fragmentProject = resource.getProject();
+          }
+          if (!project.equals(fragmentProject)) continue;
+          
           IJavaElement[] elements = fragmentRoot[i].getChildren();
           if (elements == null) continue;
           for (int j=0; j<elements.length; j++) {
