@@ -3,7 +3,7 @@
 <plugin
    id="org.knopflerfish.eclipse.core.ui"
    name="Osgi Ui Plug-in"
-   version="1.0.4"
+   version="1.0.5"
    provider-name=""
    class="org.knopflerfish.eclipse.core.ui.OsgiUiPlugin">
 

@@ -2,7 +2,7 @@
 <feature
       id="org.knopflerfish.eclipse.ide-feature"
       label="Knopflerfish OSGi IDE"
-      version="1.0.10"
+      version="1.0.11"
       provider-name="Knopflerfish">
 
    <description url="http://www.knopflerfish.org/eclipse_plugin.html">

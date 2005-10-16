@@ -143,9 +143,15 @@ public class PackageSection extends SectionPart {
   }
   
   public void setErrors(List errors) {
-    wExportPackageTableViewer.refresh();
-    wImportPackageTableViewer.refresh();
-    wDynamicImportPackageTableViewer.refresh();
+    if (wExportPackageTableViewer != null) { 
+      wExportPackageTableViewer.refresh();
+    }
+    if (wImportPackageTableViewer != null) { 
+      wImportPackageTableViewer.refresh();
+    }
+    if (wDynamicImportPackageTableViewer != null) { 
+      wDynamicImportPackageTableViewer.refresh();
+    }
   }
   
   /****************************************************************************

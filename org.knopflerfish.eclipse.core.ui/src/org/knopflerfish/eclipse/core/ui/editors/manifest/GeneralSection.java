@@ -214,7 +214,9 @@ public class GeneralSection extends SectionPart {
     marker = (IMarker) errors.get(BundleManifest.BUNDLE_SYMBOLIC_NAME);
     updateStatus(marker, wSymbolicNameStatusLabel, wSymbolicNameText);
     
-    wEnvironmentTableViewer.refresh();
+    if (wEnvironmentTableViewer != null) {
+      wEnvironmentTableViewer.refresh();
+    }
   }
   
   private void updateStatus(IMarker marker, StatusLabel wLabel, Text wText) {
@@ -232,13 +234,13 @@ public class GeneralSection extends SectionPart {
     }
     
     // Update label
-    if (wLabel != null) {
+    if (wLabel != null && !wLabel.isDisposed()) {
       wLabel.setStatusImage(img, UiUtils.LEFT, UiUtils.BOTTOM);
       wLabel.redraw();
     }
     
     // Update text
-    if (wText != null) {
+    if (wText != null && !wText.isDisposed()) {
       wText.setForeground(c);
     }
   }
