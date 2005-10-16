@@ -3,7 +3,7 @@
 <plugin
    id="org.knopflerfish.eclipse.core"
    name="Osgi Plug-in"
-   version="1.0.6"
+   version="1.0.7"
    class="org.knopflerfish.eclipse.core.internal.OsgiPlugin">
 
    <runtime>
@@ -140,6 +140,13 @@
    </extension>
    <extension
       id="packageExports"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="package" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="packageImports"
       point="org.eclipse.core.resources.markers">
       <super type="org.eclipse.core.resources.problemmarker"/>
       <!--attribute name="package" /-->

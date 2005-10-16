@@ -60,7 +60,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -83,8 +82,6 @@ import org.knopflerfish.eclipse.core.pkg.PackageUtil;
 import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
-import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
-import org.knopflerfish.eclipse.core.ui.SharedImages;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.PackageLabelProvider;
 import org.knopflerfish.eclipse.core.ui.dialogs.PackageSelectionDialog;
@@ -135,25 +132,9 @@ public class PackageSection extends SectionPart {
   ImportPackageModel importPackageModel = null;
   final BundleProject project;
   
-  // Images 
-  private Image imgPackageWarning;
-  Image imgPackageError;
-  
   public PackageSection(Composite parent, FormToolkit toolkit, int style, BundleProject project) {
     super(parent, toolkit, style);
     
-    // Create images
-    imgPackageWarning = UiUtils.ovrImage(
-        JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE),
-        OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_WARNING),
-        UiUtils.LEFT, UiUtils.BOTTOM
-        );
-    imgPackageError = UiUtils.ovrImage(
-        JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE),
-        OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_ERROR),
-        UiUtils.LEFT, UiUtils.BOTTOM
-        );
-
     this.project = project;
     Section section = getSection();
     createClient(section, toolkit);
@@ -163,6 +144,7 @@ public class PackageSection extends SectionPart {
   
   public void setErrors(List errors) {
     wExportPackageTableViewer.refresh();
+    wImportPackageTableViewer.refresh();
     wDynamicImportPackageTableViewer.refresh();
   }
   
@@ -175,15 +157,6 @@ public class PackageSection extends SectionPart {
    * @see org.eclipse.ui.forms.IFormPart#dispose()
    */
   public void dispose() {
-    if (imgPackageWarning != null) {
-      imgPackageWarning.dispose();
-      imgPackageWarning = null;
-    }
-    
-    if (imgPackageError != null) {
-      imgPackageError.dispose();
-      imgPackageError = null;
-    }
   }
   
   /*
@@ -408,7 +381,7 @@ public class PackageSection extends SectionPart {
     wImportPackageTable.setData(FormToolkit.KEY_DRAW_BORDER, FormToolkit.TEXT_BORDER);
     
     wImportPackageTableViewer = new TableViewer(wImportPackageTable);
-    ImportProvider importProvider = new ImportProvider();
+    ImportProvider importProvider = new ImportProvider(project);
     wImportPackageTableViewer.setContentProvider(importProvider);
     wImportPackageTableViewer.setLabelProvider(importProvider);
     wImportPackageTableViewer.setSorter(importProvider);
@@ -443,7 +416,7 @@ public class PackageSection extends SectionPart {
     new TableColumn(wImportPackageTable, SWT.LEFT);
     
     wd = new TableWrapData();
-    wd.rowspan = 2;
+    wd.rowspan = 3;
     wd.grabHorizontal = true;
     wd.grabVertical = true;
     wd.align = TableWrapData.FILL;
@@ -528,6 +501,46 @@ public class PackageSection extends SectionPart {
     wd = new TableWrapData();
     wd.align = TableWrapData.FILL;
     wImportPackageAddButton.setLayoutData(wd);
+    
+    Button wImportPackageAutoButton = toolkit.createButton(wImportComposite, "Auto", SWT.PUSH);
+    wImportPackageAutoButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        List neededPackageNames = Arrays.asList(project.getNeededPackageNames());
+        ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+        ArrayList importedPackageNames = new ArrayList();
+        for (int i=0; i<importedPackages.size(); i++) {
+          importedPackageNames.add(((PackageDescription) importedPackages.get(i)).getPackageName());
+        }
+        // Add missing imports
+        boolean changed = false;
+        for(Iterator i=neededPackageNames.iterator();i.hasNext();) {
+          String name = (String) i.next();
+          if (!importedPackageNames.contains(name)) {
+            importedPackages.add(new PackageDescription(name, null));
+            changed = true;
+          }
+        }
+        // Remove unneeded imports
+        for(Iterator i=importedPackages.iterator();i.hasNext();) {
+          PackageDescription pd = (PackageDescription) i.next();
+          if (!neededPackageNames.contains(pd.getPackageName())) {
+            i.remove();
+            changed = true;
+          }
+        }
+
+        if (changed) {
+          manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+          importPackageModel.updateManifest(manifest);
+          wImportPackageTableViewer.refresh();
+          UiUtils.packTableColumns(wImportPackageTableViewer.getTable());
+          markDirty();
+        }
+      }
+    });
+    wd = new TableWrapData();
+    wd.align = TableWrapData.FILL;
+    wImportPackageAutoButton.setLayoutData(wd);
     
     // Dynamic Import section
     FormText dynamicImportText = toolkit.createFormText(container, false);
