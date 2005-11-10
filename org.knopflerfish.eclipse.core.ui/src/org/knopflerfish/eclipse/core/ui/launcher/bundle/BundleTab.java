@@ -133,6 +133,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
   SelectedBundlesModel selectedBundlesModel = new SelectedBundlesModel();
   SelectedBundlesLabelProvider selectedBundlesLabelProvider;
   private FrameworkPreference distribution;
+  Map systemProperties;
 
   // Images, fonts
   private Image imageTab = null;
@@ -267,6 +268,16 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     Label wBundleSelectedLabel = new Label(wPageComposite, SWT.LEFT);
     wBundleSelectedLabel.setText("Selected bundles:");
     Table wSelectedBundleTable = new Table(wPageComposite, SWT.MULTI | SWT.FULL_SELECTION | SWT.BORDER);
+    /*
+    Menu menu = new Menu(wSelectedBundleTable);
+    try {
+    MenuItem item = new MenuItem(menu, SWT.PUSH);
+    item.setText("Copy error to clipboard");
+    wSelectedBundleTable.setMenu(menu);
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
+    */
     wSelectedBundleTableViewer = new TableViewer(wSelectedBundleTable);
     wSelectedBundleTableViewer.setContentProvider(new SelectedBundlesContentProvider());
     selectedBundlesLabelProvider = new SelectedBundlesLabelProvider();
@@ -458,7 +469,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     } catch (CoreException e) {
       e.printStackTrace();
     }
-    
 
     // Start level
     int startLevel = MainTab.DEFAULT_START_LEVEL;
@@ -476,6 +486,14 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
       // Bundle Projects
       selectedBundlesModel.addBundleProjects(configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_BUNDLE_PROJECTS, (Map) null));
       wSelectedBundleTableViewer.setInput(selectedBundlesModel);
+    } catch (CoreException e) {
+      e.printStackTrace();
+    }
+    
+    // System properties
+    systemProperties = null;
+    try {
+      systemProperties = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, (Map) null);
     } catch (CoreException e) {
       e.printStackTrace();
     }
@@ -624,7 +642,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     HashMap exportedPackages = new HashMap();
 
     // Get exported packages by runtime
-    // TODO: Fix this better, should check the property exported packages as well
     if (distribution == null) return;
     IFrameworkDefinition framework = Osgi.getFrameworkDefinition(distribution.getType());
     IOsgiLibrary [] libraries = distribution.getRuntimeLibraries();
@@ -637,6 +654,19 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
         }
         descriptions.add(frameworkPackages[j]);
         exportedPackages.put(frameworkPackages[j].getPackageName(), descriptions);
+      }
+    }
+
+    // Get system packages exportes by runtime
+    PackageDescription [] systemPackages = framework.getSystemPackages(new File(distribution.getLocation()), systemProperties);
+    if (systemPackages != null) {
+      for (int j=0; j<systemPackages.length; j++) {
+        ArrayList descriptions = (ArrayList) exportedPackages.get(systemPackages[j].getPackageName());
+        if (descriptions == null) {
+          descriptions = new ArrayList();
+        }
+        descriptions.add(systemPackages[j]);
+        exportedPackages.put(systemPackages[j].getPackageName(), descriptions);
       }
     }
     
