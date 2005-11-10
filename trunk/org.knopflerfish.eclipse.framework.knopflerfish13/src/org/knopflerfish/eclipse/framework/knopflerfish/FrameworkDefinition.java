@@ -34,10 +34,13 @@
 
 package org.knopflerfish.eclipse.framework.knopflerfish;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -59,20 +62,26 @@ import org.knopflerfish.eclipse.core.manifest.PackageDescription;
  */
 public class FrameworkDefinition implements IFrameworkDefinition {
   
-  private static String PATH_PROPERTY_FILE = "resources/framework.props";
+  // System properties used for exporting system packages
+  private final static String SYSPKG = "org.osgi.framework.system.packages";
+  private final static String SYSPKG_FILE = "org.osgi.framework.system.packages.file";
+  private final static String EXPORT13 = "org.knopflerfish.framework.system.export.all_13";
   
-  private static String [] PATH_FRAMEWORK_LIB = new String [] {
+  private final static String PATH_PROPERTY_FILE = "resources/framework.props";
+  
+  private final static String [] PATH_FRAMEWORK_LIB = new String [] {
     "knopflerfish.org/osgi/framework.jar",
     "osgi/framework.jar",
     "framework.jar"
   };
   
   // Paths relative root directory for definition  
-  private static String PATH_MAINLIB      = "framework.jar";
-  private static String PATH_MAINLIB_SRC = "framework/src";
+  private final static String PATH_MAINLIB     = "framework.jar";
+  private final static String PATH_MAINLIB_SRC = "framework/src";
+  private final static String PATH_PACKAGES13  = "packages1.3.txt";
 
-  private static String PATH_JAR_DIR            ="jars";
-  private static String PATH_BUNDLE_DIR         ="bundles";
+  private final static String PATH_JAR_DIR            ="jars";
+  private final static String PATH_BUNDLE_DIR         ="bundles";
   
   /****************************************************************************
    * org.knopflerfish.eclipse.core.IFrameworkDefinition methods
@@ -270,6 +279,46 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     return (PackageDescription[]) descriptions.toArray(new PackageDescription[descriptions.size()]);
   }
 
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getSystemPackages(java.io.File, java.util.Map)
+   */
+  public PackageDescription[] getSystemPackages(File dir, Map systemProperties) {
+    if (systemProperties == null) return null;
+    
+    StringBuffer sp = new StringBuffer();
+    String sysPkg = (String) systemProperties.get(SYSPKG);
+    if (sysPkg != null) {
+      sp.append(sysPkg);
+    }
+    
+    if (sp.length() > 0) {
+      sp.append(",");
+    }
+    
+    String export13 = (String) systemProperties.get(EXPORT13);
+    if (dir != null && export13 != null && "true".equals(export13.trim())) {
+      File root = getRootDir(dir);
+      File file = new File(root, PATH_PACKAGES13);
+      addSysPackagesFromFile(sp, file);
+    }
+    
+    String sysPkgFile = (String) systemProperties.get(SYSPKG_FILE);
+    if (sysPkgFile != null) {
+      addSysPackagesFromFile(sp, new File(sysPkgFile));
+    }
+    
+    ArrayList packages = new ArrayList();
+    StringTokenizer st = new StringTokenizer(sp.toString(), ",");
+    while(st.hasMoreTokens()) {
+      try {
+        packages.add(new PackageDescription(st.nextToken()));
+      } catch(Exception e) {}
+    }
+    
+    return (PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]);
+  }
+
   /****************************************************************************
    * Private utility methods
    ***************************************************************************/
@@ -299,5 +348,29 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     }
     return jars;
   }
-
+  
+  /**
+   * Read a file with package names and add them to a stringbuffer.
+   */
+  void addSysPackagesFromFile(StringBuffer sp, File f) {
+    if (f == null || !f.exists() || !f.isFile()) return;
+    
+    BufferedReader in = null;
+    try {
+      in = new BufferedReader(new FileReader(f));
+      String line;
+      for(line = in.readLine(); line != null; 
+      line = in.readLine()) {
+        line = line.trim();
+        if(line.length() > 0 && !line.startsWith("#")) {
+          sp.append(line);
+          sp.append(",");
+        }
+      } 
+    } catch (IOException e) {
+      // Failed to read file, ignore this
+    } finally {
+      try {   in.close();  } catch (Exception ignored) { }
+    }
+  }
 }
