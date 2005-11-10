@@ -35,6 +35,7 @@
 package org.knopflerfish.eclipse.core;
 
 import java.io.File;
+import java.util.Map;
 
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
@@ -62,6 +63,8 @@ public interface IFrameworkDefinition {
   
   
   public PackageDescription[] getExportedPackages(IOsgiLibrary[] libraries);
+  
+  public PackageDescription[] getSystemPackages(File dir, Map systemProperties);
   
   /** 
    * Create a runtime framework configuration.
