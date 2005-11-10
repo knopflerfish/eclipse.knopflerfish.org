@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -53,6 +54,9 @@ import org.knopflerfish.eclipse.core.SystemPropertyGroup;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 public class FrameworkDefinition implements IFrameworkDefinition {
+  
+  // System properties used for exporting system packages
+  private final static String SYSPKG = "org.osgi.framework.system.packages";
   
   private static String PATH_PROPERTY_FILE = "resources/framework.props";
   
@@ -286,6 +290,34 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     
     return (PackageDescription[]) descriptions.toArray(new PackageDescription[descriptions.size()]);
   }
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getSystemPackages(java.io.File, java.util.Map)
+   */
+  public PackageDescription[] getSystemPackages(File dir, Map systemProperties) {
+    if (systemProperties == null) return null;
+    
+    StringBuffer sp = new StringBuffer();
+    String sysPkg = (String) systemProperties.get(SYSPKG);
+    if (sysPkg != null) {
+      sp.append(sysPkg);
+    }
+    
+    if (sp.length() > 0) {
+      sp.append(",");
+    }
+    
+    ArrayList packages = new ArrayList();
+    StringTokenizer st = new StringTokenizer(sp.toString(), ",");
+    while(st.hasMoreTokens()) {
+      try {
+        packages.add(new PackageDescription(st.nextToken()));
+      } catch(Exception e) {}
+    }
+    
+    return (PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]);
+  }
   
   /****************************************************************************
    * Private utility methods
@@ -320,5 +352,4 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     }
     return jars;
   }
-  
 }
