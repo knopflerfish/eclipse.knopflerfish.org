@@ -37,6 +37,7 @@ package org.knopflerfish.eclipse.core.project;
 import java.io.File;
 import java.util.Map;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
@@ -88,6 +89,9 @@ public class BundleBuilder extends IncrementalProjectBuilder {
       File jarFile = new File(outDir, bundleProject.getFileName());
       try {
         bundlePackDescription.export(bundleProject, jarFile.getAbsolutePath());
+        // Refresh the resource hierarchy
+        IFile file = folder.getFile(bundleProject.getFileName());
+        file.refreshLocal(1, null);
       } catch (Throwable t) {
         OsgiPlugin.throwCoreException("Failed to build JAR file for project "+getProject().getName(), t);
       }
