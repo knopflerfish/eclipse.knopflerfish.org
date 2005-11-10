@@ -57,6 +57,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IAccessRule;
+import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -311,9 +312,90 @@ public class BundleProject implements IBundleProject {
     return (String[]) packageNames.toArray(new String[packageNames.size()]);
   }
   
+  private String[] getClassNames() {
+    ArrayList classNames = new ArrayList();
+    IProject project = javaProject.getProject();
+    try {
+      IPackageFragmentRoot[] fragmentRoot = javaProject.getAllPackageFragmentRoots();
+      for (int i=0; i<fragmentRoot.length; i++) {
+        try {
+          if (fragmentRoot[i].isExternal()) continue;
+          if (fragmentRoot[i].getKind() != IPackageFragmentRoot.K_SOURCE && 
+              !fragmentRoot[i].isArchive()) continue;
+          
+          IResource resource = fragmentRoot[i].getCorrespondingResource();
+          IProject fragmentProject = project;
+          if (resource != null) {
+            fragmentProject = resource.getProject();
+          }
+          if (project.equals(fragmentProject)) {
+            
+            IJavaElement[] elements = fragmentRoot[i].getChildren();
+            for (int j=0; j<elements.length; j++) {
+              classNames.addAll(Arrays.asList(getClassNames("", elements[j])));
+            }
+          }
+        } catch (JavaModelException jme) {
+          jme.printStackTrace();
+        }
+      }
+    } catch (CoreException e) {
+      e.printStackTrace();
+    }
+    return (String[]) classNames.toArray(new String[classNames.size()]);
+  }
+
+  private String[] getClassNames(String name, IJavaElement element) throws JavaModelException {
+    if (element == null) return null;
+
+    ArrayList classNames = new ArrayList();
+    int type = element.getElementType();
+    if (type == IJavaElement.PACKAGE_FRAGMENT) {
+      IPackageFragment fragment = (IPackageFragment) element;
+      String packageName = fragment.getElementName();
+      ICompilationUnit[] units = fragment.getCompilationUnits();
+      for (int i=0; i<units.length; i++) {
+        classNames.addAll(Arrays.asList(getClassNames(packageName, units[i])));
+      }
+      IClassFile[] classFiles = fragment.getClassFiles();
+      for (int i=0; i<classFiles.length; i++) {
+        classNames.addAll(Arrays.asList(getClassNames(packageName, classFiles[i])));
+      }
+    } else if (type == IJavaElement.COMPILATION_UNIT) {
+      ICompilationUnit unit = (ICompilationUnit) element;
+      StringBuffer buf = new StringBuffer(name);
+      buf.append('.');
+      buf.append(unit.getElementName());
+      // Remove trailing '.java'
+      buf.setLength(buf.length()-5);
+      String className = buf.toString(); 
+      classNames.add(className);
+      IJavaElement[] children = unit.getChildren();
+      for (int i=0; i<children.length; i++) {
+        classNames.addAll(Arrays.asList(getClassNames(className, children[i])));
+      }
+    } else if (type == IJavaElement.CLASS_FILE) {
+      IClassFile classFile = (IClassFile) element;
+      StringBuffer buf = new StringBuffer(name);
+      buf.append('.');
+      buf.append(classFile.getElementName());
+      // Remove trailing '.class'
+      buf.setLength(buf.length()-6);
+      String className = buf.toString(); 
+      classNames.add(className);
+      IJavaElement[] children = classFile.getChildren();
+      for (int i=0; i<children.length; i++) {
+        classNames.addAll(Arrays.asList(getClassNames(className, children[i])));
+      }
+    }
+    
+    return (String[]) classNames.toArray(new String[classNames.size()]);
+  }
+  
   public String[] getNeededPackageNames() {
     ArrayList packageNames = new ArrayList();
     List internalPackages = Arrays.asList(getExportablePackageNames());
+    List internalClasses = Arrays.asList(getClassNames());
     IProject project = javaProject.getProject();
     try {
       IPackageFragmentRoot[] fragmentRoot = javaProject.getAllPackageFragmentRoots();
@@ -345,7 +427,9 @@ public class BundleProject implements IBundleProject {
                     int idx = s.lastIndexOf('.');
                     if (idx != -1) {
                       String name = s.substring(0,idx);
-                      if (!internalPackages.contains(name) && !packageNames.contains(name)) {
+                      if (!internalPackages.contains(name) && 
+                          !internalClasses.contains(name) && 
+                          !packageNames.contains(name)) {
                         packageNames.add(s.substring(0,idx));
                       }
                     }
@@ -1005,7 +1089,7 @@ public class BundleProject implements IBundleProject {
       if (!neededPackageNames.contains(name)) {
         IMarker marker = manifestFile.createMarker(MARKER_IMPORT_PACKAGES);
         if (marker.exists()) {
-          marker.setAttribute(IMarker.MESSAGE, "The package "+name+" is imported in manifest but is never used.");
+          marker.setAttribute(IMarker.MESSAGE, "The package "+name+" is imported in manifest but is never directly referenced in the source code.");
           marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_WARNING);
           if (line != -1) {
             marker.setAttribute(IMarker.LINE_NUMBER, line);
