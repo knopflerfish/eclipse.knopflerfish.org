@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -262,6 +263,14 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     return (PackageDescription[]) descriptions.toArray(new PackageDescription[descriptions.size()]);
   }
 
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getSystemPackages(java.io.File, java.util.Map)
+   */
+  public PackageDescription[] getSystemPackages(File dir, Map systemProperties) {
+    return null;
+  }
+
   /****************************************************************************
    * Private utility methods
    ***************************************************************************/
@@ -291,5 +300,4 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     }
     return jars;
   }
-
 }
