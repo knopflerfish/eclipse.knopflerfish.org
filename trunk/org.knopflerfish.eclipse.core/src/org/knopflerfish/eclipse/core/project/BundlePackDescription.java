@@ -232,7 +232,18 @@ public class BundlePackDescription {
     try {
       // Create jar file
       jarFile = new File(path);
-      if (jarFile.exists()) jarFile.delete();
+      if (jarFile.isDirectory()) {
+        throw new IOException("Can not create jar file "+path);
+      }
+      if (jarFile.exists()) {
+        jarFile.delete();
+      }
+      
+      // Create directories if needed
+      File dir = jarFile.getParentFile();
+      if (!dir.exists()) {
+        dir.mkdirs();
+      }
 
       // Create manifest output stream
       BundleManifest manifest = new BundleManifest(bundleProject.getBundleManifest());
