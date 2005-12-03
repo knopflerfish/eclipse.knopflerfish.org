@@ -86,11 +86,12 @@ public class BundleBuilder extends IncrementalProjectBuilder {
       } catch (Throwable t) {}
       
       // Build bundle JAR
-      File jarFile = new File(outDir, bundleProject.getFileName());
+      String name = ProjectUtil.createFileName(bundleProject);
+      File jarFile = new File(outDir, name);
       try {
         bundlePackDescription.export(bundleProject, jarFile.getAbsolutePath());
         // Refresh the resource hierarchy
-        IFile file = folder.getFile(bundleProject.getFileName());
+        IFile file = folder.getFile(name);
         file.refreshLocal(1, null);
       } catch (Throwable t) {
         OsgiPlugin.throwCoreException("Failed to build JAR file for project "+getProject().getName(), t);

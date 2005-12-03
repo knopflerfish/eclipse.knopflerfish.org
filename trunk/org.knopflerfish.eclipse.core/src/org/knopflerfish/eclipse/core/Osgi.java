@@ -44,6 +44,7 @@ import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IJavaProject;
+import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -171,7 +172,7 @@ public class Osgi {
             try {
               return (IBundleRepositoryType) configs[j].createExecutableExtension("class");
             } catch (CoreException e) {
-              e.printStackTrace();
+              OsgiPlugin.log(e.getStatus());
             }
           }
         }
@@ -196,7 +197,7 @@ public class Osgi {
             try {
               repos.add( configs[j].createExecutableExtension("class"));
             } catch (CoreException e) {
-              e.printStackTrace();
+              OsgiPlugin.log(e.getStatus());
             }
           }
         }
@@ -295,7 +296,7 @@ public class Osgi {
             try {
               return (IFrameworkDefinition) configs[j].createExecutableExtension("class");
             } catch (CoreException e) {
-              e.printStackTrace();
+              OsgiPlugin.log(e.getStatus());
             }
           }
         }
@@ -320,7 +321,7 @@ public class Osgi {
             try {
               definitions.add( configs[j].createExecutableExtension("class"));
             } catch (CoreException e) {
-              e.printStackTrace();
+              OsgiPlugin.log(e.getStatus());
             }
           }
         }

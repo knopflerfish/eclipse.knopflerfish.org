@@ -220,7 +220,7 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener, IVMIn
       ResourceDeltaVisitor visitor = new ResourceDeltaVisitor();
       event.getDelta().accept(visitor);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiPlugin.log(e.getStatus());
     }
   }
 
@@ -272,6 +272,10 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener, IVMIn
     throw new CoreException(status);
   }
 
+  public static void log(IStatus status) {
+    getDefault().getLog().log(status);
+  }
+  
   private void copyFile(IPath src, File dst) {
     // Read bundle activator template
     try {
@@ -291,7 +295,10 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener, IVMIn
         fos.close();
       }
     } catch (Throwable t) {
-      t.printStackTrace();
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure copying file", t);
+      OsgiPlugin.log(status);
     }
   }
 }

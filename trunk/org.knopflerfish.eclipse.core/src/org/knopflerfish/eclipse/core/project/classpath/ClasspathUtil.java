@@ -40,6 +40,7 @@ import java.util.Arrays;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IAccessRule;
@@ -49,6 +50,7 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.preferences.EnvironmentPreference;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
@@ -192,11 +194,9 @@ public class ClasspathUtil {
         path = path.append(environment.getName());
         JavaCore.setClasspathContainer(path, javaProjects, containers, null);
       }
-      
-    } catch (Exception e) {
-      e.printStackTrace();
+    } catch (CoreException e) {
+      OsgiPlugin.log(e.getStatus());
     }
-    
   }
 
   public static void updateFrameworkContainers() {
@@ -228,9 +228,8 @@ public class ClasspathUtil {
         path = path.append(distribution.getName());
         JavaCore.setClasspathContainer(path, javaProjects, containers, null);
       }
-    } catch (Exception e) {
-      e.printStackTrace();
+    } catch (CoreException e) {
+      OsgiPlugin.log(e.getStatus());
     }
-    
   }
 }

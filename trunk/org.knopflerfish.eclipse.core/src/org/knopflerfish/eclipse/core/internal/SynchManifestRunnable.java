@@ -81,8 +81,8 @@ public class SynchManifestRunnable implements IWorkspaceRunnable, Runnable {
     try {
       IWorkspace workspace = ResourcesPlugin.getWorkspace();
       workspace.run(this, project, IWorkspace.AVOID_UPDATE, null);
-    } catch (Throwable t) {
-      t.printStackTrace();
+    } catch (CoreException e) {
+      OsgiPlugin.log(e.getStatus());
     }
   }
 
@@ -126,7 +126,7 @@ public class SynchManifestRunnable implements IWorkspaceRunnable, Runnable {
       }
     }
     
-    bundleProject.saveBundlePackDescription(packDescription);
+    bundleProject.setBundlePackDescription(packDescription);
     manifest.setBundleClassPath((String[]) bundleClasspath.toArray(new String[bundleClasspath.size()]));
     bundleProject.setBundleManifest(manifest);
   }
