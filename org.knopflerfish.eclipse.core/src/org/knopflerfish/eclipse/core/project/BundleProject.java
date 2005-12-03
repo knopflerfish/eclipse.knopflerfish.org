@@ -36,16 +36,19 @@ package org.knopflerfish.eclipse.core.project;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -56,12 +59,13 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IAccessRule;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IImportDeclaration;
+import org.eclipse.jdt.core.IImportContainer;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
@@ -71,6 +75,7 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaConventions;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 import org.knopflerfish.eclipse.core.manifest.BundleIdentity;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
@@ -91,7 +96,8 @@ import org.osgi.framework.Version;
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleProject implements IBundleProject {
-  // Markers
+  
+  // Constant marker identities
   public static final String MARKER_MANIFEST = "manifest";
   public static final String MARKER_BUNDLE_ACTIVATOR = "org.knopflerfish.eclipse.core.activator";
   public static final String MARKER_BUNDLE_NAME = "org.knopflerfish.eclipse.core.name";
@@ -105,28 +111,38 @@ public class BundleProject implements IBundleProject {
   public static final String MARKER_IMPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageImports";
   public static final String MARKER_DYNAMIC_IMPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageDynamicImports";
   
-  public static final String CLASSPATH_FILE = ".classpath";
-  //public static final String MANIFEST_FILE  = "MANIFEST.MF";
-  public static final String MANIFEST_FILE  = "bundle.manifest";
-  public static final String BUNDLE_PACK_FILE = ".bundle-pack";
-  
+  private final IProject project;
   private final IJavaProject javaProject;
-  //private BundleManifest manifest;
   
   public BundleProject(String name) {
     IWorkspaceRoot workspace = ResourcesPlugin.getWorkspace().getRoot();
     IProject project = workspace.getProject(name);
     IJavaProject javaProject = JavaCore.create(project);
     this.javaProject = javaProject;
+    this.project =javaProject.getProject();
   }
   
   public BundleProject(IJavaProject project) {
     this.javaProject = project;
+    this.project =javaProject.getProject();
   }
   
   /****************************************************************************
-   * org.knopflerfish.eclipse.core.IBundleProject methods
+   * org.knopflerfish.eclipse.core.IBundleProject implementation
    ***************************************************************************/
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getId()
+   */
+  public BundleIdentity getId() throws CoreException {
+    BundleManifest bm = getBundleManifest();
+    return new BundleIdentity(bm.getSymbolicName(), bm.getVersion());
+  }
+  
+  public IProject getProject() {
+    return project;
+  }
   
   /* (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IBundleProject#getJavaProject()
@@ -137,21 +153,72 @@ public class BundleProject implements IBundleProject {
 
   /*
    *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getId()
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getBundleManifest()
    */
-  public BundleIdentity getId() {
-    BundleManifest bm = getBundleManifest();
-    return new BundleIdentity(bm.getSymbolicName(), bm.getVersion());
+  public BundleManifest getBundleManifest() {
+    BundleManifest manifest = null;
+    
+    // Read manifest
+    InputStream is = null;
+    try {
+      try {
+        // Get manifest
+        IFile manifestFile = javaProject.getProject().getFile(MANIFEST_FILE);
+        if (manifestFile.exists()) {
+          is = manifestFile.getContents(true);
+          manifest = new BundleManifest(is);
+        } else {
+          manifest = new BundleManifest();
+        }
+      } finally {
+        if (is != null) {
+          is.close();
+        }
+      }
+    } catch (Exception e) {
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failed to get manifest for project "+javaProject.getProject().getName(), e);
+      OsgiPlugin.log(status);
+    }
+    
+    return manifest;
   }
-  
-  /****************************************************************************
-   * Bundle Pack methods
-   ***************************************************************************/
+
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#setBundleManifest(org.knopflerfish.eclipse.core.manifest.BundleManifest)
+   */
+  public void setBundleManifest(BundleManifest manifest) throws CoreException {
+    // Write manifest to file
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ByteArrayInputStream bais = null;
+    IFile file = null;
+    try {
+      try {
+        manifest.write(baos);
+        baos.flush();
+        bais = new ByteArrayInputStream(baos.toByteArray());
+        file = javaProject.getProject().getFile(MANIFEST_FILE);
+        if (!file.exists()) {
+          file.create(bais, IResource.FORCE, null);
+        } else {
+          file.setContents(bais, IResource.KEEP_HISTORY, null);
+        }
+      } finally {
+        baos.close();
+        bais.close();
+      }
+    } catch (IOException e) {
+      OsgiPlugin.throwCoreException("Failed to set manifest for project "+javaProject.getProject().getName(), e);
+    }
+  }
+
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.project.IBundleProject#getBundlePackDescription()
    */
-  public BundlePackDescription getBundlePackDescription() {
+  public BundlePackDescription getBundlePackDescription() throws CoreException {
     
     BundlePackDescription packDescription = null;
     try {
@@ -186,335 +253,121 @@ public class BundleProject implements IBundleProject {
           
         }
       }
-    } catch (Exception e) {
-      //OsgiPlugin.throwCoreException("Failed to create bundle jar description", e);
+    } catch (IOException e) {
+      OsgiPlugin.throwCoreException("Failed to get bundle pack description for project "+javaProject.getProject().getName(), e);
     }
     return packDescription;
   }
   
-  public IFile getBundlePackDescriptionFile() {
-    return javaProject.getProject().getFile(BUNDLE_PACK_FILE);
-  }
-  
-  /****************************************************************************
-   * Bundle Manifest methods
-   ***************************************************************************/
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleProject#getManifest()
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#setBundlePackDescription(org.knopflerfish.eclipse.core.project.BundlePackDescription)
    */
-  public BundleManifest getBundleManifest() {
-    BundleManifest manifest = null;
-    
-    // Read manifest
-    InputStream is = null;
+  public void setBundlePackDescription(BundlePackDescription packDescription) throws CoreException {
+    if (packDescription == null) return;
     try {
-      try {
-        // Get manifest
-        IFile manifestFile = javaProject.getProject().getFile(MANIFEST_FILE);
-        if (manifestFile.exists()) {
-          is = manifestFile.getContents(true);
-          manifest = new BundleManifest(is);
-        } else {
-          manifest = new BundleManifest();
-        }
-      } finally {
-        if (is != null) {
-          is.close();
-        }
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    
-    return manifest;
-  }
-  
-  public void setBundleManifest(BundleManifest manifest) {
-    // Write manifest to file
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ByteArrayInputStream bais = null;
-    IFile file = null;
-    try {
-      try {
-        manifest.write(baos);
-        baos.flush();
+      // Save description
+      ByteArrayOutputStream baos = null;
+      ByteArrayInputStream bais = null;
+      try { 
+        baos = new ByteArrayOutputStream();
+        packDescription.save(baos);
         bais = new ByteArrayInputStream(baos.toByteArray());
-        file = javaProject.getProject().getFile(MANIFEST_FILE);
-        if (!file.exists()) {
-          file.create(bais, IResource.FORCE, null);
+        
+        IFile bundlePackFile = javaProject.getProject().getFile(BUNDLE_PACK_FILE);
+        if (!bundlePackFile.exists()) {
+          bundlePackFile.create(bais, IResource.FORCE, null);
         } else {
-          file.setContents(bais, IResource.KEEP_HISTORY, null);
+          //bundlePackFile.setContents(bais, IResource.FORCE | IResource.KEEP_HISTORY, null);
+          bundlePackFile.setContents(bais, IResource.KEEP_HISTORY, null);
         }
       } finally {
-        baos.close();
-        bais.close();
+        if (baos != null) baos.close();
+        if (bais != null) bais.close();
+        
       }
-    } catch (Exception e) {
+    } catch (IOException e) {
+      OsgiPlugin.throwCoreException("Failed to set bundle pack description for project "+javaProject.getProject().getName(), e);
     }
-  }
-  
-  public IFile getBundleManifestFile() {
-    return javaProject.getProject().getFile(MANIFEST_FILE);
-  }
-  
-  /* (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleProject#hasExportedPackage(org.knopflerfish.eclipse.core.PackageDescription)
-   */
-  public boolean hasExportedPackage(PackageDescription pkg) {
-    PackageDescription [] exportedPackages = getBundleManifest().getExportedPackages();
-    for (int i=0; i<exportedPackages.length; i++) {
-      if (exportedPackages[i].isCompatible(pkg)) return true;
-    }
-    return false;
   }
   
   /*
    *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getExportablePackages()
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getExportablePackageNames()
    */
-  public String[] getExportablePackageNames() {
-    ArrayList packageNames = new ArrayList();
-    IProject project = javaProject.getProject();
-    try {
-      IPackageFragmentRoot[] fragmentRoot = javaProject.getAllPackageFragmentRoots();
-      for (int i=0; i<fragmentRoot.length; i++) {
-        try {
-          if (fragmentRoot[i].isExternal()) continue;
-          if (fragmentRoot[i].getKind() != IPackageFragmentRoot.K_SOURCE && 
-              !fragmentRoot[i].isArchive()) continue;
-          
-          IResource resource = fragmentRoot[i].getCorrespondingResource();
-          IProject fragmentProject = project;
-          if (resource != null) {
-            fragmentProject = resource.getProject();
-          }
-          if (project.equals(fragmentProject)) {
-            
-            IJavaElement[] elements = fragmentRoot[i].getChildren();
-            for (int j=0; j<elements.length; j++) {
-              if (elements[j].getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-                // Check if package fragment has any classes to export
-                IPackageFragment fragment = (IPackageFragment) elements[j];
-                String name = fragment.getElementName();
-                if (fragment.containsJavaResources() && !packageNames.contains(name)) {
-                  packageNames.add(name);
-                }
-              }
-            }
-          }
-        } catch (JavaModelException jme) {
-          jme.printStackTrace();
-        }
-      }
-    } catch (CoreException e) {
-      e.printStackTrace();
-    }
-    return (String[]) packageNames.toArray(new String[packageNames.size()]);
-  }
-  
-  private String[] getClassNames() {
-    ArrayList classNames = new ArrayList();
-    IProject project = javaProject.getProject();
-    try {
-      IPackageFragmentRoot[] fragmentRoot = javaProject.getAllPackageFragmentRoots();
-      for (int i=0; i<fragmentRoot.length; i++) {
-        try {
-          if (fragmentRoot[i].isExternal()) continue;
-          if (fragmentRoot[i].getKind() != IPackageFragmentRoot.K_SOURCE && 
-              !fragmentRoot[i].isArchive()) continue;
-          
-          IResource resource = fragmentRoot[i].getCorrespondingResource();
-          IProject fragmentProject = project;
-          if (resource != null) {
-            fragmentProject = resource.getProject();
-          }
-          if (project.equals(fragmentProject)) {
-            
-            IJavaElement[] elements = fragmentRoot[i].getChildren();
-            for (int j=0; j<elements.length; j++) {
-              classNames.addAll(Arrays.asList(getClassNames("", elements[j])));
-            }
-          }
-        } catch (JavaModelException jme) {
-          jme.printStackTrace();
-        }
-      }
-    } catch (CoreException e) {
-      e.printStackTrace();
-    }
-    return (String[]) classNames.toArray(new String[classNames.size()]);
+  public String[] getExportablePackageNames() throws JavaModelException {
+    Map map = getExportablePackageNames(getFragmentRoots());
+    return (String[]) map.keySet().toArray(new String[map.size()]);
   }
 
-  private String[] getClassNames(String name, IJavaElement element) throws JavaModelException {
-    if (element == null) return null;
-
-    ArrayList classNames = new ArrayList();
-    int type = element.getElementType();
-    if (type == IJavaElement.PACKAGE_FRAGMENT) {
-      IPackageFragment fragment = (IPackageFragment) element;
-      String packageName = fragment.getElementName();
-      ICompilationUnit[] units = fragment.getCompilationUnits();
-      for (int i=0; i<units.length; i++) {
-        classNames.addAll(Arrays.asList(getClassNames(packageName, units[i])));
-      }
-      IClassFile[] classFiles = fragment.getClassFiles();
-      for (int i=0; i<classFiles.length; i++) {
-        classNames.addAll(Arrays.asList(getClassNames(packageName, classFiles[i])));
-      }
-    } else if (type == IJavaElement.COMPILATION_UNIT) {
-      ICompilationUnit unit = (ICompilationUnit) element;
-      StringBuffer buf = new StringBuffer(name);
-      buf.append('.');
-      buf.append(unit.getElementName());
-      // Remove trailing '.java'
-      buf.setLength(buf.length()-5);
-      String className = buf.toString(); 
-      classNames.add(className);
-      IJavaElement[] children = unit.getChildren();
-      for (int i=0; i<children.length; i++) {
-        classNames.addAll(Arrays.asList(getClassNames(className, children[i])));
-      }
-    } else if (type == IJavaElement.CLASS_FILE) {
-      IClassFile classFile = (IClassFile) element;
-      StringBuffer buf = new StringBuffer(name);
-      buf.append('.');
-      buf.append(classFile.getElementName());
-      // Remove trailing '.class'
-      buf.setLength(buf.length()-6);
-      String className = buf.toString(); 
-      classNames.add(className);
-      IJavaElement[] children = classFile.getChildren();
-      for (int i=0; i<children.length; i++) {
-        classNames.addAll(Arrays.asList(getClassNames(className, children[i])));
-      }
-    }
+  /*
+   *  (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getReferencedPackageNames()
+   */
+  public String[] getReferencedPackageNames() throws JavaModelException {
+    TreeSet packageNames = new TreeSet();
     
-    return (String[]) classNames.toArray(new String[classNames.size()]);
-  }
-  
-  public String[] getNeededPackageNames() {
-    ArrayList packageNames = new ArrayList();
-    List internalPackages = Arrays.asList(getExportablePackageNames());
-    List internalClasses = Arrays.asList(getClassNames());
-    IProject project = javaProject.getProject();
-    try {
-      IPackageFragmentRoot[] fragmentRoot = javaProject.getAllPackageFragmentRoots();
-      for (int i=0; i<fragmentRoot.length; i++) {
-        try {
-          if (fragmentRoot[i].getKind() != IPackageFragmentRoot.K_SOURCE) continue;
-          
-          IResource resource = fragmentRoot[i].getCorrespondingResource();
-          IProject fragmentProject = project;
-          if (resource != null) {
-            fragmentProject = resource.getProject();
+    IPackageFragmentRoot[] roots = getFragmentRoots();
+    TreeSet packages = new TreeSet();
+    packages.addAll(getExportablePackageNames(roots).keySet());
+    Map classFiles = getClassFiles(roots);
+    packages.addAll(classFiles.keySet());
+    Map compilationUnits = getCompilationUnit(roots);
+    packages.addAll(compilationUnits.keySet());
+
+    for (Iterator i=compilationUnits.values().iterator(); i.hasNext();) {
+      ICompilationUnit unit = (ICompilationUnit) i.next();
+      IImportContainer container = unit.getImportContainer();
+      if (!container.exists()) continue;
+      IJavaElement[] imports = container.getChildren();
+      for (int j=0; j<imports.length;j++) {
+        String s = imports[j].getElementName();
+        if (s.startsWith("java.")) continue;
+        int idx = s.lastIndexOf('.');
+        if (idx != -1) {
+          String name = s.substring(0,idx);
+          if (!packages.contains(name) && !packageNames.contains(name)) {
+            packageNames.add(name);
           }
-          if (!project.equals(fragmentProject)) continue;
-          
-          IJavaElement[] elements = fragmentRoot[i].getChildren();
-          if (elements == null) continue;
-          for (int j=0; j<elements.length; j++) {
-            if (elements[j].getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-              IPackageFragment fragment = (IPackageFragment) elements[j];
-              if (fragment.containsJavaResources()) {
-                ICompilationUnit[] units = fragment.getCompilationUnits();
-                if (units == null) continue;
-                for (int k=0; k<units.length; k++) {
-                  IImportDeclaration[] imports = units[k].getImports();
-                  if (imports == null) continue;
-                  for (int l=0; l<imports.length;l++) {
-                    String s = imports[l].getElementName();
-                    if (s.startsWith("java.")) continue;
-                    int idx = s.lastIndexOf('.');
-                    if (idx != -1) {
-                      String name = s.substring(0,idx);
-                      if (!internalPackages.contains(name) && 
-                          !internalClasses.contains(name) && 
-                          !packageNames.contains(name)) {
-                        packageNames.add(s.substring(0,idx));
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } catch (JavaModelException jme) {
-          jme.printStackTrace();
         }
       }
-    } catch (CoreException e) {
-      e.printStackTrace();
     }
     return (String[]) packageNames.toArray(new String[packageNames.size()]);
   }
-  
+
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.project.IBundleProject#getBundleActivators()
    */
-  public IType[] getBundleActivators() {
+  public IType[] getBundleActivators() throws JavaModelException {
     ArrayList activators = new ArrayList();
     
-    try{
-      IType activatorType = javaProject.findType("org.osgi.framework.BundleActivator");
-      ITypeHierarchy hierarchy = activatorType.newTypeHierarchy(javaProject, null);
-      IType[] implClasses = hierarchy.getImplementingClasses(activatorType);
-      if (implClasses != null) {
-        for(int i=0;i<implClasses.length;i++) {
-          IPackageFragmentRoot root = (IPackageFragmentRoot) implClasses[i].getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
-          if (root != null) {
-            if (root.getKind() == IPackageFragmentRoot.K_SOURCE) {
-              IJavaProject ancestor = (IJavaProject) root.getAncestor(IJavaElement.JAVA_PROJECT);
-              if (javaProject.equals(ancestor)) {
-                activators.add(implClasses[i]);
-              }
+    IType activatorType = javaProject.findType("org.osgi.framework.BundleActivator");
+    ITypeHierarchy hierarchy = activatorType.newTypeHierarchy(javaProject, null);
+    IType[] implClasses = hierarchy.getImplementingClasses(activatorType);
+    if (implClasses != null) {
+      for(int i=0;i<implClasses.length;i++) {
+        IPackageFragmentRoot root = (IPackageFragmentRoot) implClasses[i].getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
+        if (root != null) {
+          if (root.getKind() == IPackageFragmentRoot.K_SOURCE) {
+            IJavaProject ancestor = (IJavaProject) root.getAncestor(IJavaElement.JAVA_PROJECT);
+            if (javaProject.equals(ancestor)) {
+              activators.add(implClasses[i]);
             }
           }
         }
       }
-    } catch (JavaModelException e) {
-      e.printStackTrace();
     }
     
     return (IType[]) activators.toArray(new IType[activators.size()]);
   }
   
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getLocalJars()
-   */
-  public IFile[] getJars() {
-    IFile[] files = null;
-    try {
-      files = getFiles(javaProject.getProject(), "jar", javaProject.getOutputLocation());
-    } catch (JavaModelException e) {
-      e.printStackTrace();
-    }
-    return files;
-  }
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.project.IBundleProject#getFileName()
-   */
-  public String getFileName() {
-    StringBuffer buf = new StringBuffer(javaProject.getProject().getName());
-    Version version = getBundleManifest().getVersion();
-    if (version != null) {
-      buf.append("-");
-      buf.append(version.toString());
-    }
-    buf.append(".jar");
-    
-    return buf.toString();
-  }
-
   /****************************************************************************
    * Buildpath methods
    ***************************************************************************/
   public BuildPath[] getBuildPaths() {
     ArrayList paths = new ArrayList();
-
+    
     try {
       IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
       for(int i=0; i<rawClasspath.length; i++) {
@@ -544,7 +397,7 @@ public class BundleProject implements IBundleProject {
     }
     return (BuildPath[]) paths.toArray(new BuildPath[paths.size()]);
   }
-
+  
   public BuildPath getBuildPath(PackageDescription pd) {
     if (pd == null) return null;
     
@@ -564,7 +417,7 @@ public class BundleProject implements IBundleProject {
     return new BuildPath(path, pd, id, name);
   }
   
-  public void addBuildPath(BuildPath path, boolean updateManifest) {
+  public void addBuildPath(BuildPath path, boolean updateManifest) throws CoreException {
     if (path == null || path.getContainerPath() == null || 
         path.getPackageDescription() == null) return;
     
@@ -576,7 +429,7 @@ public class BundleProject implements IBundleProject {
     } 
   }
   
-  public void removeBuildPath(BuildPath path, boolean updateManifest) {
+  public void removeBuildPath(BuildPath path, boolean updateManifest) throws CoreException {
     if (path == null || path.getContainerPath() == null || 
         path.getPackageDescription() == null) return;
     
@@ -616,330 +469,314 @@ public class BundleProject implements IBundleProject {
     }
     return null;
   }
-
+  
   /****************************************************************************
    * Update Classpath methods
    ***************************************************************************/
   
-  private void importFrameworkPackage(PackageDescription pd, boolean updateManifest) {
+  private void importFrameworkPackage(PackageDescription pd, boolean updateManifest) throws CoreException {
     
     // Update access rules for framework container
-    try {
-      ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
-      int idx = -1;
-      for(int i=0;i<entries.size();i++) {
-        // Find framework container
-        IClasspathEntry entry = (IClasspathEntry) entries.get(i);
-        if (entry.getPath().toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
-          idx = i;
+    ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+    int idx = -1;
+    for(int i=0;i<entries.size();i++) {
+      // Find framework container
+      IClasspathEntry entry = (IClasspathEntry) entries.get(i);
+      if (entry.getPath().toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
+        idx = i;
+        break;
+      }
+    }
+    
+    // Check if access rule aleady exist
+    IAccessRule rule = ClasspathUtil.createAccessRule(pd);
+    IClasspathAttribute attr =
+      JavaCore.newClasspathAttribute(pd.getPackageName(), pd.getSpecificationVersion().toString());
+    if (idx != -1) {
+      boolean exist = false;
+      IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
+      
+      ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+      ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
+      // Check if rule exists
+      for(int i=0;i<rules.size();i++) {
+        if (rule.equals(rules.get(i))) {
+          exist = true;
           break;
         }
       }
       
-      // Check if access rule aleady exist
-      IAccessRule rule = ClasspathUtil.createAccessRule(pd);
-      IClasspathAttribute attr =
-        JavaCore.newClasspathAttribute(pd.getPackageName(), pd.getSpecificationVersion().toString());
-      if (idx != -1) {
-        boolean exist = false;
-        IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
-        
-        ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
-        ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
-        // Check if rule exists
-        for(int i=0;i<rules.size();i++) {
-          if (rule.equals(rules.get(i))) {
-            exist = true;
-            break;
-          }
-        }
-        
-        // Update classpath
-        if (!exist) {
-          rules.add(0, rule);
-          attributes.add(attr);
-              
-          IClasspathEntry newEntry = JavaCore.newContainerEntry(
-              new Path(FrameworkContainer.CONTAINER_PATH),
-              (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-              (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
-              false
-          );
-          entries.remove(idx);
-          entries.add(idx, newEntry);
-          
-          javaProject.setRawClasspath(
-              (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
-              null);
-        }
-      }
-
-      // Update manifest
-      if (updateManifest) {
-        // Add package to manifest
-        BundleManifest manifest = getBundleManifest();
-        ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
-        boolean changed = false;
-        if (!importedPackages.contains(pd)) {
-          importedPackages.add(pd);
-          changed = true;
-        }
-        
-        if(changed) {
-          manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
-          setBundleManifest(manifest);
-        }
-      }
-    } catch (JavaModelException e) {
-    }
-  }
-  
-  public void removeFrameworkPackage(PackageDescription pd, boolean updateManifest) {
-    
-    // Update access rules for framework container
-    try {
-      ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
-      int idx = -1;
-      for(int i=0;i<entries.size();i++) {
-        // Find framework container
-        IClasspathEntry entry = (IClasspathEntry) entries.get(i);
-        if (entry.getPath().toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
-          idx = i;
-          break;
-        }
-      }
-      
-      // Check if access rule exist
-      IAccessRule rule = ClasspathUtil.createAccessRule(pd);
-      IClasspathAttribute attr =
-        JavaCore.newClasspathAttribute(pd.getPackageName(), pd.getSpecificationVersion().toString());
-      if (idx != -1) {
-        boolean exist = false;
-        IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
-        
-        ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
-        ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
-        // Check if rule exists
-        for(int i=0;i<rules.size();i++) {
-          if (rule.equals(rules.get(i))) {
-            exist = true;
-            break;
-          }
-        }
-        
-        // Update classpath
-        if (exist) {
-          rules.remove(rule);
-          attributes.remove(attr);
-          IClasspathEntry newEntry = JavaCore.newContainerEntry(
-              new Path(FrameworkContainer.CONTAINER_PATH),
-              (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-              (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
-              false
-          );
-          entries.remove(idx);
-          entries.add(idx, newEntry);
-          
-          javaProject.setRawClasspath(
-              (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
-              null);
-        }
-      }
-      
-      // Update manifest
-      if (updateManifest) {
-        // Add package to manifest
-        BundleManifest manifest = getBundleManifest();
-        ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
-        boolean changed = false;
-        if (importedPackages.contains(pd)) {
-          importedPackages.remove(pd);
-          changed = true;
-        }
-        
-        if(changed) {
-          manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
-          setBundleManifest(manifest);
-        }
-      }
-    } catch (JavaModelException e) {
-    }
-  }
-  
-  public void importBundlePackage(BuildPath bp, boolean updateManifest) {
-    
-    // Update access rules for bundle container
-    try {
-      ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
-      int idx = -1;
-      for(int i=0;i<entries.size();i++) {
-        // Find bundle container
-        IClasspathEntry entry = (IClasspathEntry) entries.get(i);
-        if (entry.getPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
-          if (bp.getBundleIdentity().getSymbolicName().equals(BundleContainerInitializer.getBundleIdentity(entry.getPath()).getSymbolicName())) {
-            idx = i;
-            break;
-          }
-        }
-      }
-      
-      // Check if access rule aleady exist
-      IAccessRule rule = ClasspathUtil.createAccessRule(bp.getPackageDescription());
-      IClasspathAttribute attr =
-        JavaCore.newClasspathAttribute(
-            bp.getPackageDescription().getPackageName(), 
-            bp.getPackageDescription().getSpecificationVersion().toString());
-      if (idx != -1) {
-        boolean exist = false;
-        IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
-        
-        ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
-        ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
-        // Check if rule exists
-        for(int i=0;i<rules.size();i++) {
-          if (rule.equals(rules.get(i))) {
-            exist = true;
-            break;
-          }
-        }
-        
-        // Update classpath
-        if (!exist) {
-          rules.add(0, rule);
-          attributes.add(attr);
-          IClasspathEntry newEntry = JavaCore.newContainerEntry(
-              new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().getSymbolicName().toString()),
-              (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-              (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
-              false
-          );
-          entries.remove(idx);
-          entries.add(idx, newEntry);
-          
-          javaProject.setRawClasspath(
-              (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
-              null);
-        }
-      } else {
-        // Add new entry
-        IAccessRule defaultRule = JavaCore.newAccessRule(new Path("**/*"), IAccessRule.K_NON_ACCESSIBLE);
-        ArrayList attributes = new ArrayList();
-        attributes.add(JavaCore.newClasspathAttribute(ClasspathUtil.ATTR_BUNDLENAME, bp.getBundleName()));
+      // Update classpath
+      if (!exist) {
+        rules.add(0, rule);
         attributes.add(attr);
+        
         IClasspathEntry newEntry = JavaCore.newContainerEntry(
-            new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().getSymbolicName().toString()),
-            new IAccessRule[] {rule, defaultRule},
+            new Path(FrameworkContainer.CONTAINER_PATH),
+            (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
             (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
             false
         );
-        entries.add(newEntry);
+        entries.remove(idx);
+        entries.add(idx, newEntry);
         
         javaProject.setRawClasspath(
             (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
             null);
       }
-
-      // Update manifest
-      if (updateManifest) {
-        // Add package to manifest
-        BundleManifest manifest = getBundleManifest();
-        ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
-        boolean changed = false;
-        if (!importedPackages.contains(bp.getPackageDescription())) {
-          importedPackages.add(bp.getPackageDescription());
-          changed = true;
-        }
-        
-        if(changed) {
-          manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
-          setBundleManifest(manifest);
+    }
+    
+    // Update manifest
+    if (updateManifest) {
+      // Add package to manifest
+      BundleManifest manifest = getBundleManifest();
+      ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+      boolean changed = false;
+      if (!importedPackages.contains(pd)) {
+        importedPackages.add(pd);
+        changed = true;
+      }
+      
+      if(changed) {
+        manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+        setBundleManifest(manifest);
+      }
+    }
+  }
+  
+  public void removeFrameworkPackage(PackageDescription pd, boolean updateManifest) throws CoreException {
+    
+    // Update access rules for framework container
+    ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+    int idx = -1;
+    for(int i=0;i<entries.size();i++) {
+      // Find framework container
+      IClasspathEntry entry = (IClasspathEntry) entries.get(i);
+      if (entry.getPath().toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
+        idx = i;
+        break;
+      }
+    }
+    
+    // Check if access rule exist
+    IAccessRule rule = ClasspathUtil.createAccessRule(pd);
+    IClasspathAttribute attr =
+      JavaCore.newClasspathAttribute(pd.getPackageName(), pd.getSpecificationVersion().toString());
+    if (idx != -1) {
+      boolean exist = false;
+      IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
+      
+      ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+      ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
+      // Check if rule exists
+      for(int i=0;i<rules.size();i++) {
+        if (rule.equals(rules.get(i))) {
+          exist = true;
+          break;
         }
       }
       
-    } catch (JavaModelException e) {
-      e.printStackTrace();
+      // Update classpath
+      if (exist) {
+        rules.remove(rule);
+        attributes.remove(attr);
+        IClasspathEntry newEntry = JavaCore.newContainerEntry(
+            new Path(FrameworkContainer.CONTAINER_PATH),
+            (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
+            (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
+            false
+        );
+        entries.remove(idx);
+        entries.add(idx, newEntry);
+        
+        javaProject.setRawClasspath(
+            (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
+            null);
+      }
+    }
+    
+    // Update manifest
+    if (updateManifest) {
+      // Add package to manifest
+      BundleManifest manifest = getBundleManifest();
+      ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+      boolean changed = false;
+      if (importedPackages.contains(pd)) {
+        importedPackages.remove(pd);
+        changed = true;
+      }
+      
+      if(changed) {
+        manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+        setBundleManifest(manifest);
+      }
+    }
+  }
+  
+  public void importBundlePackage(BuildPath bp, boolean updateManifest) throws CoreException {
+    
+    // Update access rules for bundle container
+    ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+    int idx = -1;
+    for(int i=0;i<entries.size();i++) {
+      // Find bundle container
+      IClasspathEntry entry = (IClasspathEntry) entries.get(i);
+      if (entry.getPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
+        if (bp.getBundleIdentity().getSymbolicName().equals(BundleContainerInitializer.getBundleIdentity(entry.getPath()).getSymbolicName())) {
+          idx = i;
+          break;
+        }
+      }
+    }
+    
+    // Check if access rule aleady exist
+    IAccessRule rule = ClasspathUtil.createAccessRule(bp.getPackageDescription());
+    IClasspathAttribute attr =
+      JavaCore.newClasspathAttribute(
+          bp.getPackageDescription().getPackageName(), 
+          bp.getPackageDescription().getSpecificationVersion().toString());
+    if (idx != -1) {
+      boolean exist = false;
+      IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
+      
+      ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+      ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
+      // Check if rule exists
+      for(int i=0;i<rules.size();i++) {
+        if (rule.equals(rules.get(i))) {
+          exist = true;
+          break;
+        }
+      }
+      
+      // Update classpath
+      if (!exist) {
+        rules.add(0, rule);
+        attributes.add(attr);
+        IClasspathEntry newEntry = JavaCore.newContainerEntry(
+            new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().getSymbolicName().toString()),
+            (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
+            (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
+            false
+        );
+        entries.remove(idx);
+        entries.add(idx, newEntry);
+        
+        javaProject.setRawClasspath(
+            (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
+            null);
+      }
+    } else {
+      // Add new entry
+      IAccessRule defaultRule = JavaCore.newAccessRule(new Path("**/*"), IAccessRule.K_NON_ACCESSIBLE);
+      ArrayList attributes = new ArrayList();
+      attributes.add(JavaCore.newClasspathAttribute(ClasspathUtil.ATTR_BUNDLENAME, bp.getBundleName()));
+      attributes.add(attr);
+      IClasspathEntry newEntry = JavaCore.newContainerEntry(
+          new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().getSymbolicName().toString()),
+          new IAccessRule[] {rule, defaultRule},
+          (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
+          false
+      );
+      entries.add(newEntry);
+      
+      javaProject.setRawClasspath(
+          (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
+          null);
+    }
+    
+    // Update manifest
+    if (updateManifest) {
+      // Add package to manifest
+      BundleManifest manifest = getBundleManifest();
+      ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+      boolean changed = false;
+      if (!importedPackages.contains(bp.getPackageDescription())) {
+        importedPackages.add(bp.getPackageDescription());
+        changed = true;
+      }
+      
+      if(changed) {
+        manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+        setBundleManifest(manifest);
+      }
     }
   }
   
   
-  public void removeBundlePackage(BuildPath bp, boolean updateManifest) {
+  public void removeBundlePackage(BuildPath bp, boolean updateManifest) throws CoreException {
     
     // Update access rules for bundle container
-    try {
-      ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
-      int idx = -1;
-      for(int i=0;i<entries.size();i++) {
-        // Find bundle container
-        IClasspathEntry entry = (IClasspathEntry) entries.get(i);
-        if (entry.getPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
-          if (bp.getBundleIdentity().equals(BundleContainerInitializer.getBundleIdentity(entry.getPath()))) {
-            idx = i;
-            break;
-          }
+    ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+    int idx = -1;
+    for(int i=0;i<entries.size();i++) {
+      // Find bundle container
+      IClasspathEntry entry = (IClasspathEntry) entries.get(i);
+      if (entry.getPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
+        if (bp.getBundleIdentity().equals(BundleContainerInitializer.getBundleIdentity(entry.getPath()))) {
+          idx = i;
+          break;
+        }
+      }
+    }
+    
+    // Check if access rule aleady exist
+    IAccessRule rule = ClasspathUtil.createAccessRule(bp.getPackageDescription());
+    IClasspathAttribute attr =
+      JavaCore.newClasspathAttribute(
+          bp.getPackageDescription().getPackageName(), 
+          bp.getPackageDescription().getSpecificationVersion().toString());
+    if (idx != -1) {
+      boolean exist = false;
+      IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
+      
+      ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
+      ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
+      // Check if rule exists
+      for(int i=0;i<rules.size();i++) {
+        if (rule.equals(rules.get(i))) {
+          exist = true;
+          break;
         }
       }
       
-      // Check if access rule aleady exist
-      IAccessRule rule = ClasspathUtil.createAccessRule(bp.getPackageDescription());
-      IClasspathAttribute attr =
-        JavaCore.newClasspathAttribute(
-            bp.getPackageDescription().getPackageName(), 
-            bp.getPackageDescription().getSpecificationVersion().toString());
-      if (idx != -1) {
-        boolean exist = false;
-        IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
-        
-        ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
-        ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
-        // Check if rule exists
-        for(int i=0;i<rules.size();i++) {
-          if (rule.equals(rules.get(i))) {
-            exist = true;
-            break;
-          }
+      // Update classpath
+      if (exist) {
+        attributes.remove(attr);
+        rules.remove(rule);
+        entries.remove(idx);
+        if (rules.size() > 1) {
+          // Update entry
+          IClasspathEntry newEntry = JavaCore.newContainerEntry(
+              new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().toString()),
+              (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
+              (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
+              false
+          );
+          entries.add(idx, newEntry);
         }
         
-        // Update classpath
-        if (exist) {
-          attributes.remove(attr);
-          rules.remove(rule);
-          entries.remove(idx);
-          if (rules.size() > 1) {
-            // Update entry
-            IClasspathEntry newEntry = JavaCore.newContainerEntry(
-                new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().toString()),
-                (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-                (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
-                false
-            );
-            entries.add(idx, newEntry);
-          }
-          
-          javaProject.setRawClasspath(
-              (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
-              null);
-        }
+        javaProject.setRawClasspath(
+            (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
+            null);
+      }
+    }
+    
+    // Update manifest
+    if (updateManifest) {
+      // Add package to manifest
+      BundleManifest manifest = getBundleManifest();
+      ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+      boolean changed = false;
+      if (importedPackages.contains(bp.getPackageDescription())) {
+        importedPackages.remove(bp.getPackageDescription());
+        changed = true;
       }
       
-      // Update manifest
-      if (updateManifest) {
-        // Add package to manifest
-        BundleManifest manifest = getBundleManifest();
-        ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
-        boolean changed = false;
-        if (importedPackages.contains(bp.getPackageDescription())) {
-          importedPackages.remove(bp.getPackageDescription());
-          changed = true;
-        }
-        
-        if(changed) {
-          manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
-          setBundleManifest(manifest);
-        }
+      if(changed) {
+        manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+        setBundleManifest(manifest);
       }
-      
-    } catch (JavaModelException e) {
-      e.printStackTrace();
     }
   }
   
@@ -948,7 +785,8 @@ public class BundleProject implements IBundleProject {
    ***************************************************************************/
   
   public void checkManifest() throws CoreException {
-    IFile manifestFile = getBundleManifestFile();
+    
+    IFile manifestFile = javaProject.getProject().getFile(MANIFEST_FILE);
     
     InputStream is = null;
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -967,7 +805,10 @@ public class BundleProject implements IBundleProject {
         baos.close();
       }
     } catch (Throwable t) {
-      t.printStackTrace();
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure reading manifest contents", t);
+      OsgiPlugin.log(status);
     }
     StringBuffer manifestContents = new StringBuffer(baos.toString());
     BundleManifest manifest = getBundleManifest();
@@ -985,7 +826,7 @@ public class BundleProject implements IBundleProject {
         checkManifestBundleName(manifest), 
         IMarker.SEVERITY_WARNING,
         manifestFile);
-
+    
     // Check Bundle symbolic name
     SymbolicName symbolicName = manifest.getSymbolicName();
     String error = null;
@@ -1059,7 +900,7 @@ public class BundleProject implements IBundleProject {
     // Check Imports, get needed packages and check against manifest
     // Warn if imports are done that are not needed
     // Error if imports other to java. are done and are not specified in manifest.
-    List neededPackageNames = Arrays.asList(getNeededPackageNames());
+    List neededPackageNames = Arrays.asList(getReferencedPackageNames());
     PackageDescription[] importedPackages = manifest.getImportedPackages();
     ArrayList importedPackageNames = new ArrayList();
     for (int i=0; i<importedPackages.length; i++) {
@@ -1100,7 +941,7 @@ public class BundleProject implements IBundleProject {
     }
   }
   
-  public String checkManifestBundleActivator(BundleManifest manifest) {
+  public String checkManifestBundleActivator(BundleManifest manifest) throws CoreException {
     // Check that bundle activator class exists
     String activator = manifest.getActivator();
     if (activator != null) {
@@ -1183,7 +1024,7 @@ public class BundleProject implements IBundleProject {
     return null;
   }
   
-  public String checkManifestBundleClassPath(BundleManifest manifest) { 
+  public String checkManifestBundleClassPath(BundleManifest manifest) throws CoreException { 
     String[] classPaths = manifest.getBundleClassPath();
     Map map = getBundlePackDescription().getContentsMap(false);
     for (int i=0; i<classPaths.length; i++) {
@@ -1200,12 +1041,11 @@ public class BundleProject implements IBundleProject {
     return null;
   }
   
-  public String checkPackageExports(BundleManifest manifest) {
-    List exportablePackages = Arrays.asList(getExportablePackageNames());
-    
+  public String checkPackageExports(BundleManifest manifest) throws JavaModelException {
+    Map exportablePackages = getExportablePackageNames(getFragmentRoots());
     PackageDescription[] packages = manifest.getExportedPackages();
     for(int i=0; i<packages.length;i++) {
-      if (!exportablePackages.contains(packages[i].getPackageName())) {
+      if (!exportablePackages.containsKey(packages[i].getPackageName())) {
         return "Bundle exports packages which are not in the bundle classpath.";
       }
     }
@@ -1252,31 +1092,9 @@ public class BundleProject implements IBundleProject {
   /****************************************************************************
    * Private worker methods
    ***************************************************************************/
-  private IFile[] getFiles(IResource resource, String extension, IPath exclude) {
-    if (resource instanceof IFile && extension.equalsIgnoreCase(resource.getFileExtension())) {
-      return new IFile[] {(IFile) resource};
-    } else if (resource instanceof IContainer) {
-      IContainer container = (IContainer) resource;
-      ArrayList files = new ArrayList();
-      try {
-        IResource[] resources = container.members();
-        if (resources != null) {
-          for(int i=0; i<resources.length; i++) {
-            if (!resources[i].getFullPath().equals(exclude)) {
-              files.addAll(Arrays.asList(getFiles(resources[i], extension, exclude)));
-            }
-          }
-        }
-      } catch (CoreException e) {
-      }
-      return (IFile[]) files.toArray(new IFile[files.size()]);
-    } else {
-      return new IFile[0];
-    }
-  }
   
   
-  public BundlePackDescription loadBundlePackDescription() throws CoreException {
+  private BundlePackDescription loadBundlePackDescription() throws CoreException {
     // Read bundle jar
     InputStream is = null;
     BundlePackDescription jar  = null;
@@ -1297,69 +1115,121 @@ public class BundleProject implements IBundleProject {
     }
     return jar;
   }
+
+  /****************************************************************************
+   * Private worker methods for checking contents of bundle project
+   ***************************************************************************/
   
-  public void saveBundlePackDescription(BundlePackDescription packDescription) throws CoreException {
-    if (packDescription == null) return;
-    try {
-      // Save description
-      ByteArrayOutputStream baos = null;
-      ByteArrayInputStream bais = null;
-      try { 
-        baos = new ByteArrayOutputStream();
-        packDescription.save(baos);
-        bais = new ByteArrayInputStream(baos.toByteArray());
-        
-        IFile bundlePackFile = javaProject.getProject().getFile(BUNDLE_PACK_FILE);
-        if (!bundlePackFile.exists()) {
-          bundlePackFile.create(bais, IResource.FORCE, null);
-        } else {
-          //bundlePackFile.setContents(bais, IResource.FORCE | IResource.KEEP_HISTORY, null);
-          bundlePackFile.setContents(bais, IResource.KEEP_HISTORY, null);
-        }
-      } finally {
-        if (baos != null) baos.close();
-        if (bais != null) bais.close();
-        
+  private IPackageFragmentRoot[] getFragmentRoots() throws JavaModelException {
+    ArrayList fragmentRoots = new ArrayList();
+    
+    IProject project = javaProject.getProject();
+    IPackageFragmentRoot[] fragmentRoot = javaProject.getAllPackageFragmentRoots();
+    for (int i=0; i<fragmentRoot.length; i++) {
+      if (fragmentRoot[i].isExternal()) continue;
+      if (fragmentRoot[i].getKind() != IPackageFragmentRoot.K_SOURCE && 
+          !fragmentRoot[i].isArchive()) continue;
+      
+      IResource resource = fragmentRoot[i].getCorrespondingResource();
+      IProject fragmentProject = project;
+      if (resource != null) {
+        fragmentProject = resource.getProject();
       }
-    } catch (Exception e) {
-      OsgiPlugin.throwCoreException("Failed to create bundle jar description", e);
+      if (project.equals(fragmentProject)) {
+        fragmentRoots.add(fragmentRoot[i]);
+      }
     }
+    
+    return (IPackageFragmentRoot[]) fragmentRoots.toArray(new IPackageFragmentRoot[fragmentRoots.size()]);
   }
   
-  /*
-   public void updateClasspath() {
-   Map map = bundlePackDescription.getContentsMap();
-   HashMap resources = new HashMap();
-   List pathList = new ArrayList(Arrays.asList(manifest.getBundleClassPath()));
-   for (Iterator i = pathList.iterator(); i.hasNext(); ) {
-   String path = ((String) i.next()).trim();
-   if (path.startsWith("/")) path = path.substring(1);
-   
-   if (map.containsKey(path)) {
-   BundleResource resource = new BundleResource((IPath) map.get(path), path, null);
-   resources.put(resource.getSource().makeAbsolute().toString(), resource);
-   }
-   }
-   
-   ArrayList entries = new ArrayList(Arrays.asList(project.getRawClasspath()));
-   boolean changed = false;
-   for(Iterator i=entries.iterator();i.hasNext();) {
-   IClasspathEntry entry = (IClasspathEntry) i.next();
-   if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
-   String path = entry.getPath().makeAbsolute().toString();
-   if (resources.containsKey(path)) {
-   i.remove();
-   changed = true;
-   }
-   }
-   }
-   if (changed) {
-   project.setRawClasspath(
-   (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
-   null);
-   }
-   
-   }
-   */
+  private Map getExportablePackageNames(IPackageFragmentRoot[] roots) throws JavaModelException {
+    HashMap packageNames = new HashMap();
+    
+    for (int i=0; i<roots.length; i++) {
+      IJavaElement[] elements = roots[i].getChildren();
+      for (int j=0; j<elements.length; j++) {
+        if (elements[j].getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
+          // Check if package fragment has any classes to export
+          IPackageFragment fragment = (IPackageFragment) elements[j];
+          String name = fragment.getElementName().trim();
+          if (name.length() == 0 || "meta-inf".equalsIgnoreCase(name)) continue; 
+          boolean javaResources = fragment.containsJavaResources();
+          boolean nonJavaResources = fragment.getNonJavaResources().length > 0;
+          
+          if (javaResources || nonJavaResources) {
+            packageNames.put(name, roots[i]);
+          }
+        }
+      }
+    }
+    return packageNames;
+  }
+  
+  private Map getClassFiles(IPackageFragmentRoot[] roots) throws JavaModelException {
+    HashMap classFiles = new HashMap();
+    
+    for (int i=0; i<roots.length; i++) {
+      IJavaElement[] elements = roots[i].getChildren();
+      for (int j=0; j<elements.length; j++) {
+        IJavaElement element = elements[j];
+        int type = element.getElementType();
+        
+        if (type == IJavaElement.PACKAGE_FRAGMENT) {
+          IPackageFragment fragment = (IPackageFragment) element;
+          String packageName = fragment.getElementName();
+          StringBuffer buf = new StringBuffer(packageName);
+          buf.append('.');
+          int bufLen = buf.length();
+          
+          IClassFile[] files = fragment.getClassFiles();
+          for (int k=0; k<files.length; k++) {
+            IClassFile classFile = files[k];
+            buf.setLength(bufLen);
+            buf.append(classFile.getElementName());
+            // Remove trailing '.class'
+            buf.setLength(buf.length()-6);
+            // Fix internal class names
+            String className = buf.toString().replace('$', '.');
+            classFiles.put(className, classFile);
+          }
+        }
+      }
+    }
+    return classFiles;
+  }
+  
+  private Map getCompilationUnit(IPackageFragmentRoot[] roots) throws JavaModelException {
+    HashMap compilationUnits = new HashMap();
+    
+    for (int i=0; i<roots.length; i++) {
+      IJavaElement[] elements = roots[i].getChildren();
+      for (int j=0; j<elements.length; j++) {
+        IJavaElement element = elements[j];
+        int type = element.getElementType();
+        
+        if (type == IJavaElement.PACKAGE_FRAGMENT) {
+          IPackageFragment fragment = (IPackageFragment) element;
+          String packageName = fragment.getElementName();
+          StringBuffer buf = new StringBuffer(packageName);
+          buf.append('.');
+          int bufLen = buf.length();
+          
+          ICompilationUnit[] units = fragment.getCompilationUnits();
+          for (int k=0; k<units.length; k++) {
+            ICompilationUnit unit = units[k];
+            buf.setLength(bufLen);
+            buf.append(unit.getElementName());
+            // Remove trailing '.java'
+            buf.setLength(buf.length()-5);
+            // TODO:Fix internal classes for compilation units
+            String className = buf.toString();
+            compilationUnits.put(className, unit);
+          }
+        }
+      }
+    }
+    return compilationUnits;
+  }
 }
 

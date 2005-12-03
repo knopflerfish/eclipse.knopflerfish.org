@@ -51,10 +51,8 @@ import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -65,12 +63,13 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.knopflerfish.eclipse.core.IBundleProject;
+import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -86,12 +85,12 @@ public class BundlePackDescription {
   
   private TreeSet resources = new TreeSet();
   private final IProject project;
-
+  
   public BundlePackDescription(IProject project) {
     this.project = project;
   }
   
-  public BundlePackDescription(IProject project, InputStream is) throws IOException, ParserConfigurationException, SAXException {
+  public BundlePackDescription(IProject project, InputStream is) throws CoreException {
     this.project = project;
     load(project, is);
   }
@@ -116,7 +115,7 @@ public class BundlePackDescription {
       }
     }
   }
-
+  
   public void removeResource(IPath src) {
     if (src == null)  return;
     for(Iterator i=resources.iterator();i.hasNext();) {
@@ -126,83 +125,52 @@ public class BundlePackDescription {
       }
     }
   }
-  
+
+  /*
   public void updateResource(BundleResource resource) {
     if (resources.contains(resource)) { 
       resources.remove(resource);
     }
     resources.add(resource);
   }
+  */
   
-  private void load(IProject project, InputStream is) throws ParserConfigurationException, SAXException, IOException {
-    // Parse xml file
-    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-    DocumentBuilder db = dbf.newDocumentBuilder();
-    Document doc = db.parse(is);
-    
-    // Read bundlejar tag
-    NodeList list = doc.getElementsByTagName(TAG_BUNDLEJAR);
-    if (list.getLength()== 0) return;
-    
-    Node bundleJarNode = list.item(0);
-    
-    // Resources
-    resources.clear();
-    NodeList resourceNodes = bundleJarNode.getChildNodes();
-    for (int i=0; i<resourceNodes.getLength(); i++) {
-      Node resourceNode = resourceNodes.item(i);
-      if (resourceNode.getNodeType() != Node.ELEMENT_NODE) continue;
+  public void save(OutputStream os) throws CoreException {
+    try {
+      // Parse xml file
+      DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+      DocumentBuilder db = dbf.newDocumentBuilder();
+      Document doc = db.newDocument();
       
-      if (TAG_RESOURCE.equals(resourceNode.getNodeName())) {
-        try {
-          BundleResource resource = new BundleResource(project, resourceNode);
-          resources.add(resource);
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-      }
+      // Create bundlejar tag
+      Element elem = doc.createElement(TAG_BUNDLEJAR);
+      doc.appendChild(elem);
+      
+      // Create resource tags
+      BundleResource[] resources = getResources();
+      for (int i=0; i<resources.length; i++) {
+        elem.appendChild(resources[i].createElement(doc));
+      }   
+      
+      // Create DOM source
+      DOMSource source = new DOMSource();
+      // Create xml node 
+      source.setNode(doc);
+      
+      // Create result
+      StreamResult result = new StreamResult(os);
+      
+      // Transform
+      TransformerFactory factory = TransformerFactory.newInstance();
+      Transformer transformer = factory.newTransformer();
+      transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+      transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+      transformer.transform(source, result);
+    } catch (Exception e) {
+      OsgiPlugin.throwCoreException("Failure saving pack description for project "+project.getName(), e);
     }
   }
   
-  public Element createElement(Document doc) {
-    // Create bundlejar tag
-    Element elem = doc.createElement(TAG_BUNDLEJAR);
-    doc.appendChild(elem);
-    
-    // Create resource tags
-    BundleResource[] resources = getResources();
-    for (int i=0; i<resources.length; i++) {
-      elem.appendChild(resources[i].createElement(doc));
-    }   
-
-    return elem;
-  }
-  
-  public void save(OutputStream os) throws TransformerException, ParserConfigurationException {
-    // Parse xml file
-    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-    DocumentBuilder db = dbf.newDocumentBuilder();
-    Document doc = db.newDocument();
-    
-    // Create bundlejar tag
-    createElement(doc);
-    
-    // Create DOM source
-    DOMSource source = new DOMSource();
-    // Create xml node 
-    source.setNode(doc);
-    
-    // Create result
-    StreamResult result = new StreamResult(os);
-    
-    // Transform
-    TransformerFactory factory = TransformerFactory.newInstance();
-    Transformer transformer = factory.newTransformer();
-    transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-    transformer.transform(source, result);
-  }
- 
   public Map getContentsMap(boolean invert) {
     // Add contents
     BundleResource[] resources = getResources();
@@ -224,16 +192,16 @@ public class BundlePackDescription {
     return map;
   }
   
-  public File export(IBundleProject bundleProject, String path) throws IOException {
+  public File export(IBundleProject bundleProject, String path) throws CoreException {
     JarOutputStream jos = null;
     InputStream is = null;
     File jarFile = null;
-
+    
     try {
       // Create jar file
       jarFile = new File(path);
       if (jarFile.isDirectory()) {
-        throw new IOException("Can not create jar file "+path);
+        OsgiPlugin.throwCoreException("Faiure exporting bundle "+path+", path exists as directory.", null);
       }
       if (jarFile.exists()) {
         jarFile.delete();
@@ -244,41 +212,79 @@ public class BundlePackDescription {
       if (!dir.exists()) {
         dir.mkdirs();
       }
-
+      
       // Create manifest output stream
       BundleManifest manifest = new BundleManifest(bundleProject.getBundleManifest());
       // Put build attributes
       Date date = new Date();
       manifest.getMainAttributes().putValue(BundleManifest.BUILD_DATE, date.toString());
 
-      jos = new JarOutputStream(new FileOutputStream(jarFile), manifest);
-      
-      // Add contents
-      Map contents = getContentsMap(true);
-      for(Iterator i=contents.entrySet().iterator(); i.hasNext();) {
-        Map.Entry entry = (Map.Entry) i.next();
-        IPath src = (IPath) entry.getKey();
-        IResource resource = project.findMember(src.removeFirstSegments(1));
-        if (resource == null) {
-          continue;
-        } else if (resource.getType() == IResource.FILE) {
-          try {
-            File file = new File(resource.getRawLocation().toString());
-            addFileToJar(jos, file, (String) entry.getValue(), null);
-          } catch (Throwable t) {}
+      try {
+        jos = new JarOutputStream(new FileOutputStream(jarFile), manifest);
+        
+        // Add contents
+        Map contents = getContentsMap(true);
+        for(Iterator i=contents.entrySet().iterator(); i.hasNext();) {
+          Map.Entry entry = (Map.Entry) i.next();
+          IPath src = (IPath) entry.getKey();
+          IResource resource = project.findMember(src.removeFirstSegments(1));
+          if (resource == null) {
+            continue;
+          } else if (resource.getType() == IResource.FILE) {
+            try {
+              File file = new File(resource.getRawLocation().toString());
+              addFileToJar(jos, file, (String) entry.getValue(), null);
+            } catch (Throwable t) {}
+          }
+        }
+      } finally {
+        if (is != null) {
+          is.close();
+        }
+        if (jos != null) {
+          jos.close();
         }
       }
-    } finally {
-      if (is != null) {
-        is.close();
-      }
-      if (jos != null) {
-        jos.close();
-      }
+    } catch (IOException e) {
+      OsgiPlugin.throwCoreException("Faiure exporting bundle "+path+"", e);
     }
     
     return jarFile;
     
+  }
+  
+  /****************************************************************************
+   * Private worker methods
+   ***************************************************************************/
+  
+  private void load(IProject project, InputStream is) throws CoreException {
+    try {
+      // Parse xml file
+      DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+      DocumentBuilder db = dbf.newDocumentBuilder();
+      Document doc = db.parse(is);
+      
+      // Read bundlejar tag
+      NodeList list = doc.getElementsByTagName(TAG_BUNDLEJAR);
+      if (list.getLength()== 0) return;
+      
+      Node bundleJarNode = list.item(0);
+      
+      // Resources
+      resources.clear();
+      NodeList resourceNodes = bundleJarNode.getChildNodes();
+      for (int i=0; i<resourceNodes.getLength(); i++) {
+        Node resourceNode = resourceNodes.item(i);
+        if (resourceNode.getNodeType() != Node.ELEMENT_NODE) continue;
+        
+        if (TAG_RESOURCE.equals(resourceNode.getNodeName())) {
+          BundleResource resource = new BundleResource(project, resourceNode);
+          resources.add(resource);
+        }
+      }
+    } catch (Exception e) {
+      OsgiPlugin.throwCoreException("Failure loading pack description for project "+project.getName(), e);
+    }
   }
   
   private void addFileToJar(JarOutputStream jos, File file, String path, Pattern pattern) throws IOException { 
@@ -289,7 +295,7 @@ public class BundlePackDescription {
       String name = file.getName();
       if (!pattern.matcher(name).matches()) return;
     }
-
+    
     if (path == null || path.trim().length() == 0) {
       path = file.getName();
     }
@@ -311,7 +317,7 @@ public class BundlePackDescription {
       //jos.closeEntry();
     }
   }
-
+  
   private void addDirToMap(Map map, IFolder folder, String path, Pattern pattern, boolean invert) throws CoreException {
     if (folder == null) return;
     IResource[] resources = folder.members();
@@ -340,7 +346,7 @@ public class BundlePackDescription {
       }
     }
   }
-
+  
   private void addFileToMap(Map map, IFile file, String path, Pattern pattern, boolean invert) { 
     if (file == null) return;
     
@@ -349,7 +355,7 @@ public class BundlePackDescription {
       String name = file.getName();
       if (!pattern.matcher(name).matches()) return;
     }
-
+    
     if (path == null || path.trim().length() == 0) {
       path = file.getName();
     }

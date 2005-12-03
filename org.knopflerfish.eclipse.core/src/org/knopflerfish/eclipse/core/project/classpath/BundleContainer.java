@@ -39,17 +39,21 @@ import java.util.ArrayList;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IClasspathContainer;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.IBundleRepository;
 import org.knopflerfish.eclipse.core.IBundleRepositoryType;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.manifest.SymbolicName;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
@@ -87,12 +91,8 @@ public class BundleContainer implements IClasspathContainer {
   public IClasspathEntry[] getClasspathEntries() {
     
     PackageDescription[] packages = null;
-    try {
-      IClasspathEntry ice = ClasspathUtil.findClasspathEntry(project, path);
-      packages = ClasspathUtil.getPackages(ice);
-    } catch (Throwable t) {
-      t.printStackTrace();
-    }
+    IClasspathEntry ice = ClasspathUtil.findClasspathEntry(project, path);
+    packages = ClasspathUtil.getPackages(ice);
     
     // Check if workspace contains bundle
     try {
@@ -101,13 +101,14 @@ public class BundleContainer implements IClasspathContainer {
       for(int i=0; projects != null && i<projects.length; i++) {
         if (projects[i].isOpen() && projects[i].hasNature(Osgi.NATURE_ID)) {
           IJavaProject javaProject = JavaCore.create(projects[i]);
-          BundleProject bundleProject = new BundleProject(javaProject);
+          IBundleProject bundleProject = new BundleProject(javaProject);
+          BundleManifest manifest = bundleProject.getBundleManifest();
           if (symbolicName.equals(bundleProject.getId().getSymbolicName())) {
             // Check that project exports the needed packages
             boolean hasPackages = true;
             if (packages != null) {
               for (int j=0; j<packages.length; j++) {
-                if (!bundleProject.hasExportedPackage(packages[j])) {
+                if (!manifest.hasExportedPackage(packages[j])) {
                   hasPackages = false;
                 }
               }
@@ -116,15 +117,15 @@ public class BundleContainer implements IClasspathContainer {
             
             // Found project exporting the needed packages, create
             // classpath entry
-            name = bundleProject.getBundleManifest().getName();
+            name = manifest.getName();
             IClasspathEntry entry = 
               JavaCore.newProjectEntry(javaProject.getPath());
             return new IClasspathEntry[] {entry};
           }
         }
       }
-    } catch (Throwable t) {
-      t.printStackTrace();
+    } catch (CoreException e) {
+      OsgiPlugin.log(e.getStatus());
     }
 
     // Check if repository contains bundle
@@ -159,7 +160,7 @@ public class BundleContainer implements IClasspathContainer {
             if (!src.toFile().exists()) {
               src = null;
             }
-          } catch (Exception e) {
+          } catch (Exception ignore) {
           }
         }
         if (libsOk) {

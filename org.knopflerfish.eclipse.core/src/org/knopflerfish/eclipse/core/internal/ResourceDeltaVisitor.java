@@ -46,6 +46,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 
@@ -78,14 +79,14 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
 
       IFile file = (IFile) res;
       IProject project = file.getProject();
-      if (BundleProject.CLASSPATH_FILE.equals(file.getName())) {
+      if (IBundleProject.CLASSPATH_FILE.equals(file.getName())) {
 
         if (!isClasspathSynched(project)) {
           // Update manifest
           Runnable runnable = new SynchManifestRunnable(project);
           new Thread(runnable).start();
         }
-      } else if (BundleProject.MANIFEST_FILE.equals(file.getName())) {
+      } else if (IBundleProject.MANIFEST_FILE.equals(file.getName())) {
         if (!isClasspathSynched(project)) {
           // Update classpath
           Runnable runnable = new SynchClasspathRunnable(project);

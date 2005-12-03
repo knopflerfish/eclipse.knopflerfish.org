@@ -58,7 +58,7 @@ import org.knopflerfish.eclipse.core.project.BundleProject;
  * @see http://www.gatespacetelematics.com/
  */
 public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
-
+  
   private final IProject project;
   private final BundleProject bundleProject;
   private final IClasspathEntry[] entries;
@@ -80,13 +80,12 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
   public void run() {
     try {
       IWorkspace workspace = ResourcesPlugin.getWorkspace();
-      //workspace.run(this, project, IWorkspace.AVOID_UPDATE, null);
       workspace.run(this, null, IWorkspace.AVOID_UPDATE, null);
-    } catch (Throwable t) {
-      t.printStackTrace();
+    } catch (CoreException e) {
+      OsgiPlugin.log(e.getStatus());
     }
   }
-
+  
   /****************************************************************************
    * org.eclipse.core.resources.IWorkspaceRunnable methods
    ***************************************************************************/
@@ -104,7 +103,7 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
     }
     Map contents = packDescription.getContentsMap(false);
     ArrayList projectClasspath = new ArrayList();
-   
+    
     int idx = 0;
     for (int i=0; i<bundleClasspath.length; i++) {
       String path = bundleClasspath[i];
@@ -169,7 +168,7 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
     
     return -1;
   }
-
+  
   private int findLibraryEntry(int startIdx, IClasspathEntry[] entries, IPath path) {
     if (entries == null || startIdx < 0 || startIdx >= entries.length || path == null) {
       return -1;
@@ -207,7 +206,7 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
       }
     }
   }
-
+  
   private IClasspathEntry createLibraryEntry(IPath path) {
     IClasspathEntry libEntry = JavaCore.newLibraryEntry(
         path,

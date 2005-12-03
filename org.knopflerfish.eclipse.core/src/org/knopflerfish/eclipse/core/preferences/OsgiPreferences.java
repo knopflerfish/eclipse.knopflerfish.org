@@ -36,7 +36,10 @@ package org.knopflerfish.eclipse.core.preferences;
 
 import java.util.ArrayList;
 
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
@@ -45,18 +48,18 @@ import org.osgi.service.prefs.Preferences;
  * @see http://www.gatespacetelematics.com/
  */
 public class OsgiPreferences {
-
+  
   // Preference nodes
   public static final String PREFERENCE_ROOT_NODE         = "org.knopflerfish.eclipse.core.osgi";
   public static final String PREFERENCE_REPOSITORIES_NODE = "repositories";
   public static final String PREFERENCE_FRAMEWORKS_NODE   = "frameworks";
   public static final String PREFERENCE_ENVIRONMENTS_NODE = "environments";
-                        
+  
   /****************************************************************************
    * Bundle repository preferences methods
    ***************************************************************************/
   public static RepositoryPreference[] getBundleRepositories() {
-
+    
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_REPOSITORIES_NODE);
     ArrayList repos = new ArrayList();
     
@@ -68,12 +71,15 @@ public class OsgiPreferences {
         idx++;
       }
     } catch (BackingStoreException e) {
-      e.printStackTrace();
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure reading bundle repositories from preferences", e);
+      OsgiPlugin.log(status);
     }
     
     return (RepositoryPreference[]) repos.toArray(new RepositoryPreference[repos.size()]);
   }
-
+  
   public static RepositoryPreference getBundleRepository(String name) {
     if (name == null || name.length() == 0) return null;
     
@@ -88,28 +94,38 @@ public class OsgiPreferences {
         idx++;
       }
     } catch (BackingStoreException e) {
-      e.printStackTrace();
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure reading bundle repository from preferences", e);
+      OsgiPlugin.log(status);
     }
     return null;
   }
-
-  public static void setBundleRepositories(RepositoryPreference[] repos) throws BackingStoreException {
+  
+  public static void setBundleRepositories(RepositoryPreference[] repos) {
     // Remove previous repositories
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_REPOSITORIES_NODE);
-    String [] names = node.childrenNames();
-    if (names != null) {
-      for(int i=0; i<names.length; i++) {
-        node.node(names[i]).removeNode();
+    try {
+      String [] names = node.childrenNames();
+      if (names != null) {
+        for(int i=0; i<names.length; i++) {
+          node.node(names[i]).removeNode();
+        }
       }
+      
+      // Save repositories
+      if (repos == null) return;
+      for(int i=0; i<repos.length;i++) {
+        Preferences repoNode = node.node("Repository "+i);
+        repos[i].save(repoNode);
+      }
+      node.flush();
+    } catch (BackingStoreException e) {
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure saving bundle repositories to preferences", e);
+      OsgiPlugin.log(status);
     }
-    
-    // Save repositories
-    if (repos == null) return;
-    for(int i=0; i<repos.length;i++) {
-      Preferences repoNode = node.node("Repository "+i);
-      repos[i].save(repoNode);
-    }
-    node.flush();
   }
   
   
@@ -117,7 +133,7 @@ public class OsgiPreferences {
    * Framework preferences methods
    ***************************************************************************/
   public static FrameworkPreference[] getFrameworks() {
-
+    
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_FRAMEWORKS_NODE);
     ArrayList frameworks = new ArrayList();
     
@@ -127,12 +143,15 @@ public class OsgiPreferences {
         frameworks.add(new FrameworkPreference(node.node(children[i])));
       }
     } catch (BackingStoreException e) {
-      e.printStackTrace();
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure reading frameworks from preferences", e);
+      OsgiPlugin.log(status);
     }
     
     return (FrameworkPreference[]) frameworks.toArray(new FrameworkPreference[frameworks.size()]);
   }
-
+  
   public static FrameworkPreference getFramework(String name) {
     if (name == null || name.length() == 0) return null;
     
@@ -142,11 +161,14 @@ public class OsgiPreferences {
         return new FrameworkPreference(node.node(name));
       }
     } catch (BackingStoreException e) {
-      e.printStackTrace();
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure reading framework from preferences", e);
+      OsgiPlugin.log(status);
     }
     return null;
   }
-
+  
   public static FrameworkPreference getDefaultFramework() {
     FrameworkPreference[] frameworks = getFrameworks();
     for (int i=0; i<frameworks.length; i++) {
@@ -156,23 +178,30 @@ public class OsgiPreferences {
     }
     return null;
   }
-
-  public static void setFrameworks(FrameworkPreference[] frameworks) throws BackingStoreException {
+  
+  public static void setFrameworks(FrameworkPreference[] frameworks) {
     // Remove previous distributions
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_FRAMEWORKS_NODE);
-    String [] names = node.childrenNames();
-    if (names != null) {
-      for(int i=0; i<names.length; i++) {
-        node.node(names[i]).removeNode();
+    try {
+      String [] names = node.childrenNames();
+      if (names != null) {
+        for(int i=0; i<names.length; i++) {
+          node.node(names[i]).removeNode();
+        }
       }
+      
+      // Save framework distributions
+      if (frameworks == null) return;
+      for(int i=0; i<frameworks.length;i++) {
+        frameworks[i].save(node);
+      }
+      node.flush();
+    } catch (BackingStoreException e) {
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure saving frameworks to preferences", e);
+      OsgiPlugin.log(status);
     }
-    
-    // Save framework distributions
-    if (frameworks == null) return;
-    for(int i=0; i<frameworks.length;i++) {
-      frameworks[i].save(node);
-    }
-    node.flush();
   }
   
   /****************************************************************************
@@ -189,12 +218,15 @@ public class OsgiPreferences {
         environments.add(new EnvironmentPreference(node.node(children[i])));
       }
     } catch (BackingStoreException e) {
-      e.printStackTrace();
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure reading environments from preferences", e);
+      OsgiPlugin.log(status);
     }
     
     return (EnvironmentPreference[]) environments.toArray(new EnvironmentPreference[environments.size()]);
   }
-
+  
   public static EnvironmentPreference getExecutionEnvironment(String name) {
     if (name == null || name.length() == 0) return null;
     
@@ -206,11 +238,14 @@ public class OsgiPreferences {
         return new EnvironmentPreference(node.node(name));
       }
     } catch (BackingStoreException e) {
-      e.printStackTrace();
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure reading environment from preferences", e);
+      OsgiPlugin.log(status);
     }
     return null;
   }
-
+  
   public static EnvironmentPreference getDefaultExecutionEnvironment() {
     EnvironmentPreference[] environments = getExecutionEnvironments();
     for (int i=0; i<environments.length; i++) {
@@ -220,22 +255,29 @@ public class OsgiPreferences {
     }
     return null;
   }
-
-  public static void setExecutionEnvironment(EnvironmentPreference[] environments) throws BackingStoreException {
+  
+  public static void setExecutionEnvironment(EnvironmentPreference[] environments) {
     // Remove previous environments
     Preferences node = new InstanceScope().getNode(PREFERENCE_ROOT_NODE).node(PREFERENCE_ENVIRONMENTS_NODE);
-    String [] names = node.childrenNames();
-    if (names != null) {
-      for(int i=0; i<names.length; i++) {
-        node.node(names[i]).removeNode();
+    try {
+      String [] names = node.childrenNames();
+      if (names != null) {
+        for(int i=0; i<names.length; i++) {
+          node.node(names[i]).removeNode();
+        }
       }
+      
+      // Save environments
+      if (environments == null) return;
+      for(int i=0; i<environments.length;i++) {
+        environments[i].save(node);
+      }
+      node.flush();
+    } catch (BackingStoreException e) {
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure saving environments to preferences", e);
+      OsgiPlugin.log(status);
     }
-    
-    // Save environments
-    if (environments == null) return;
-    for(int i=0; i<environments.length;i++) {
-      environments[i].save(node);
-    }
-    node.flush();
   }
 }

@@ -34,8 +34,8 @@
 
 package org.knopflerfish.eclipse.core.pkg;
 
+import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
-import org.knopflerfish.eclipse.core.project.IBundleProject;
 
 /**
  * @author Anders Rimén, Gatespace Telematics

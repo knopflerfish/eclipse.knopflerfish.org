@@ -47,6 +47,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.IBundleRepository;
 import org.knopflerfish.eclipse.core.IBundleRepositoryType;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
@@ -60,7 +61,6 @@ import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.project.IBundleProject;
 import org.knopflerfish.eclipse.core.project.classpath.BundleContainer;
 import org.osgi.framework.Version;
 
@@ -180,10 +180,10 @@ public class PackageUtil {
         if (projects[i].hasNature(Osgi.NATURE_ID)) {
           IJavaProject project = JavaCore.create(projects[i]);
           IBundleProject bundleProject = new BundleProject(project);
-          
-          if (bundleProject.hasExportedPackage(pd)) {
+          BundleManifest manifest = bundleProject.getBundleManifest();
+          if (manifest.hasExportedPackage(pd)) {
             BundleIdentity id = bundleProject.getId();
-            String  name = bundleProject.getBundleManifest().getName();
+            String  name = manifest.getName();
             bundleIds.add(new BuildPath(path.append("/"+id.getSymbolicName().toString()), pd, id, name));
           }
         }

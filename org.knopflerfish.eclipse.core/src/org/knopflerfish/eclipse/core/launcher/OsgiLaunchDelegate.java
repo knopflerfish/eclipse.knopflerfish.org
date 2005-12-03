@@ -66,6 +66,7 @@ import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.project.ProjectUtil;
 
 /**
  * Implementation of OSGi launch configuration delegate.
@@ -133,7 +134,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
         try {
           BundleProject bundleProject = new BundleProject(project);
           IFolder folder = root.getFolder(project.getOutputLocation());
-          File jarFile = new File(folder.getLocation().toString(), bundleProject.getFileName());
+          File jarFile = new File(folder.getLocation().toString(), ProjectUtil.createFileName(bundleProject));
           IOsgiBundle bundle = new OsgiBundle(jarFile);
           conf.addBundle(bundle, (BundleLaunchInfo) entry.getValue());
         } catch (IOException e) {
