@@ -6,7 +6,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.runtime.CoreException;
-import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.IBundleProject;
 
 public class BundleFilesVisitor implements IResourceDeltaVisitor {
 
@@ -36,12 +36,12 @@ public class BundleFilesVisitor implements IResourceDeltaVisitor {
     switch(res.getType()) {
     case IResource.FILE:
       IFile file = (IFile) res;
-      if (BundleProject.MANIFEST_FILE.equals(file.getName())) {
+      if (IBundleProject.MANIFEST_FILE.equals(file.getName())) {
         manifestRemoved = delta.getKind() == IResourceDelta.REMOVED;
         manifestChanged = true;
         manifestFile = file;
         return true;
-      } else if (BundleProject.BUNDLE_PACK_FILE.equals(file.getName())) {
+      } else if (IBundleProject.BUNDLE_PACK_FILE.equals(file.getName())) {
         packDescriptionRemoved = delta.getKind() == IResourceDelta.REMOVED;
         packDescriptionChanged = true;
         packDescriptionFile = file;

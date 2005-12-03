@@ -125,7 +125,7 @@ public class ProjectWizardPage extends WizardPage {
     wProjectNameText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
         updateLocation();
-        e.widget.setData(ERROR, verifyProjectName());
+        verifyAll();
         updateStatus();
       }
     });
@@ -156,6 +156,8 @@ public class ProjectWizardPage extends WizardPage {
         wProjectContentsDirectoryText.setEnabled(!selection);
         wProjectContentsBrowseButton.setEnabled(!selection);
         updateLocation();
+        verifyProjectLocation();
+        updateStatus();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -169,7 +171,7 @@ public class ProjectWizardPage extends WizardPage {
     wProjectContentsDirectoryText = new Text(wProjectContentsGroup, SWT.SINGLE | SWT.BORDER);
     wProjectContentsDirectoryText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
-        wProjectContentsDirectoryText.setData(ERROR, verifyProjectLocation());
+        verifyProjectLocation();
         updateStatus();
       }
     });
@@ -186,7 +188,8 @@ public class ProjectWizardPage extends WizardPage {
         String path = dialog.open();
         if (path != null) {
           wProjectContentsDirectoryText.setText(path);
-          wProjectContentsDirectoryText.setData(ERROR, verifyProjectLocation());
+          verifyProjectLocation();
+          updateStatus();
         }
       }
     });
@@ -313,7 +316,7 @@ public class ProjectWizardPage extends WizardPage {
     wFrameworkDefaultButton.setText("Use default framework distribution"+(defaultDistribution != null ? " ("+defaultDistribution.getName()+")" : ""));
     
     // Update state
-    wProjectNameText.setData(ERROR, verifyProjectName());
+    verifyProjectName();
     updateLocation();
     
     setControl(composite);
@@ -384,40 +387,63 @@ public class ProjectWizardPage extends WizardPage {
   /****************************************************************************
    * Verify UI Input methods
    ***************************************************************************/
-  String verifyProjectName() {
+  void verifyAll() {
+    verifyProjectName();
+    verifyProjectLocation();
+  }
+  
+  void verifyProjectName() {
     String name = getProjectName();
 
     // Check that project name is not empty
     if (name == null || name.trim().length() == 0) {
-      return "Enter project name";
+      wProjectNameText.setData(ERROR, "Enter project name.");
+      return;
     }
 
     // Check that project name is valid
     IWorkspace workspace = ResourcesPlugin.getWorkspace();
     IStatus status = workspace.validateName(name, IResource.PROJECT);
     if (!status.isOK()) {
-      return status.getMessage();
+      wProjectNameText.setData(ERROR, status.getMessage());
+      return;
     }
     
     // Check that project name not already exists
     IProject[] projects = workspace.getRoot().getProjects();
     for (int i=0; projects != null && i<projects.length; i++) {
       if (name.equals(projects[i].getName())) {
-        return "Project name is already used";
+        wProjectNameText.setData(ERROR, "Project name is already used.");
+        return;
       }
     }
     
-    return null;
+    wProjectNameText.setData(ERROR, null);
   }
   
-  String verifyProjectLocation() {
+  void verifyProjectLocation() {
     //String location = wProjectContentsDirectoryText.getText();
+    //Path path = new Path(location);
     
-    // TODO:Check that project location is valid folder name
+    // Check that project location is valid
+    /*
+    IWorkspace workspace = ResourcesPlugin.getWorkspace();
+    IWorkspaceRoot root = workspace.getRoot();
+    String name = getProjectName();
+    if (wProjectNameText.getData(ERROR) == null && name.trim().length()>0) { 
+      IProject project = root.getProject(getProjectName());
+      IStatus status = workspace.validateProjectLocation(project, path);
+      System.err.println("Status "+status);
+      if (!status.isOK()) {
+        wProjectContentsDirectoryText.setData(ERROR, status.getMessage());
+        return;
+      }
+    }
+    */
     
     // TODO:Check that project location not already exists
     
-    return null;
+    wProjectContentsDirectoryText.setData(ERROR, null);
   }
 
   /****************************************************************************

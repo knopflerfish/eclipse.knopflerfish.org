@@ -34,8 +34,7 @@
 
 package org.knopflerfish.eclipse.core.ui.editors.packaging;
 
-import java.io.IOException;
-
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -51,6 +50,8 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.project.ProjectUtil;
+import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -152,13 +153,13 @@ public class ExportSection extends SectionPart {
         }
         
         FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.SAVE);
-        dialog.setFileName(project.getFileName());
+        dialog.setFileName(ProjectUtil.createFileName(project));
         String path = dialog.open();
         if (path != null) {
           try {
             project.getBundlePackDescription().export(project, path);
-          } catch (IOException e) {
-            e.printStackTrace();
+          } catch (CoreException e) {
+            OsgiUiPlugin.log(e.getStatus());
           }
         }
       }

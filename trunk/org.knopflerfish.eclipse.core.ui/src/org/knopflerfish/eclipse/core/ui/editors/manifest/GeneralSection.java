@@ -44,6 +44,7 @@ import java.util.TreeSet;
 import java.util.jar.Attributes;
 
 import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IDocument;
@@ -381,7 +382,12 @@ public class GeneralSection extends SectionPart {
     Button wBrowseActivatorButton = toolkit.createButton(container, "Browse...", SWT.PUSH);
     wBrowseActivatorButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent event) {
-        IType[] activators = project.getBundleActivators();
+        IType[] activators = null;
+        try {
+          activators = project.getBundleActivators();
+        } catch (CoreException e) {
+          OsgiUiPlugin.log(e.getStatus());
+        }
         TypeSelectionDialog dialog =
           new TypeSelectionDialog(Display.getCurrent().getActiveShell(), activators, "BundleActivator");
         

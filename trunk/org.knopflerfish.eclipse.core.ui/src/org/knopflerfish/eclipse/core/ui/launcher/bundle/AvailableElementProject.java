@@ -36,7 +36,7 @@ package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
 import java.util.ArrayList;
 
-import org.knopflerfish.eclipse.core.project.IBundleProject;
+import org.knopflerfish.eclipse.core.IBundleProject;
 import org.osgi.framework.Version;
 
 /**

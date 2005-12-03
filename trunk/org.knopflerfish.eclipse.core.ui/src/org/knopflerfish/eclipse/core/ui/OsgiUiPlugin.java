@@ -34,10 +34,15 @@
 
 package org.knopflerfish.eclipse.core.ui;
 
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.ui.plugin.*;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
-import java.util.*;
 
 /**
  * The main plugin class to be used in the desktop.
@@ -117,8 +122,21 @@ public class OsgiUiPlugin extends AbstractUIPlugin {
     return resourceBundle;
   }
   
+  /****************************************************************************
+   * Public utility methods
+   ***************************************************************************/
+  
+  public static void throwCoreException(String message, Throwable t) throws CoreException {
+    IStatus status =
+      new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, message, t);
+    throw new CoreException(status);
+  }
+  
+  public static void log(IStatus status) {
+    getDefault().getLog().log(status);
+  }
+
   public static SharedImages getSharedImages() {
-    
     return getDefault().sharedImages;
   }
 }

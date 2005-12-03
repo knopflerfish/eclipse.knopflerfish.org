@@ -84,6 +84,7 @@ import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.launcher.SourcePathComputer;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
 /**
@@ -465,7 +466,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     try {
       installName = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
     int idx = 0;
     if (installName != null) {
@@ -479,7 +480,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     try {
       instanceDir = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, "");
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
     wInstanceDirText.setText(instanceDir);
     
@@ -489,7 +490,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
       // Instance settings
       instanceInit = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, false);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
     wInitButton.setSelection(instanceInit);
     
@@ -498,7 +499,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     try {
       startLevel = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, DEFAULT_START_LEVEL);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
     wStartLevelSpinner.setSelection(startLevel);
     
@@ -507,7 +508,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
       systemProperties = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, (Map) null);
       initializeSystemProperties(systemProperties);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
   }
 
@@ -542,7 +543,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     try {
       name = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
     if(OsgiPreferences.getFramework(name) == null) {
       setErrorMessage("No framework selected.");
