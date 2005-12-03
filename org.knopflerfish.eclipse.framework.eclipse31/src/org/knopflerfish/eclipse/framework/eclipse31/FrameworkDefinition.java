@@ -145,8 +145,7 @@ public class FrameworkDefinition implements IFrameworkDefinition {
            library.setSource(src.getAbsolutePath());
            }*/
           libraries.add(library);
-        } catch (IOException e) {
-          e.printStackTrace();
+        } catch (IOException ignore) {
         }
       }
     }
