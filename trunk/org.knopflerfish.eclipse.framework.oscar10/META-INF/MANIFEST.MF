@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Oscar 1.0 Plug-in
 Bundle-SymbolicName: org.knopflerfish.eclipse.framework.oscar10; singleton:=true
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-Activator: org.knopflerfish.eclipse.framework.oscar.OscarPlugin
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.core.runtime,
