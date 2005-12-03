@@ -37,6 +37,7 @@ package org.knopflerfish.eclipse.core.ui.editors.manifest;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -63,6 +64,7 @@ import org.osgi.framework.Version;
 public class ExportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider, ITableColorProvider {
 
   private final BundleProject project;
+  private List packages;
   
   // Images 
   private Image imgPackageError;
@@ -99,6 +101,12 @@ public class ExportProvider extends ViewerSorter implements IStructuredContentPr
    * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
    */
   public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+    packages = null;
+    try {
+      packages = Arrays.asList(project.getExportablePackageNames());
+    } catch (JavaModelException e) {
+      OsgiUiPlugin.log(e.getStatus());
+    }
   }
 
   /*
@@ -155,8 +163,7 @@ public class ExportProvider extends ViewerSorter implements IStructuredContentPr
   public Image getColumnImage(Object element, int columnIndex) {
     if (columnIndex == 0) {
       PackageDescription pd = (PackageDescription) element;
-      List packages = Arrays.asList(project.getExportablePackageNames());
-      if (packages.contains(pd.getPackageName())) {
+      if (packages != null && packages.contains(pd.getPackageName())) {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
       }
       return imgPackageError;
@@ -190,8 +197,7 @@ public class ExportProvider extends ViewerSorter implements IStructuredContentPr
    */
   public Color getForeground(Object element, int columnIndex) {
     PackageDescription pd = (PackageDescription) element;
-    List packages = Arrays.asList(project.getExportablePackageNames());
-    if (packages.contains(pd.getPackageName())) {
+    if (packages != null && packages.contains(pd.getPackageName())) {
       return null;
     }
     return Display.getCurrent().getSystemColor(SWT.COLOR_RED);

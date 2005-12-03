@@ -317,14 +317,9 @@ public class FrameworkPage extends PreferencePage implements IWorkbenchPreferenc
    */
   public boolean performOk() {
     // Save framework distributions to preference store
-    try {
-      OsgiPreferences.setFrameworks(
-          (FrameworkPreference[]) distributions.toArray(new FrameworkPreference[distributions.size()]));
-      
-      ClasspathUtil.updateFrameworkContainers();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    OsgiPreferences.setFrameworks(
+        (FrameworkPreference[]) distributions.toArray(new FrameworkPreference[distributions.size()]));
+    ClasspathUtil.updateFrameworkContainers();
     return true;
   }
   

@@ -272,14 +272,9 @@ public class EnvironmentPage extends PreferencePage implements IWorkbenchPrefere
    */
   public boolean performOk() {
     // Save execution environments to preference store
-    try {
-      OsgiPreferences.setExecutionEnvironment(
-          (EnvironmentPreference[]) environments.toArray(new EnvironmentPreference[environments.size()]));
-
-      ClasspathUtil.updateEnvironmentContainers();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    OsgiPreferences.setExecutionEnvironment(
+        (EnvironmentPreference[]) environments.toArray(new EnvironmentPreference[environments.size()]));
+    ClasspathUtil.updateEnvironmentContainers();
     return true;
   }
 

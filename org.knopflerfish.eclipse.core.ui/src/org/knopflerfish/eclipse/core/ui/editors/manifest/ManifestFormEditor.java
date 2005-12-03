@@ -57,6 +57,7 @@ import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
 
 /**
@@ -64,7 +65,7 @@ import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
  * @see http://www.gatespacetelematics.com/
  */
 public class ManifestFormEditor extends FormPage implements IDocumentListener {
-
+  
   // Model objects
   private final BundleProject project;
   private BundleDocument doc;
@@ -74,7 +75,7 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
   private PackageSection packageSection;
   private NativeCodeSection nativeCodeSection;
   private ClasspathSection classPathSection;
-
+  
   public ManifestFormEditor(FormEditor editor, String id, String title, BundleProject project) {
     super(editor, id, title);
     this.project = project;
@@ -109,11 +110,11 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     if (this.doc != null) {
       this.doc.addDocumentListener(this);
     }
-
+    
     IManagedForm form = getManagedForm();
     if (form == null) return;
     form.setInput(doc);
-
+    
     firePropertyChange(PROP_INPUT);
   }
   
@@ -126,7 +127,7 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
    */
   public void dispose() {
     super.dispose();
-
+    
     if (this.doc != null) {
       this.doc.removeDocumentListener(this);
     }
@@ -143,13 +144,13 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     if (doc != null) {
       managedForm.setInput(doc);
     }
-
+    
     // Create form
     FormToolkit toolkit = managedForm.getToolkit();   
     ScrolledForm form = managedForm.getForm(); 
     form.setText(getTitle()); 
     Composite body = form.getBody();
-
+    
     // Set layout manager
     GridLayout layout = new GridLayout();
     layout.numColumns = 2;
@@ -160,7 +161,7 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     generalSection = new GeneralSection(body, toolkit, 
         Section.DESCRIPTION | ExpandableComposite.TITLE_BAR, project);
     generalSection.initialize(managedForm);
-
+    
     classPathSection = new ClasspathSection(body, toolkit, 
         Section.DESCRIPTION | ExpandableComposite.TITLE_BAR, project);
     classPathSection.initialize(managedForm);
@@ -168,7 +169,7 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     packageSection = new PackageSection(body, toolkit, 
         Section.DESCRIPTION | ExpandableComposite.TITLE_BAR, project);
     packageSection.initialize(managedForm);
-
+    
     nativeCodeSection = new NativeCodeSection(body, toolkit, 
         Section.DESCRIPTION | ExpandableComposite.TITLE_BAR | ExpandableComposite.TWISTIE, project);
     nativeCodeSection.initialize(managedForm);
@@ -183,12 +184,13 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     try {
       IFileEditorInput manifestInput = (IFileEditorInput) getEditorInput();
       IFile manifestFile = manifestInput.getFile();
-      setErrors(manifestFile.findMarkers(null, true, IResource.DEPTH_INFINITE));
+      IMarker[] markers = manifestFile.findMarkers(null, true, IResource.DEPTH_INFINITE);
+      setErrors(markers);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
   }
-
+  
   /****************************************************************************
    * org.eclipse.jface.text.IDocumentListener methods
    ***************************************************************************/
@@ -198,7 +200,7 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
    */
   public void documentAboutToBeChanged(DocumentEvent event) {
   }
-
+  
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.text.IDocumentListener#documentChanged(org.eclipse.jface.text.DocumentEvent)
@@ -208,7 +210,7 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
     
     IManagedForm form = getManagedForm();
     if (form == null) return;
-
+    
     IFormPart[] parts = form.getParts();
     if (parts != null) {
       for(int i=0; i<parts.length;i++) {
@@ -218,40 +220,40 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
   }
   
   public void setErrors(IMarker[] markers) {
-      HashMap errorsGeneralSection = new HashMap();
-      ArrayList errorsPackageSection = new ArrayList();
-      ArrayList errorsClasspathSection = new ArrayList();
-      for (int i=0; i<markers.length; i++) {
-        try {
-          String type = markers[i].getType(); 
-          if (type.equals(BundleProject.MARKER_BUNDLE_ACTIVATOR)) {
-            errorsGeneralSection.put(BundleManifest.BUNDLE_ACTIVATOR, markers[i]); 
-          } else if (type.equals(BundleProject.MARKER_BUNDLE_VERSION)) {
-            errorsGeneralSection.put(BundleManifest.BUNDLE_VERSION, markers[i]); 
-          } else if (type.equals(BundleProject.MARKER_BUNDLE_SYMBOLICNAME)) {
-            errorsGeneralSection.put(BundleManifest.BUNDLE_SYMBOLIC_NAME, markers[i]); 
-          } else if (type.equals(BundleProject.MARKER_BUNDLE_UPDATELOCATION)) {
-            errorsGeneralSection.put(BundleManifest.BUNDLE_UPDATELOCATION, markers[i]); 
-          } else if (type.equals(BundleProject.MARKER_BUNDLE_DOCURL)) {
-            errorsGeneralSection.put(BundleManifest.BUNDLE_DOCURL, markers[i]); 
-          } else if (type.equals(BundleProject.MARKER_BUNDLE_NAME)) {
-            errorsGeneralSection.put(BundleManifest.BUNDLE_NAME, markers[i]); 
-          } else if (type.equals(BundleProject.MARKER_BUNDLE_UPDATELOCATION)) {
-            errorsGeneralSection.put(BundleManifest.BUNDLE_UPDATELOCATION, markers[i]); 
-          } else if (type.equals(BundleProject.MARKER_BUNDLE_CLASSPATH)) {
-            errorsClasspathSection.add(BundleManifest.BUNDLE_CLASSPATH);
-          } else if (type.equals(BundleProject.MARKER_EXPORT_PACKAGES)) {
-            errorsPackageSection.add(BundleManifest.EXPORT_PACKAGE);
-          } else if (type.equals(BundleProject.MARKER_IMPORT_PACKAGES)) {
-            errorsPackageSection.add(BundleManifest.IMPORT_PACKAGE);
-          } else if (type.equals(BundleProject.MARKER_DYNAMIC_IMPORT_PACKAGES)) {
-            errorsPackageSection.add(BundleManifest.DYNAMIC_IMPORT_PACKAGE);
-          }
-        } catch (CoreException e) {
-          e.printStackTrace();
+    HashMap errorsGeneralSection = new HashMap();
+    ArrayList errorsPackageSection = new ArrayList();
+    ArrayList errorsClasspathSection = new ArrayList();
+    
+    for (int i=0; markers != null && i<markers.length; i++) {
+      try {
+        String type = markers[i].getType(); 
+        if (type.equals(BundleProject.MARKER_BUNDLE_ACTIVATOR)) {
+          errorsGeneralSection.put(BundleManifest.BUNDLE_ACTIVATOR, markers[i]); 
+        } else if (type.equals(BundleProject.MARKER_BUNDLE_VERSION)) {
+          errorsGeneralSection.put(BundleManifest.BUNDLE_VERSION, markers[i]); 
+        } else if (type.equals(BundleProject.MARKER_BUNDLE_SYMBOLICNAME)) {
+          errorsGeneralSection.put(BundleManifest.BUNDLE_SYMBOLIC_NAME, markers[i]); 
+        } else if (type.equals(BundleProject.MARKER_BUNDLE_UPDATELOCATION)) {
+          errorsGeneralSection.put(BundleManifest.BUNDLE_UPDATELOCATION, markers[i]); 
+        } else if (type.equals(BundleProject.MARKER_BUNDLE_DOCURL)) {
+          errorsGeneralSection.put(BundleManifest.BUNDLE_DOCURL, markers[i]); 
+        } else if (type.equals(BundleProject.MARKER_BUNDLE_NAME)) {
+          errorsGeneralSection.put(BundleManifest.BUNDLE_NAME, markers[i]); 
+        } else if (type.equals(BundleProject.MARKER_BUNDLE_UPDATELOCATION)) {
+          errorsGeneralSection.put(BundleManifest.BUNDLE_UPDATELOCATION, markers[i]); 
+        } else if (type.equals(BundleProject.MARKER_BUNDLE_CLASSPATH)) {
+          errorsClasspathSection.add(BundleManifest.BUNDLE_CLASSPATH);
+        } else if (type.equals(BundleProject.MARKER_EXPORT_PACKAGES)) {
+          errorsPackageSection.add(BundleManifest.EXPORT_PACKAGE);
+        } else if (type.equals(BundleProject.MARKER_IMPORT_PACKAGES)) {
+          errorsPackageSection.add(BundleManifest.IMPORT_PACKAGE);
+        } else if (type.equals(BundleProject.MARKER_DYNAMIC_IMPORT_PACKAGES)) {
+          errorsPackageSection.add(BundleManifest.DYNAMIC_IMPORT_PACKAGE);
         }
+      } catch (CoreException e) {
+        OsgiUiPlugin.log(e.getStatus());
       }
-      
+    }
     if (generalSection != null) {
       generalSection.setErrors(errorsGeneralSection);
     }

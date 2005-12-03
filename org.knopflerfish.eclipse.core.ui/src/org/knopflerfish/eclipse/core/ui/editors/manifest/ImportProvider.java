@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -62,6 +63,7 @@ import org.osgi.framework.Version;
 public class ImportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider {
   
   private final BundleProject project;
+  private List packages;
   
   // Images 
   private Image imgPackageWarning;
@@ -100,6 +102,12 @@ public class ImportProvider extends ViewerSorter implements IStructuredContentPr
    * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
    */
   public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+    packages = null;
+    try {
+      packages = Arrays.asList(project.getReferencedPackageNames());
+    } catch (JavaModelException e) {
+      OsgiUiPlugin.log(e.getStatus());
+    }
   }
 
   /*
@@ -157,8 +165,7 @@ public class ImportProvider extends ViewerSorter implements IStructuredContentPr
   public Image getColumnImage(Object element, int columnIndex) {
     if (columnIndex == 0) {
       PackageDescription pd = ((BuildPath) element).getPackageDescription();
-      List packages = Arrays.asList(project.getNeededPackageNames());
-      if (packages.contains(pd.getPackageName())) {
+      if (packages != null && packages.contains(pd.getPackageName())) {
         return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
       }
       return imgPackageWarning;

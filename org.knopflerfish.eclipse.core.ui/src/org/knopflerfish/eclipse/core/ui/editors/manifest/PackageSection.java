@@ -43,6 +43,7 @@ import java.util.TreeMap;
 
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.IDocument;
@@ -82,6 +83,7 @@ import org.knopflerfish.eclipse.core.pkg.PackageUtil;
 import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
+import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.PackageLabelProvider;
 import org.knopflerfish.eclipse.core.ui.dialogs.PackageSelectionDialog;
@@ -326,7 +328,12 @@ public class PackageSection extends SectionPart {
     wExportPackageAddButton = toolkit.createButton(wExportComposite, "Add...", SWT.PUSH);
     wExportPackageAddButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        ArrayList exportablePackageNames = new ArrayList(Arrays.asList(project.getExportablePackageNames()));
+        ArrayList exportablePackageNames = new ArrayList();
+        try {
+          exportablePackageNames.addAll(Arrays.asList(project.getExportablePackageNames()));
+        } catch (JavaModelException jme) {
+          OsgiUiPlugin.log(jme.getStatus());
+        }
         ArrayList exportedPackages = new ArrayList(Arrays.asList(manifest.getExportedPackages()));
         
         // Remove already exported packages from list of exportable
@@ -511,7 +518,12 @@ public class PackageSection extends SectionPart {
     Button wImportPackageAutoButton = toolkit.createButton(wImportComposite, "Auto", SWT.PUSH);
     wImportPackageAutoButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        List neededPackageNames = Arrays.asList(project.getNeededPackageNames());
+        ArrayList neededPackageNames = new ArrayList();
+        try {
+          neededPackageNames.addAll(Arrays.asList(project.getReferencedPackageNames()));
+        } catch (JavaModelException jme) {
+          OsgiUiPlugin.log(jme.getStatus());
+        }
         ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
         ArrayList importedPackageNames = new ArrayList();
         for (int i=0; i<importedPackages.size(); i++) {
@@ -761,7 +773,7 @@ public class PackageSection extends SectionPart {
       BuildPath element = (BuildPath) o;
       if (PackageSection.PROP_PACKAGE_CONTAINER.equals(property)) {
         PackageDescription pd = element.getPackageDescription();
-        return !project.hasExportedPackage(pd);
+        return !project.getBundleManifest().hasExportedPackage(pd);
       } else if (PackageSection.PROP_PACKAGE_VERSION.equals(property)) {
         return true;
       } else {

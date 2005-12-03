@@ -39,6 +39,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
@@ -59,10 +61,12 @@ import org.eclipse.ui.forms.editor.FormEditor;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.texteditor.DocumentProviderRegistry;
 import org.eclipse.ui.texteditor.IDocumentProvider;
+import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ImportPackageModel;
 import org.knopflerfish.eclipse.core.ui.editors.manifest.ManifestFormEditor;
 import org.knopflerfish.eclipse.core.ui.editors.packaging.PackagingFormEditor;
@@ -85,7 +89,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
   ManifestFormEditor manifestFormEditor;
   TextEditor manifestTextEditor;
   PackagingFormEditor buildFormEditor;
-  BundleProject project;
+  BundleProject bundleProject;
   
   IDocumentProvider provider;
 
@@ -123,8 +127,9 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
       // Create editor inputs
       IFileEditorInput manifestInput = (IFileEditorInput) editorInput;
       manifestFile = manifestInput.getFile();
-      project = new BundleProject(JavaCore.create(manifestFile.getProject()));
-      packFile = project.getBundlePackDescriptionFile();
+      IProject project = manifestFile.getProject();
+      bundleProject = new BundleProject(JavaCore.create(project));
+      packFile = project.getFile(IBundleProject.BUNDLE_PACK_FILE);
       IFileEditorInput bundlePackInput = new FileEditorInput(packFile);
       connectManifest(manifestInput);
       connectBundlePack(bundlePackInput);
@@ -133,16 +138,16 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
       IWorkspace workspace = ResourcesPlugin.getWorkspace();
       workspace.addResourceChangeListener(this, IResourceChangeEvent.POST_CHANGE);
     
-      setPartName("Bundle "+manifestFile.getProject().getName());
+      setPartName("Bundle "+project.getName());
         
       // Text manifest editor
       manifestTextEditor = new TextEditor();
       
       // Graphical manifest Editor
-      manifestFormEditor =  new ManifestFormEditor(this, PAGE_MANIFEST_ID, PAGE_MANIFEST_TITLE, project);
+      manifestFormEditor =  new ManifestFormEditor(this, PAGE_MANIFEST_ID, PAGE_MANIFEST_TITLE, bundleProject);
         
       // Graphical build Editor
-      buildFormEditor =  new PackagingFormEditor(this, PAGE_PACKAGING_ID, PAGE_PACKAGING_TITLE, project);
+      buildFormEditor =  new PackagingFormEditor(this, PAGE_PACKAGING_ID, PAGE_PACKAGING_TITLE, bundleProject);
 
       // Add editor pages to form editor
       addPage(manifestFormEditor);
@@ -155,14 +160,14 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
       ImportPackageModel model = 
         new ImportPackageModel(
             ManifestUtil.createManifest(manifestDoc.get().getBytes()),
-            project);
+            bundleProject);
 
       BundleDocument buildDoc = new BundleDocument(manifestDoc, packDoc, model);
       manifestFormEditor.attachDocument(buildDoc);
       buildFormEditor.attachDocument(buildDoc);
 
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
   }
 
@@ -185,6 +190,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
     // Commit form pages
     IWorkspaceRunnable runnable = new IWorkspaceRunnable() {
       public void run(IProgressMonitor monitor) throws CoreException {
+        
         // Commit changes
         manifestFormEditor.doSave(monitor);
         buildFormEditor.doSave(monitor);
@@ -199,7 +205,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
         BundleManifest manifest = ManifestUtil.createManifest(manifestDoc.get().getBytes());
         model.updateManifest(manifest);
         ArrayList newPaths = new ArrayList(Arrays.asList(model.getPaths()));
-        ArrayList oldPaths = new ArrayList(Arrays.asList(project.getBuildPaths()));
+        ArrayList oldPaths = new ArrayList(Arrays.asList(bundleProject.getBuildPaths()));
 
         // Remove overlapping paths
         for (Iterator i=newPaths.iterator(); i.hasNext();) {
@@ -212,23 +218,24 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
         // Remove old paths
         for (Iterator i=oldPaths.iterator(); i.hasNext();) {
           BuildPath bp = (BuildPath) i.next();
-          project.removeBuildPath(bp, false);
+          bundleProject.removeBuildPath(bp, false);
         }
         
         // Add new paths
         for (Iterator i=newPaths.iterator(); i.hasNext();) {
           BuildPath bp = (BuildPath) i.next();
-          project.addBuildPath(bp, false);
+          bundleProject.addBuildPath(bp, false);
         }
         
         firePropertyChange(PROP_DIRTY);
+
       }
     };
     IWorkspace workspace = ResourcesPlugin.getWorkspace();
     try {
       workspace.run(runnable,null, IWorkspace.AVOID_UPDATE, monitor);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
   }
 
@@ -271,10 +278,11 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
    * @see org.eclipse.core.resources.IResourceChangeListener#resourceChanged(org.eclipse.core.resources.IResourceChangeEvent)
    */
   public void resourceChanged(IResourceChangeEvent event) {
+
     try {
       IResourceDelta delta = event.getDelta();
       final BundleFilesVisitor visitor = 
-        new BundleFilesVisitor(project.getJavaProject().getProject());
+        new BundleFilesVisitor(bundleProject.getJavaProject().getProject());
       delta.accept(visitor);
       
       // Check if project is closed or removed or manifest file was  deleted
@@ -312,7 +320,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
         refreshEditors(visitor);
       }
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
   }
 
@@ -321,6 +329,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
    ***************************************************************************/
   
   void refreshEditors(final BundleFilesVisitor visitor) {
+
     Display.getDefault().asyncExec(new Runnable() {
       public void run() {
         try {
@@ -340,13 +349,14 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
               manifestTextEditor.doRevertToSaved();
             }
             // Pass markers to graphical view
-            manifestFormEditor.setErrors(visitor.getManifestFile().findMarkers(null, true, IResource.DEPTH_INFINITE));
+            IMarker[] markers = visitor.getManifestFile().findMarkers(null, true, IResource.DEPTH_INFINITE);
+            manifestFormEditor.setErrors(markers);
             IDocument manifestDoc = provider.getDocument(manifestInput);
             IDocument packDoc = provider.getDocument(bundlePackInput);
             ImportPackageModel model = 
               new ImportPackageModel(
                   ManifestUtil.createManifest(manifestDoc.get().getBytes()),
-                  project);
+                  bundleProject);
 
             manifestFormEditor.attachDocument(new BundleDocument(manifestDoc, packDoc, model));
             manifestFormEditor.refresh();
@@ -359,7 +369,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
             ImportPackageModel model = 
               new ImportPackageModel(
                   ManifestUtil.createManifest(manifestDoc.get().getBytes()),
-                  project);
+                  bundleProject);
 
             buildFormEditor.attachDocument(new BundleDocument(manifestDoc, packDoc, model));
             buildFormEditor.refresh();
@@ -367,7 +377,7 @@ public class BundleEditor extends FormEditor implements IResourceChangeListener 
 
           firePropertyChange(PROP_DIRTY);
         } catch (CoreException e) {
-          e.printStackTrace();
+          OsgiUiPlugin.log(e.getStatus());
         }
       }
     });

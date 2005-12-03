@@ -315,12 +315,8 @@ public class BundleRepositoryPage extends PreferencePage implements IWorkbenchPr
    */
   public boolean performOk() {
     // Save bundle repositories to preference store
-    try {
-      OsgiPreferences.setBundleRepositories(
-          (RepositoryPreference[]) repositories.toArray(new RepositoryPreference[repositories.size()]));
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    OsgiPreferences.setBundleRepositories(
+        (RepositoryPreference[]) repositories.toArray(new RepositoryPreference[repositories.size()]));
     return true;
   }
 

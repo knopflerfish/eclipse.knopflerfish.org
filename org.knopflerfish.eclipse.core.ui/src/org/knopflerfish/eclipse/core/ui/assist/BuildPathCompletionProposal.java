@@ -34,6 +34,7 @@
 
 package org.knopflerfish.eclipse.core.ui.assist;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
@@ -44,6 +45,7 @@ import org.eclipse.swt.graphics.Point;
 import org.knopflerfish.eclipse.core.project.BuildPath;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
+import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.osgi.framework.Version;
 
 /**
@@ -79,7 +81,11 @@ public class BuildPathCompletionProposal implements IJavaCompletionProposal {
    * @see org.eclipse.jface.text.contentassist.ICompletionProposal#apply(org.eclipse.jface.text.IDocument)
    */
   public void apply(IDocument document) {
-    bundleProject.addBuildPath(buildPath, true);
+    try {
+      bundleProject.addBuildPath(buildPath, true);
+    } catch (CoreException e) {
+      OsgiUiPlugin.log(e.getStatus());
+    }
   }
 
   /* (non-Javadoc)

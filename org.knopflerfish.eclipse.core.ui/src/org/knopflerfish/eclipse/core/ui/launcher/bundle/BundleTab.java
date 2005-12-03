@@ -80,6 +80,7 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
@@ -91,7 +92,7 @@ import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.project.BundleProject;
-import org.knopflerfish.eclipse.core.project.IBundleProject;
+import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
 import org.knopflerfish.eclipse.core.ui.launcher.main.MainTab;
@@ -467,7 +468,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
         distribution = OsgiPreferences.getDefaultFramework();
       }
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
 
     // Start level
@@ -475,7 +476,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     try {
       startLevel = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, MainTab.DEFAULT_START_LEVEL);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
     selectedBundlesLabelProvider.setInitialStartLevel(startLevel);
     
@@ -487,7 +488,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
       selectedBundlesModel.addBundleProjects(configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_BUNDLE_PROJECTS, (Map) null));
       wSelectedBundleTableViewer.setInput(selectedBundlesModel);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
     
     // System properties
@@ -495,7 +496,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     try {
       systemProperties = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, (Map) null);
     } catch (CoreException e) {
-      e.printStackTrace();
+      OsgiUiPlugin.log(e.getStatus());
     }
 
     // Update packages

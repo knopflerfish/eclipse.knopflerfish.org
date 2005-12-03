@@ -45,6 +45,7 @@ import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IDocument;
@@ -79,6 +80,7 @@ import org.knopflerfish.eclipse.core.manifest.ManifestUtil;
 import org.knopflerfish.eclipse.core.project.BundlePackDescription;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.project.BundleResource;
+import org.knopflerfish.eclipse.core.project.ProjectUtil;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.SharedImages;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
@@ -475,21 +477,25 @@ public class ClasspathSection extends SectionPart {
   }
   
   IFile[] getAvailableLibraries() {
-    IFile[] files = project.getJars();
     HashMap fileMap = new HashMap();
-    for (int i=0; i<files.length; i++) {
-      fileMap.put(files[i].getFullPath(), files[i]);
-    }
-    
-    String[] classPaths = manifest.getBundleClassPath();
-    for (int i=0; i<classPaths.length; i++) {
-      String path = classPaths[i];
-      if (path.startsWith("/")) path = path.substring(1);
-      
-      if (bundleContents.containsKey(path)) {
-        IPath location = (IPath) bundleContents.get(path);
-        fileMap.remove(location);
+    try {
+      IFile[] files = ProjectUtil.getFiles(project.getProject(), "jar", project.getJavaProject().getOutputLocation());
+      for (int i=0; i<files.length; i++) {
+        fileMap.put(files[i].getFullPath(), files[i]);
       }
+      
+      String[] classPaths = manifest.getBundleClassPath();
+      for (int i=0; i<classPaths.length; i++) {
+        String path = classPaths[i];
+        if (path.startsWith("/")) path = path.substring(1);
+        
+        if (bundleContents.containsKey(path)) {
+          IPath location = (IPath) bundleContents.get(path);
+          fileMap.remove(location);
+        }
+      }
+    } catch (JavaModelException e) {
+      OsgiUiPlugin.log(e.getStatus());
     }
     
     return (IFile []) fileMap.values().toArray(new IFile[fileMap.size()]);

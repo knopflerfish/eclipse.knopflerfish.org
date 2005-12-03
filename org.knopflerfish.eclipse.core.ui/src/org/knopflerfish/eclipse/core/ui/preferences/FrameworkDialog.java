@@ -302,15 +302,11 @@ public class FrameworkDialog extends Dialog {
     wDefaultButton.setText("Use default settings");
     wDefaultButton.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
-        try {
         if (((Button) e.widget).getSelection()) {
           setDefaultSettings();
         }
         enableCustomSettings(!((Button) e.widget).getSelection());
         verifyAll();
-        } catch (Throwable t) {
-          t.printStackTrace();
-        }
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);

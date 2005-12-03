@@ -87,7 +87,7 @@ public class ImportPackageModel {
     for(Iterator i=importedPackages.iterator(); i.hasNext();) {
       PackageDescription pd = (PackageDescription) i.next();
       BuildPath bp = project.getBuildPath(pd);
-      boolean hasExportedPackage = project.hasExportedPackage(pd);
+      boolean  hasExportedPackage = project.getBundleManifest().hasExportedPackage(pd);
 
       // Get default bundle for package
       
