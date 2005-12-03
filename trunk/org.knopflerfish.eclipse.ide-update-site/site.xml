@@ -3,7 +3,7 @@
    <description url="http://www.knopflerfish.org/eclipse-update">
       Knopflerfish Eclipse Plugins Update Site
    </description>
-   <feature url="features/org.knopflerfish.eclipse.ide-feature_1.0.11.jar" id="org.knopflerfish.eclipse.ide-feature" version="1.0.11">
+   <feature url="features/org.knopflerfish.eclipse.ide-feature_1.0.12.jar" id="org.knopflerfish.eclipse.ide-feature" version="1.0.12">
       <category name="Knopflerfish"/>
    </feature>
    <category-def name="Knopflerfish" label="Knopflerfish Plugin">
