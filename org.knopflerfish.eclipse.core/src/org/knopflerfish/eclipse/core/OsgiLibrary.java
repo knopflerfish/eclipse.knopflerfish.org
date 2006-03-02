@@ -60,6 +60,7 @@ public class OsgiLibrary implements IOsgiLibrary {
     
     jar = new JarFile(file);
     manifest = jar.getManifest();
+    jar.close();
   }
   
   /****************************************************************************
