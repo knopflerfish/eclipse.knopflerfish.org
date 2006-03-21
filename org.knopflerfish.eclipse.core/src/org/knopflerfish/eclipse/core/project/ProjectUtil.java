@@ -42,6 +42,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.knopflerfish.eclipse.core.IBundleProject;
 import org.osgi.framework.Version;
 
 /**
@@ -58,7 +59,7 @@ public class ProjectUtil {
    * 
    * @return filename
    */
-  public static String createFileName(BundleProject project) {
+  public static String createFileName(IBundleProject project) {
     StringBuffer buf = new StringBuffer(project.getJavaProject().getProject().getName());
     Version version = project.getBundleManifest().getVersion();
     if (version != null) {
