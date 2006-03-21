@@ -34,17 +34,26 @@
 
 package org.knopflerfish.eclipse.core;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.TreeSet;
 
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.core.runtime.Status;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
+import org.knopflerfish.eclipse.core.project.BundleProject;
+import org.knopflerfish.eclipse.core.project.ProjectUtil;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -334,11 +343,63 @@ public class Osgi {
   /****************************************************************************
    * Project methods
    ***************************************************************************/
-  public static boolean isBundleProject(IJavaProject project) {
+  public static boolean isBundleProject(IProject project) {
     try {
-      return project.getProject().hasNature(Osgi.NATURE_ID);
+      return project.hasNature(Osgi.NATURE_ID);
     } catch (CoreException e) {
       return false;
     }
+  }
+  
+  public static IBundleProject[] getBundleProjects() {
+    ArrayList bundleProjects =  new ArrayList();
+    IProject[] project = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+    if (project != null) {
+      for (int i=0; i<project.length; i++) {
+        try {
+          if(project[i].hasNature(Osgi.NATURE_ID)) {
+            bundleProjects.add(new BundleProject(project[i].getName()));
+          }
+        } catch (CoreException e) {
+          OsgiPlugin.log(e.getStatus());
+        }
+      }
+    }
+    
+    return (IBundleProject[]) bundleProjects.toArray(new IBundleProject[bundleProjects.size()]);
+  }
+
+  public static IBundleProject getBundleProject(String name) {
+    try {
+      IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(name);
+      if (project != null && project.exists()) {
+        if(project.hasNature(Osgi.NATURE_ID)) {
+          return new BundleProject(project.getName());
+        }
+      }
+    } catch (Throwable t) {
+      // Ignore 
+    }
+    
+    return null;
+  }
+  
+  public static IOsgiBundle getBundle(IBundleProject bundleProject) {
+    IOsgiBundle bundle = null;
+    try {
+      IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+      IFolder folder = root.getFolder(bundleProject.getJavaProject().getOutputLocation());
+      File jarFile = new File(folder.getLocation().toString(), ProjectUtil.createFileName(bundleProject));
+      bundle = new OsgiBundle(jarFile);
+    } catch (CoreException e) {
+      OsgiPlugin.log(e.getStatus());
+    } catch (IOException e) {
+      IStatus status =
+        new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, 
+            "Failure reading bundle jar", e);
+      OsgiPlugin.log(status);
+    }
+     
+    return bundle;
   }
 }
