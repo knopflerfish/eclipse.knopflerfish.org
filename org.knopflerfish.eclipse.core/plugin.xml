@@ -3,7 +3,7 @@
 <plugin
    id="org.knopflerfish.eclipse.core"
    name="Osgi Plug-in"
-   version="1.0.10"
+   version="1.0.11"
    class="org.knopflerfish.eclipse.core.internal.OsgiPlugin">
 
    <runtime>
