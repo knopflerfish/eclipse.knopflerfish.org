@@ -52,7 +52,8 @@ import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
+ * @author Anders Rimï¿½n, Gatespace Telematics
+ * @author Mats-Ola Persson, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleBuilder extends IncrementalProjectBuilder {

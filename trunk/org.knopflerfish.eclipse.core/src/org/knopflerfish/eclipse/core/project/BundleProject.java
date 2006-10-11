@@ -92,7 +92,8 @@ import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
+ * @author Anders Rimï¿½n, Gatespace Telematics
+ * @author Mats-Ola Persson, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleProject implements IBundleProject {
@@ -110,6 +111,7 @@ public class BundleProject implements IBundleProject {
   public static final String MARKER_EXPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageExports";
   public static final String MARKER_IMPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageImports";
   public static final String MARKER_DYNAMIC_IMPORT_PACKAGES  = "org.knopflerfish.eclipse.core.packageDynamicImports";
+  public static final String MARKER_SYMBOLICNAME_AND_VERSION_CLASH = "org.knopflerfish.eclipse.core.symbolicNameVersionClash";
   
   private final IProject project;
   private final IJavaProject javaProject;
@@ -839,7 +841,7 @@ public class BundleProject implements IBundleProject {
       IStatus status = JavaConventions.validatePackageName(symbolicName.getSymbolicName());
       if (status.getSeverity() == IStatus.ERROR) {
         error = "Symbolic name is not a valid package name.";
-        severity = IMarker.SEVERITY_WARNING;
+        severity = manifest.isR4() ? IMarker.SEVERITY_ERROR : IMarker.SEVERITY_WARNING;
       }
     }
     updateMarker(MARKER_BUNDLE_SYMBOLICNAME, 
@@ -854,6 +856,24 @@ public class BundleProject implements IBundleProject {
         checkManifestBundleVersion(manifest), 
         IMarker.SEVERITY_ERROR,
         manifestFile);
+    
+    manifestFile.deleteMarkers(MARKER_SYMBOLICNAME_AND_VERSION_CLASH, false, IResource.DEPTH_INFINITE);
+    if (manifest.isR4()) {
+      // Check uniqueness
+      IBundleProject[] projects = ProjectUtil.getBundleProjects();
+      for (int i = 0; i < projects.length; i++) {
+        if (!projects[i].getProject().getName().equals(getProject().getName()) && 
+            getId().equals(projects[i].getId())) {
+          String errorMsg = "Bundle-ManifestVersion set to 2 requires SymbolicName and Version to be unique.";
+          
+          updateMarker(MARKER_SYMBOLICNAME_AND_VERSION_CLASH,
+              ManifestUtil.findAttributeLine(manifestContents, BundleManifest.BUNDLE_MANIFESTVERSION),
+              errorMsg,
+              IMarker.SEVERITY_ERROR,
+              manifestFile);
+        }
+      }
+    }
     
     // Check Bundle update location
     updateMarker(MARKER_BUNDLE_UPDATELOCATION, 
@@ -1231,5 +1251,7 @@ public class BundleProject implements IBundleProject {
     }
     return compilationUnits;
   }
+  
+
 }
 

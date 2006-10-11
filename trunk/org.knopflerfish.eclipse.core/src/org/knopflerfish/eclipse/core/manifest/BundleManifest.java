@@ -44,7 +44,8 @@ import java.util.jar.Manifest;
 import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
+ * @author Anders Rimï¿½n, Gatespace Telematics
+ * @author Mats-Ola Persson, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleManifest extends Manifest {
@@ -67,6 +68,7 @@ public class BundleManifest extends Manifest {
   public static final String EXPORT_PACKAGE         = "Export-Package";
   public static final String IMPORT_PACKAGE         = "Import-Package";
   public static final String DYNAMIC_IMPORT_PACKAGE = "DynamicImport-Package";
+  public static final String BUNDLE_MANIFESTVERSION = "Bundle-ManifestVersion";
   
   // Build information attributes
   public static final String BUILT_FROM            = "Built-From";
@@ -117,6 +119,14 @@ public class BundleManifest extends Manifest {
   
   public void setName(String value) {
     setAttribute(BUNDLE_NAME, value);
+  }
+  
+  public String getManifestVersion() {
+	return getAttribute(BUNDLE_MANIFESTVERSION);  
+  }
+ 
+  public void setManifestVersion(String value) {
+    setAttribute(BUNDLE_MANIFESTVERSION, value);
   }
   
   public Version getVersion() {
@@ -412,6 +422,10 @@ public class BundleManifest extends Manifest {
       if (exportedPackages[i].isCompatible(pd)) return true;
     }
     return false;
+  }
+  
+  public boolean isR4() {
+    return "2".equals(getManifestVersion());
   }
   
   /****************************************************************************

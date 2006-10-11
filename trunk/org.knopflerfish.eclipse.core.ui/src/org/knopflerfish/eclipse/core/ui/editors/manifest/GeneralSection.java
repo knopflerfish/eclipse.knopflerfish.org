@@ -62,10 +62,12 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
@@ -92,7 +94,8 @@ import org.knopflerfish.eclipse.core.ui.dialogs.TypeSelectionDialog;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
+ * @author Anders Rimï¿½n, Gatespace Telematics
+ * @author Mats-Ola Persson, Gatepspace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class GeneralSection extends SectionPart {
@@ -125,6 +128,10 @@ public class GeneralSection extends SectionPart {
     "Update Location:";
   private static final String BUNDLE_UPDATELOCATION_TOOLTIP = 
     "If the bundle is updated, this location should be used (if present) to retrieve the updated JAR file.";
+  private static final String BUNDLE_MANIFEST_VERSION_LABEL = 
+    "Manifest Version";
+  private static final String BUNDLE_MANIFEST_VERSION_TOOLTIP = 
+    "The manifest version of this bundle.";
   private static final String BUNDLE_ACTIVATOR_LABEL = 
     "Activator:";
   private static final String BUNDLE_ACTIVATOR_TOOLTIP = 
@@ -152,6 +159,9 @@ public class GeneralSection extends SectionPart {
   private static final String BUNDLE_COPYRIGHT_TOOLTIP = 
     "Copyright specification for this bundle.";
   
+  
+  private static final String[] BUNDLE_MANIFEST_VERSIONS = new String[] {"2", ""};
+  
   // SWT Widgets
   private StatusLabel wSymbolicNameStatusLabel;
   private Text wSymbolicNameText;
@@ -161,6 +171,8 @@ public class GeneralSection extends SectionPart {
   private Text wNameText;
   private Text wUpdateLocationText;
   private StatusLabel wUpdateLocationStatusLabel;
+  private Combo wManifestVersionCombo;
+  private StatusLabel wManifestVersionLabel;
   Text wActivatorText;
   private StatusLabel wActivatorStatusLabel;
   private Text wDescriptionText;
@@ -214,35 +226,55 @@ public class GeneralSection extends SectionPart {
     updateStatus(marker, wVersionStatusLabel, wVersionText);
     marker = (IMarker) errors.get(BundleManifest.BUNDLE_SYMBOLIC_NAME);
     updateStatus(marker, wSymbolicNameStatusLabel, wSymbolicNameText);
+    marker = (IMarker) errors.get(BundleManifest.BUNDLE_MANIFESTVERSION);
+    updateStatus(marker, wManifestVersionLabel, wManifestVersionCombo);
     
     if (wEnvironmentTableViewer != null) {
       wEnvironmentTableViewer.refresh();
     }
   }
   
-  private void updateStatus(IMarker marker, StatusLabel wLabel, Text wText) {
+  private Color getColor(IMarker marker) {
     Color c = null;
-    Image img = null;
-    
     if (marker != null) {
       int severity = marker.getAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
-      img = OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_ERROR);
       c = Display.getDefault().getSystemColor(SWT.COLOR_RED);
       if (severity == IMarker.SEVERITY_WARNING) {
-        img = OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_WARNING);
         c = null;
       }
     }
-    
-    // Update label
-    if (wLabel != null && !wLabel.isDisposed()) {
-      wLabel.setStatusImage(img, UiUtils.LEFT, UiUtils.BOTTOM);
-      wLabel.redraw();
+    return c;
+  }
+  
+  private void setLabelIcon(IMarker marker, StatusLabel label) {
+    Image img = null;
+    if (marker != null) {
+      int severity = marker.getAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+      img = OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_ERROR);
+      if (severity == IMarker.SEVERITY_WARNING) {
+        img = OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_WARNING);
+      }
     }
     
+    if (label != null && !label.isDisposed()) {
+      label.setStatusImage(img, UiUtils.LEFT, UiUtils.BOTTOM);
+      label.redraw();
+    }
+  }
+  
+  private void updateStatus(IMarker marker, StatusLabel wLabel, Text wText) {
+    setLabelIcon(marker, wLabel);
     // Update text
     if (wText != null && !wText.isDisposed()) {
-      wText.setForeground(c);
+      wText.setForeground(getColor(marker));
+    }
+  }
+  
+  private void updateStatus(IMarker marker, StatusLabel wLabel, Combo combo) {
+    setLabelIcon(marker, wLabel);
+    // Update combo
+    if (combo != null && !combo.isDisposed()) {
+      combo.setForeground(getColor(marker));
     }
   }
   
@@ -279,6 +311,12 @@ public class GeneralSection extends SectionPart {
         BundleManifest.BUNDLE_NAME, wNameText.getText());
     ManifestUtil.setManifestAttribute(buf, 
         BundleManifest.BUNDLE_UPDATELOCATION, wUpdateLocationText.getText());
+    if ("".equals(wManifestVersionCombo.getText())) {
+      ManifestUtil.removeAttribute(buf, BundleManifest.BUNDLE_MANIFESTVERSION);
+    } else {
+      ManifestUtil.setManifestAttribute(buf,
+          BundleManifest.BUNDLE_MANIFESTVERSION, wManifestVersionCombo.getText());
+    }
     ManifestUtil.setManifestAttribute(buf, 
         BundleManifest.BUNDLE_ACTIVATOR, wActivatorText.getText());
     ManifestUtil.setManifestAttribute(buf, 
@@ -315,6 +353,7 @@ public class GeneralSection extends SectionPart {
     setText(wVersionText, attributes, BundleManifest.BUNDLE_VERSION);
     setText(wNameText, attributes, BundleManifest.BUNDLE_NAME);
     setText(wUpdateLocationText, attributes, BundleManifest.BUNDLE_UPDATELOCATION);
+    setCombo(wManifestVersionCombo, attributes, BundleManifest.BUNDLE_MANIFESTVERSION);
     setText(wActivatorText, attributes, BundleManifest.BUNDLE_ACTIVATOR);
     setText(wDescriptionText, attributes, BundleManifest.BUNDLE_DESCRIPTION);
     setText(wDocUrlText, attributes, BundleManifest.BUNDLE_DOCURL);
@@ -375,6 +414,36 @@ public class GeneralSection extends SectionPart {
     wUpdateLocationStatusLabel =
       createLabel(container, toolkit, BUNDLE_UPDATELOCATION_LABEL, BUNDLE_UPDATELOCATION_TOOLTIP);
     wUpdateLocationText = createText(container, toolkit, 2);
+    
+    wManifestVersionLabel = createLabel(container, toolkit, BUNDLE_MANIFEST_VERSION_LABEL, 
+        BUNDLE_MANIFEST_VERSION_TOOLTIP);
+
+    
+    TableWrapData tmp = new TableWrapData();
+    tmp.valign = TableWrapData.MIDDLE;
+    tmp.align = TableWrapData.FILL;
+    tmp.grabHorizontal = true;
+    tmp.colspan = 2;
+    wManifestVersionCombo = new Combo(container, SWT.DROP_DOWN);
+    for (int i = 0; i < BUNDLE_MANIFEST_VERSIONS.length; i++) {
+      wManifestVersionCombo.add(BUNDLE_MANIFEST_VERSIONS[i]);
+    }
+    wManifestVersionCombo.select(0);
+    wManifestVersionCombo.addSelectionListener(new SelectionListener() {
+      public void widgetSelected(SelectionEvent e) {
+        markDirty();        
+      }
+
+      public void widgetDefaultSelected(SelectionEvent e) {
+        markDirty();
+      }
+    });
+    wManifestVersionCombo.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        markDirty();        
+      }});
+    wManifestVersionCombo.setLayoutData(tmp);
+
     wActivatorStatusLabel = 
       createLabel(container, toolkit, BUNDLE_ACTIVATOR_LABEL, BUNDLE_ACTIVATOR_TOOLTIP);
     wActivatorText = createText(container, toolkit, 1);
@@ -718,6 +787,20 @@ public class GeneralSection extends SectionPart {
     }
     if (!value.equals(wText.getText())) {
       wText.setText(value);
+    }
+  }
+  
+  private void setCombo(Combo combo, Attributes attributes, String key) {
+    String value = null;
+    if (attributes != null && key != null) {
+      value = attributes.getValue(key);
+    }
+    if (value == null) {
+      value = "";
+    }
+    
+    if (!value.equals(combo.getText())) {
+      combo.setText(value);
     }
   }
   

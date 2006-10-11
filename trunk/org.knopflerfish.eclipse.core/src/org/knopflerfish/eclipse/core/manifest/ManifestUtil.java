@@ -40,12 +40,37 @@ import java.io.IOException;
 import java.io.StringReader;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
+ * @author Anders Rimï¿½n, Gatespace Telematics
+ * @author Mats-Ola Persson, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class ManifestUtil {
   
   private static final int MAX_LINE_LENGTH_EXCL_NEWLINE = 70;
+  
+  static public void removeAttribute(StringBuffer buf, String attr) {
+    BufferedReader reader = new BufferedReader(new StringReader(buf.toString()));
+    String line = null;
+    
+    try {
+      while ((line = reader.readLine()) != null) {
+        if (line.startsWith(attr)) {
+          int start = buf.indexOf(line);
+          int end = start + line.length();
+          if (end < buf.length() && buf.charAt(end) == '\r') {
+            end += 1;
+          }
+          if (end < buf.length() && buf.charAt(end) == '\n') {
+            end += 1;
+          }
+          buf.replace(start, end, "");
+          break;
+        }
+      }
+    } catch (IOException e) {
+      // ignore
+    }
+  }
 
   static public int findAttributeLine(StringBuffer buf, String attr) {
     // Find position of attribute

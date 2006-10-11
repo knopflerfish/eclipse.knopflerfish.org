@@ -44,19 +44,24 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.knopflerfish.eclipse.core.IBundleProject;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.SymbolicName;
+import org.knopflerfish.eclipse.core.project.ProjectUtil;
 import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
+ * @author Anders Rimï¿½n, Gatespace Telematics
+ * @author Mats-Ola Persson, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleWizardPage extends WizardPage {
@@ -65,8 +70,7 @@ public class BundleWizardPage extends WizardPage {
   private static final String DEFAULT_BUNDLE_VERSION = "1.0";
   private static final String DEFAULT_ACTIVATOR_CLASS_NAME = "Activator";
   
-  private static final String ERROR     = "error";
-  private static final String WARNING   = "warning";
+  private static final String[] BUNDLE_MANIFEST_VERSIONS = {"2", ""};
 
   private int MARGIN_HEIGHT = 11;
   private int MARGIN_WIDTH = 9;
@@ -85,6 +89,7 @@ public class BundleWizardPage extends WizardPage {
   Text    wBundleActivatorPackageText;
   private Label   wBundleActivatorClassLabel;
   private Text    wBundleActivatorClassText;
+  private Combo   wBundleManifestVersionMenu;
 
   
   public BundleWizardPage(ISelection selection, ProjectWizardPage projectPage) {
@@ -133,14 +138,13 @@ public class BundleWizardPage extends WizardPage {
     wBundleSymbolicNameText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
         if (!((Boolean) e.widget.getData(PROP_INITIALIZED)).booleanValue()) {
-          e.widget.setData(PROP_INITIALIZED, new Boolean(true));
+          e.widget.setData(PROP_INITIALIZED, Boolean.TRUE);
         }
         if (!((Boolean) wBundleActivatorPackageText.getData(PROP_INITIALIZED)).booleanValue()) {
           wBundleActivatorPackageText.setText(wBundleSymbolicNameText.getText());
-          wBundleActivatorPackageText.setData(PROP_INITIALIZED, new Boolean(false));
+          wBundleActivatorPackageText.setData(PROP_INITIALIZED, Boolean.FALSE);
         }
-        verifyBundleSymbolicName();
-        updateStatus();
+        verify();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -153,8 +157,7 @@ public class BundleWizardPage extends WizardPage {
     wBundleVersionText = new Text(wBundleManifestGroup, SWT.SINGLE | SWT.BORDER);
     wBundleVersionText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
-        verifyBundleVersion();
-        updateStatus();
+        verify();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -171,11 +174,30 @@ public class BundleWizardPage extends WizardPage {
         if (!((Boolean) e.widget.getData(PROP_INITIALIZED)).booleanValue()) {
           e.widget.setData(PROP_INITIALIZED, new Boolean(true));
         }
-        verifyBundleName();
+        verify();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
     wBundleNameText.setLayoutData(gd);
+    
+    // Bundle Manifest Version
+    Label wBundleManifestVersionNameLabel = new Label(wBundleManifestGroup, SWT.LEFT);
+    wBundleManifestVersionNameLabel.setText("Manifest Version:");
+    wBundleManifestVersionMenu = new Combo(wBundleManifestGroup, SWT.READ_ONLY | SWT.DROP_DOWN);
+    wBundleManifestVersionMenu.addSelectionListener(new SelectionListener() {
+      public void widgetSelected(SelectionEvent e) {
+        verify();
+      }
+
+      public void widgetDefaultSelected(SelectionEvent e) {
+        verify();
+      }
+    });
+    for (int i = 0; i < BUNDLE_MANIFEST_VERSIONS.length; i++) {
+      wBundleManifestVersionMenu.add(BUNDLE_MANIFEST_VERSIONS[i]);
+    }
+    
+    wBundleManifestVersionMenu.select(0);
 
     // Bundle Description
     Label wBundleDescriptionLabel = new Label(wBundleManifestGroup, SWT.LEFT);
@@ -184,7 +206,7 @@ public class BundleWizardPage extends WizardPage {
     wBundleDescriptionText = new Text(wBundleManifestGroup, SWT.SINGLE | SWT.BORDER);
     wBundleDescriptionText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
-        verifyBundleDescription();
+        verify();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -197,7 +219,7 @@ public class BundleWizardPage extends WizardPage {
     wBundleVendorText = new Text(wBundleManifestGroup, SWT.SINGLE | SWT.BORDER);
     wBundleVendorText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
-        verifyBundleVendor();
+       verify();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -221,9 +243,7 @@ public class BundleWizardPage extends WizardPage {
     wCreateBundleActivatorButton.addSelectionListener(new SelectionAdapter(){
       public void widgetSelected(SelectionEvent e) {
         updateActivatorControls();
-        verifyActivatorPackageName();
-        verifyActivatorClassName();
-        updateStatus();
+        verify();
       }
     });
     wCreateBundleActivatorButton.setSelection(false);
@@ -243,8 +263,7 @@ public class BundleWizardPage extends WizardPage {
         if (!((Boolean) e.widget.getData(PROP_INITIALIZED)).booleanValue()) {
           e.widget.setData(PROP_INITIALIZED, new Boolean(true));
         }
-        verifyActivatorPackageName();
-        updateStatus();
+        verify();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -257,21 +276,21 @@ public class BundleWizardPage extends WizardPage {
     wBundleActivatorClassText = new Text(wBundleActivatorGroup, SWT.SINGLE | SWT.BORDER);
     wBundleActivatorClassText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
-        verifyActivatorClassName();
-        updateStatus();
+        verify();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
     wBundleActivatorClassText.setLayoutData(gd);
-    
-    verifyAll();
-    updateActivatorControls();
-    setControl(composite);
-    updateStatus();
-    
+   
     // Set default values
     wBundleVersionText.setText(DEFAULT_BUNDLE_VERSION);
     wBundleActivatorClassText.setText(DEFAULT_ACTIVATOR_CLASS_NAME);
+    
+    verify();
+    updateActivatorControls();
+    setControl(composite);
+    
+   
   }
   
   /*
@@ -304,83 +323,55 @@ public class BundleWizardPage extends WizardPage {
     wBundleActivatorPackageText.setEnabled(enable);
   }
   
-  void updateStatus() {
+  /****************************************************************************
+   * Verify UI Input methods
+   ***************************************************************************/
+  
+  private void verify() {
+    Issue[] issues = 
+      new Issue[] { verifyBundleName(), verifyBundleVersion(),
+         verifyBundleDescription(), verifyBundleVendor(), 
+         verifyActivatorPackageName(), verifyActivatorClassName(), 
+         verifyBundleSymbolicName(), isR4() ? verifyR4() : null };
     
-    Control c = getControl();
-    Composite composite = (Composite) c;
-    composite.getChildren();
-    
-    // Loop through widgets checking for errors
-    String error = (String) getData(getControl(), ERROR);
-    if (error != null) {
-      setPageComplete(false);
-      setMessage(error, IMessageProvider.ERROR);
-      return;
+    boolean error = false;
+    for (int i = 0; i < issues.length; i++) {
+      if (issues[i] != null && issues[i].severity == IMessageProvider.ERROR) {
+        setMessage(issues[i].msg, IMessageProvider.ERROR);
+        error = true;
+      }
     }
     
-    // Loop through widgets checking for warnings
-    String warning = (String) getData(getControl(), WARNING);
-    if (warning != null) {
-      setPageComplete(true);
-      setMessage(warning, IMessageProvider.WARNING);
-      return;
+    for (int i = 0; i < issues.length; i++) {
+      if (issues[i] != null && issues[i].severity == IMessageProvider.WARNING) {
+        setMessage(issues[i].msg, IMessageProvider.WARNING);
+      }
     }
-
-    // Everything is ok
-    setPageComplete(true);
+    
+    setPageComplete(!error);
     setMessage(null);
   }
   
-  private Object getData(Control c, String key) {
-    if (c == null || key == null) return null;
-    
-    // Check if this control contains the key
-    Object data = c.getData(key);
-    if (data != null) return data;
-    
-    if (c instanceof Composite) {
-      // Check if any children contain the key
-      Control [] children = ((Composite) c).getChildren();
-      if (children != null) {
-        for(int i=0; i<children.length; i++) {
-          data = getData(children[i], key);
-          if (data != null) return data;
+  Issue verifyBundleSymbolicName() {
+    String name = wBundleSymbolicNameText.getText();
+    if (name == null || name.trim().length()== 0) {
+      return new Issue("Symbolic name must be set.", IMessageProvider.ERROR);
+    } else {
+      IStatus status = JavaConventions.validatePackageName(name);
+      if (status.getSeverity() == IStatus.ERROR) {
+        if (isR4()) {
+          String errorMsg = "Symbolic name must be based on the reverse domain name convention.";
+          return new Issue(errorMsg, IMessageProvider.ERROR);
+        } else {
+          String errorMsg = "Symbolic name should be based on the reverse domain name convention.";
+          return new Issue(errorMsg, IMessageProvider.WARNING);
         }
       }
     }
     return null;
   }
   
-  /****************************************************************************
-   * Verify UI Input methods
-   ***************************************************************************/
-  private void verifyAll() {
-    verifyBundleName();
-    verifyBundleVersion();
-    verifyBundleDescription();
-    verifyBundleVendor();
-    verifyActivatorPackageName();
-    verifyActivatorClassName();
-  }
-  
-  void verifyBundleSymbolicName() {
-    String name = wBundleSymbolicNameText.getText();
-    if (name == null || name.trim().length()== 0) {
-      wBundleSymbolicNameText.setData(ERROR, "Symbolic name must be set.");
-      wBundleSymbolicNameText.setData(WARNING, null);
-    } else {
-      IStatus status = JavaConventions.validatePackageName(name);
-      if (status.getSeverity() == IStatus.ERROR) {
-        wBundleSymbolicNameText.setData(ERROR, null);
-        wBundleSymbolicNameText.setData(WARNING, "Symbolic name should be based on the reverse domain name convention.");
-      } else {
-        wBundleSymbolicNameText.setData(ERROR, null);
-        wBundleSymbolicNameText.setData(WARNING, null);
-      }
-    }
-  }
-  
-  void verifyBundleName() {
+  Issue verifyBundleName() {
     //String name = getBundleName();
     
     // TODO:Check that project name is not empty
@@ -388,80 +379,84 @@ public class BundleWizardPage extends WizardPage {
     // TODO:Check that project name is valid
     
     // TODO:Check that project name not already exists
-    
+    return null;
   }
 
-  void verifyBundleVersion() {
+  Issue verifyBundleVersion() {
     String version = wBundleVersionText.getText();
     try { 
       Version.parseVersion(version);
-      wBundleVersionText.setData(ERROR, null);
-      wBundleVersionText.setData(WARNING, null);
+      return null;
     } catch (IllegalArgumentException e) {
-      wBundleVersionText.setData(ERROR, "Version improperly formatted, format major('.'minor('.'micro('.'qualifier)?)?)?");
-      wBundleVersionText.setData(WARNING, null);
+      return new Issue("Version improperly formatted, format major('.'minor('.'micro('.'qualifier)?)?)?", IMessageProvider.ERROR);
     }
   }
   
-  void verifyBundleDescription() {
-    //String description = getBundleDescription();
+  Issue verifyR4() {
+    String version = wBundleVersionText.getText();
+    String symbolicName = wBundleSymbolicNameText.getText();
+    IBundleProject[] projects = ProjectUtil.getBundleProjects();
+    
+    try {
+      for (int i = 0; i < projects.length; i++) {
+        BundleManifest manifest = projects[i].getBundleManifest();
+        SymbolicName sn = manifest.getSymbolicName();
+        Version ver = manifest.getVersion();
+        if (sn.getSymbolicName().equals(symbolicName) &&
+            new Version(version).equals(ver)) {
+          return new Issue("Manifest Version 2 requires Symbolic Name and Version to be unique.", IMessageProvider.ERROR);
+        } 
+      }
+    } catch (IllegalArgumentException e) {
+      // ignore. Happens when version is not correctly parsed. 
+      // Other checks will take care of this.
+    }
+    return null;
   }
   
-  void verifyBundleVendor() {
+  Issue verifyBundleDescription() {
+    //String description = getBundleDescription();
+    return null;
+  }
+  
+  Issue verifyBundleVendor() {
     //String vendor = getBundleVendor();
+    return null;
   }
 
-  void verifyActivatorPackageName() {
+  Issue verifyActivatorPackageName() {
     String packageName = getActivatorPackageName();
     if (isCreateBundleActivator()) {
       if (packageName == null || packageName.trim().length() == 0) {
-        wBundleActivatorPackageText.setData(WARNING, "The use of default package is discouraged.");
-        wBundleActivatorPackageText.setData(ERROR, null);
+        return new Issue("The use of default package is discouraged.", IMessageProvider.WARNING);
       } else {
         IStatus status = JavaConventions.validatePackageName(packageName);
         switch (status.getSeverity()) {
         case IStatus.ERROR:
-          wBundleActivatorPackageText.setData(ERROR, status.getMessage());
-          wBundleActivatorPackageText.setData(WARNING, null);
-          break;
+          return new Issue(status.getMessage(), IMessageProvider.ERROR);
         case IStatus.WARNING:
-          wBundleActivatorPackageText.setData(ERROR, null);
-          wBundleActivatorPackageText.setData(WARNING, status.getMessage());
-          break;
+          return new Issue(status.getMessage(), IMessageProvider.WARNING);
         default:
-          wBundleActivatorPackageText.setData(ERROR, null);
-          wBundleActivatorPackageText.setData(WARNING, null);
-          break;
+          return null;
         }
       }
-    } else {
-      wBundleActivatorPackageText.setData(WARNING, null);
-      wBundleActivatorPackageText.setData(ERROR, null);
     }
+    return null;
   }
 
-  void verifyActivatorClassName() {
+  Issue verifyActivatorClassName() {
     String className = getActivatorClassName();
     if (isCreateBundleActivator()) {
       IStatus status = JavaConventions.validateJavaTypeName(className);
       switch (status.getSeverity()) {
       case IStatus.ERROR:
-        wBundleActivatorClassText.setData(ERROR, status.getMessage());
-        wBundleActivatorClassText.setData(WARNING, null);
-        break;
+        return new Issue(status.getMessage(), IMessageProvider.ERROR);
       case IStatus.WARNING:
-        wBundleActivatorClassText.setData(ERROR, null);
-        wBundleActivatorClassText.setData(WARNING, status.getMessage());
-        break;
+        return new Issue(status.getMessage(), IMessageProvider.WARNING);
       default:
-        wBundleActivatorClassText.setData(ERROR, null);
-        wBundleActivatorClassText.setData(WARNING, null);
-        break;
       }
-    } else {
-      wBundleActivatorClassText.setData(WARNING, null);
-      wBundleActivatorClassText.setData(ERROR, null);
     }
+    return null;
   }
   
   /****************************************************************************
@@ -537,5 +532,23 @@ public class BundleWizardPage extends WizardPage {
   
   public boolean isCreateBundleActivator() {
     return wCreateBundleActivatorButton.getSelection();
+  }
+
+  public String getBundleManifestVersion() {
+    return wBundleManifestVersionMenu.getText().trim();
+  }
+  
+  private boolean isR4() {
+    return "2".equals(getBundleManifestVersion());
+  }
+  
+  private static class Issue {
+    final String msg;
+    final int severity;
+    
+    Issue(String msg, int severity) {
+      this.msg = msg;
+      this.severity = severity;
+    }
   }
 }

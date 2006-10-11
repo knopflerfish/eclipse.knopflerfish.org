@@ -74,7 +74,8 @@ import org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
+ * @author Anders Rimï¿½n, Gatespace Telematics
+ * @author Mats-Ola Persson, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class BundleProjectWizard extends Wizard implements INewWizard {
@@ -189,6 +190,10 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
     manifest.setVersion(bundlePage.getBundleVersion());
     manifest.setVendor(bundlePage.getBundleVendor());
     manifest.setDescription(bundlePage.getBundleDescription());
+    if (!"".equals(bundlePage.getBundleManifestVersion())) {
+      manifest.setManifestVersion(bundlePage.getBundleManifestVersion());
+    }
+    
     if (bundlePage.isCreateBundleActivator()) {
       String activator = bundlePage.getActivatorClassName();
       String packageName = bundlePage.getActivatorPackageName();
