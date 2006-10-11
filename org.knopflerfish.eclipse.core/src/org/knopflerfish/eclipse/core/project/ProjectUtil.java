@@ -39,14 +39,20 @@ import java.util.Arrays;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.jdt.core.JavaCore;
 import org.knopflerfish.eclipse.core.IBundleProject;
+import org.knopflerfish.eclipse.core.Osgi;
 import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
+ * @author Anders Rimï¿½n, Gatespace Telematics
+ * @author Mats-Ola Persson, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class ProjectUtil {
@@ -103,5 +109,29 @@ public class ProjectUtil {
     } else {
       return new IFile[0];
     }
+  }
+  
+  
+  /**
+   * Returns all the bundle projects of this workspace.
+   * 
+   * @return array of IBundleProject
+   */
+
+  public static IBundleProject[] getBundleProjects() {
+    IWorkspace workspace = ResourcesPlugin.getWorkspace();
+    ArrayList retval = new ArrayList();
+    IProject[] projects = workspace.getRoot().getProjects();
+    for (int i = 0; i < projects.length; i++) {
+      try {
+        if (projects[i].hasNature(Osgi.NATURE_ID)) {
+          retval.add(new BundleProject(JavaCore.create(projects[i])));
+        }
+      } catch (CoreException e) {
+        // ignore. this means that the project has been removed.
+      }
+    }
+    
+    return (IBundleProject[]) retval.toArray(new IBundleProject[retval.size()]);
   }
 }

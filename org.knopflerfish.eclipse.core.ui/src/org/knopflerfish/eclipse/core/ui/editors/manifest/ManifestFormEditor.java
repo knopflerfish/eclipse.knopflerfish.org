@@ -61,7 +61,8 @@ import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.editors.BundleDocument;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
+ * @author Anders Rimï¿½n, Gatespace Telematics
+ * @author Mats-Ola Persson, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
 public class ManifestFormEditor extends FormPage implements IDocumentListener {
@@ -240,7 +241,12 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
         } else if (type.equals(BundleProject.MARKER_BUNDLE_NAME)) {
           errorsGeneralSection.put(BundleManifest.BUNDLE_NAME, markers[i]); 
         } else if (type.equals(BundleProject.MARKER_BUNDLE_UPDATELOCATION)) {
-          errorsGeneralSection.put(BundleManifest.BUNDLE_UPDATELOCATION, markers[i]); 
+          errorsGeneralSection.put(BundleManifest.BUNDLE_UPDATELOCATION, markers[i]);
+        } else if (type.equals(BundleProject.MARKER_SYMBOLICNAME_AND_VERSION_CLASH)) {
+          /* TODO: should the error marker be shown at these labels too?
+          errorsGeneralSection.put(BundleManifest.BUNDLE_SYMBOLIC_NAME, markers[i]);
+          errorsGeneralSection.put(BundleManifest.BUNDLE_VERSION, markers[i]); */ 
+          errorsGeneralSection.put(BundleManifest.BUNDLE_MANIFESTVERSION, markers[i]);
         } else if (type.equals(BundleProject.MARKER_BUNDLE_CLASSPATH)) {
           errorsClasspathSection.add(BundleManifest.BUNDLE_CLASSPATH);
         } else if (type.equals(BundleProject.MARKER_EXPORT_PACKAGES)) {
@@ -249,7 +255,7 @@ public class ManifestFormEditor extends FormPage implements IDocumentListener {
           errorsPackageSection.add(BundleManifest.IMPORT_PACKAGE);
         } else if (type.equals(BundleProject.MARKER_DYNAMIC_IMPORT_PACKAGES)) {
           errorsPackageSection.add(BundleManifest.DYNAMIC_IMPORT_PACKAGE);
-        }
+        } 
       } catch (CoreException e) {
         OsgiUiPlugin.log(e.getStatus());
       }
