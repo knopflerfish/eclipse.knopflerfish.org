@@ -421,7 +421,6 @@ public class GeneralSection extends SectionPart {
     
     TableWrapData tmp = new TableWrapData();
     tmp.valign = TableWrapData.MIDDLE;
-    tmp.align = TableWrapData.FILL;
     tmp.grabHorizontal = true;
     tmp.colspan = 2;
     wManifestVersionCombo = new Combo(container, SWT.DROP_DOWN);
@@ -431,7 +430,7 @@ public class GeneralSection extends SectionPart {
     wManifestVersionCombo.select(0);
     wManifestVersionCombo.addSelectionListener(new SelectionListener() {
       public void widgetSelected(SelectionEvent e) {
-        markDirty();        
+        markDirty();
       }
 
       public void widgetDefaultSelected(SelectionEvent e) {
