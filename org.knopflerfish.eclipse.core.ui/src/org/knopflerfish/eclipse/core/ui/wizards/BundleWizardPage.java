@@ -196,7 +196,8 @@ public class BundleWizardPage extends WizardPage {
     for (int i = 0; i < BUNDLE_MANIFEST_VERSIONS.length; i++) {
       wBundleManifestVersionMenu.add(BUNDLE_MANIFEST_VERSIONS[i]);
     }
-    
+//    gd = new GridData(GridData.FILL_HORIZONTAL);
+//    wBundleManifestVersionMenu.setLayoutData(gd);
     wBundleManifestVersionMenu.select(0);
 
     // Bundle Description
