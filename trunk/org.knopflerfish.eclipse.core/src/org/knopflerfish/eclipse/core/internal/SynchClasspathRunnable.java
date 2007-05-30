@@ -96,6 +96,8 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
   public void run(IProgressMonitor monitor) throws CoreException {
     if (project == null) return;
     
+    // This method syncs the project class path according to what is listed in the
+    // bundle manifest.
     BundlePackDescription packDescription = bundleProject.getBundlePackDescription();
     String[] bundleClasspath = bundleProject.getBundleManifest().getBundleClassPath();
     if (bundleClasspath.length == 0) {
@@ -105,15 +107,23 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
     ArrayList projectClasspath = new ArrayList();
     
     int idx = 0;
+    boolean srcDone = false;
     for (int i=0; i<bundleClasspath.length; i++) {
       String path = bundleClasspath[i];
-      if (".".equals(path)) {
-        // Find source entry
-        int srcIdx = findSourceEntry(idx, entries);
-        if (srcIdx != -1) {
-          copyEntries(idx, srcIdx, entries, projectClasspath, false);
-          projectClasspath.add(entries[srcIdx]);
-          idx = srcIdx+1;
+      if (".".equals(path) && !srcDone) {
+        // Only one source allowed
+        srcDone = true;
+        // Find source entries
+        Integer[] srcIdx = findSourceEntries(entries);
+        if (srcIdx.length > 0) {
+          
+          // Copy external class path entries located before first src entry
+          copyEntries(idx, srcIdx[0].intValue(), entries, projectClasspath, false);
+          // Group all src entries
+          for(int j=0; j<srcIdx.length; j++) {
+            projectClasspath.add(entries[srcIdx[j].intValue()]);
+          }
+          idx = srcIdx[0].intValue()+1;
         } else{
           projectClasspath.add(createDefaultSourceEntry());
           copyEntries(idx, entries.length, entries, projectClasspath, false);
@@ -126,7 +136,7 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
           // Something wrong with contents file, nothing to do just continue
           continue;
         }
-        int srcIdx = findLibraryEntry(idx, entries, libPath);
+        int srcIdx = findLibraryEntry(entries, libPath);
         if (srcIdx != -1) {
           copyEntries(idx, srcIdx, entries, projectClasspath, false);
           projectClasspath.add(entries[srcIdx]);
@@ -139,7 +149,7 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
       }
     }
     if (idx < entries.length) {
-      copyEntries(idx, entries.length, entries, projectClasspath, bundleClasspath.length == 0);
+      copyEntries(idx, entries.length, entries, projectClasspath, false);
       idx = entries.length;
     }
     
@@ -155,26 +165,27 @@ public class SynchClasspathRunnable implements IWorkspaceRunnable, Runnable {
         null);
   }
   
-  private int findSourceEntry(int startIdx, IClasspathEntry[] entries) {
-    if (entries == null || startIdx < 0 || startIdx >= entries.length) {
-      return -1;
+  private Integer[] findSourceEntries(IClasspathEntry[] entries) {
+    ArrayList l = new ArrayList();
+    if (entries == null) {
+      return (Integer[]) l.toArray(new Integer[l.size()]);
     }
     
-    for (int i=startIdx; i<entries.length; i++) {
+    for (int i=0; i<entries.length; i++) {
       if(entries[i].getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-        return i;
+        l.add(new Integer(i));
       }
     }
     
-    return -1;
+    return (Integer[]) l.toArray(new Integer[l.size()]);
   }
   
-  private int findLibraryEntry(int startIdx, IClasspathEntry[] entries, IPath path) {
-    if (entries == null || startIdx < 0 || startIdx >= entries.length || path == null) {
+  private int findLibraryEntry(IClasspathEntry[] entries, IPath path) {
+    if (entries == null || path == null) {
       return -1;
     }
     
-    for (int i=startIdx; i<entries.length; i++) {
+    for (int i=0; i<entries.length; i++) {
       if(entries[i].getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
         if (entries[i].getPath().equals(path)) {
           return i;
