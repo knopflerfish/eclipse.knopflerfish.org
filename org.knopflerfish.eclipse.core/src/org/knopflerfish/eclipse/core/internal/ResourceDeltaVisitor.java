@@ -130,10 +130,17 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
     IClasspathEntry [] rawClassPath = javaProject.getRawClasspath();
     
     int idx = 0;
+    int prevEntryKind = -1;
     for (int i=0; i<rawClassPath.length; i++) {
       IClasspathEntry entry = rawClassPath[i];
 
-      if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+      // Check if source entry, if multiple source entries exist
+      // they must not exist any lib entries in between otherwise
+      // the classpath in the bundle manifest can not be created
+      // correctly
+      if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE && 
+          prevEntryKind != IClasspathEntry.CPE_SOURCE) {
+        prevEntryKind = IClasspathEntry.CPE_SOURCE;
         if (idx == 0 && bundleClassPath.length == 0) {
           continue;
         } else if (idx > bundleClassPath.length-1) {
@@ -147,6 +154,7 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
           idx = idx +1;
         }
       } else if (entry.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
+        prevEntryKind = IClasspathEntry.CPE_LIBRARY;
         // Check that library is a member of this project
         IResource lib = project.findMember(entry.getPath().removeFirstSegments(1));
         if (lib != null) {
