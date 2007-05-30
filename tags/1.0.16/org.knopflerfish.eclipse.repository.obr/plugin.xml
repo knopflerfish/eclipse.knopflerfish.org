@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension
+         point="org.knopflerfish.eclipse.core.bundleRepositoryType">
+    <bundleRepositoryType
+          class="org.knopflerfish.eclipse.repository.obr.BundleRepositoryType"
+          configDescription="Repository URL"
+          id="org.knopflerfish.eclipse.repository.obr.BundleRepositoryType"
+          image="icons/obj16/oscar_obj.gif"
+          name="OBR Repository"/>
+   </extension>
+
+</plugin>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin
+   id="org.knopflerfish.eclipse.core.ui"
+   name="Osgi Ui Plug-in"
+   version="1.0.7"
+   provider-name=""
+   class="org.knopflerfish.eclipse.core.ui.OsgiUiPlugin">
+
+   <runtime>
+      <library name="osgiui.jar">
+         <export name="org.knopflerfish.eclipse.core.ui.launcher.*"/>
+      </library> 
+   </runtime>
+
+   <requires>
+      <import plugin="org.eclipse.ui"/>
+      <import plugin="org.eclipse.core.runtime"/>
+      <import plugin="org.eclipse.debug.ui"/>
+      <import plugin="org.eclipse.jdt.debug.ui"/>
+      <import plugin="org.eclipse.debug.core"/>
+      <import plugin="org.knopflerfish.eclipse.core"/>
+      <import plugin="org.eclipse.core.resources"/>
+      <import plugin="org.eclipse.ui.ide"/>
+      <import plugin="org.eclipse.jdt.core"/>
+      <import plugin="org.eclipse.jdt.launching"/>
+      <import plugin="org.eclipse.jface.text"/>
+      <import plugin="org.eclipse.ui.editors"/>
+      <import plugin="org.eclipse.ui.forms"/>
+      <import plugin="org.eclipse.jdt.ui"/>
+      <import plugin="org.eclipse.ui.workbench.texteditor"/>
+   </requires>
+   
+   <extension
+         point="org.eclipse.debug.ui.launchConfigurationTypeImages">
+    <launchConfigurationTypeImage
+          icon="icons/obj16/osgi_obj.gif"
+          configTypeID="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
+          id="org.knopflerfish.eclipse.core.ui.launchConfigImage">
+    </launchConfigurationTypeImage>
+   </extension>
+
+	<extension point="org.eclipse.debug.ui.launchConfigurationTabGroups">
+	    <launchConfigurationTabGroup
+	        type="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
+	        class="org.knopflerfish.eclipse.core.ui.launcher.TabGroup"
+	        id="org.knopflerfish.eclipse.core.ui.launcher.TabGroup">
+	    </launchConfigurationTabGroup>
+	</extension>
+ <extension
+       point="org.eclipse.ui.newWizards">
+    <category
+          name="OSGi"
+          id="org.knopflerfish.eclipse.core.ui"/>
+    <wizard
+          category="org.knopflerfish.eclipse.core.ui"
+          class="org.knopflerfish.eclipse.core.ui.wizards.BundleProjectWizard"
+          finalPerspective="org.eclipse.jdt.ui.JavaPerspective"
+          icon="icons/obj16/knopflerfish_obj.gif"
+          id="org.knopflerfish.eclipse.core.ui.wizards.BundleProjectWizard"
+          name="Bundle Project"
+          project="true">
+        <description>Create a Bundle Project</description>
+    </wizard>
+ </extension>
+ <extension point="org.eclipse.ui.ide.projectNatureImages">
+  <image 
+    id="org.knopflerfish.eclipse.core.ui.bundleNatureImage"
+    natureId="org.knopflerfish.eclipse.core.bundlenature"
+    icon="icons/ovr16/bundle_ovr.gif">
+  </image>
+ </extension>
+ <extension
+       point="org.eclipse.ui.editors">
+    <editor
+          class="org.knopflerfish.eclipse.core.ui.editors.BundleEditor"
+          filenames="bundle.manifest"
+          icon="icons/obj16/file_b_obj.gif"
+          id="org.knopflerfish.eclipse.core.ui.editors.BundleEditor"
+          name="Bundle Editor"/>
+ </extension>
+ <extension
+       point="org.eclipse.ui.preferencePages">
+    <page
+          class="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"
+          name="OSGi"
+          id="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"/>
+    <page
+          class="org.knopflerfish.eclipse.core.ui.preferences.BundleRepositoryPage"
+          category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"
+          name="Bundle Repositories"
+          id="org.knopflerfish.eclipse.core.ui.preferences.BundleRepositoryPage"/>
+    <page
+          class="org.knopflerfish.eclipse.core.ui.preferences.EnvironmentPage"
+          category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"
+          name="Environments"
+          id="org.knopflerfish.eclipse.core.ui.preferences.EnvironmentPage"/>
+    <page
+          class="org.knopflerfish.eclipse.core.ui.preferences.FrameworkPage"
+          category="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"
+          name="Frameworks"
+          id="org.knopflerfish.eclipse.core.ui.preferences.FrameworkPage"/>
+ </extension>
+ <extension
+       point="org.eclipse.jdt.ui.quickFixProcessors">
+	<quickFixProcessor 
+		id="org.knopflerfish.eclipse.core.ui.quickfix.ImportQuickFix"
+		name="Import Quick Fix Processor"
+		class="org.knopflerfish.eclipse.core.ui.assist.ImportQuickFix">
+	</quickFixProcessor>
+ </extension>
+ <extension point="org.eclipse.ui.preferenceTransfer">
+       <transfer
+            name="OSGi settings"
+		    icon="icons/obj16/knopflerfish_obj.gif"
+            id="org.knopflerfish.eclipse.core.ui.exportOSGiPreferences">
+            <mapping scope="instance">
+	          <entry node="org.knopflerfish.eclipse.core.osgi"/>
+            </mapping>
+      <description>
+        Preferences related to build, run and debug OSGi bundle projects.
+      </description>
+    </transfer>
+  </extension>
+
+</plugin>
