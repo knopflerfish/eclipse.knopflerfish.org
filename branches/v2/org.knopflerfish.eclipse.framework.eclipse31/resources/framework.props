@@ -1,0 +1,15 @@
+framework.property.num = 3
+
+framework.property.0.name = org.osgi.framework.system.packages
+framework.property.0.description = List of packages exported from system classloader, other than java.* and org.osgi.framework.
+framework.property.0.group = OSGi Framework
+
+framework.property.1.name = org.osgi.service.http.port
+framework.property.1.description = This property specifies the port used for servlets and resources accessible via HTTP.
+framework.property.1.group = OSGi Web Server
+framework.property.1.default = 80
+
+framework.property.2.name = org.osgi.service.http.port.secure
+framework.property.2.description = This property specifies the port used for servlets and resources accessible via HTTPS.
+framework.property.2.group = OSGi Web Server
+framework.property.2.default = 443
