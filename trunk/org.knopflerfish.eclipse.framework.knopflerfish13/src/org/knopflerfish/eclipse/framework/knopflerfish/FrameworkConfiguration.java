@@ -38,13 +38,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import org.knopflerfish.eclipse.core.Arguments;
 import org.knopflerfish.eclipse.core.IFrameworkConfiguration;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
+import org.knopflerfish.eclipse.core.Property;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 
 /**
@@ -52,36 +53,39 @@ import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
  * @see http://www.gatespacetelematics.com/
  */
 public class FrameworkConfiguration implements IFrameworkConfiguration {
-  
+
   private static final int DEFAULT_STARTLEVEL = 7;
-  
+
   private static String PROPERTY_FRAMEWORK_DIR = "org.osgi.framework.dir";
-  
+
   private File workDir;
-  private TreeMap bundles = new TreeMap(); // Startlevel (Integer), List of BundleElement
-  private Map systemProperties;
+  private TreeMap<Integer, List<BundleElement>> bundles = new TreeMap<Integer, List<BundleElement>>();
+  private Map<String, Property> systemProperties;
   private boolean clean;
   private int startLevel = DEFAULT_STARTLEVEL;
-  
-  public FrameworkConfiguration(File dir) {
+
+  public FrameworkConfiguration(File dir)
+  {
     this.workDir = dir;
   }
-  
+
   /****************************************************************************
    * org.knopflerfish.eclipse.core.IFrameworkConfiguration methods
    ***************************************************************************/
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#create()
    */
-  public Arguments create() throws IOException {
+  public Arguments create() throws IOException
+  {
     Arguments args = new Arguments();
-    ArrayList programArgs = new ArrayList();
-    
+    ArrayList<String> programArgs = new ArrayList<String>();
+
     // Create xargs file
     File initFile = new File(workDir, "init.xargs");
     File restartFile = new File(workDir, "restart.xargs");
-    
+
     // Start empty framework
     if (clean) {
       programArgs.add("-init");
@@ -91,114 +95,133 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
         deleteDir(fwDir);
       }
     }
-    
+
     // Set framework dir
-    writeProperty(initFile, PROPERTY_FRAMEWORK_DIR, workDir.getAbsolutePath()+"/fwdir", false);
-    writeProperty(restartFile, PROPERTY_FRAMEWORK_DIR, workDir.getAbsolutePath()+"/fwdir", false);
-    
+    Property propFrameworkDir = new Property(PROPERTY_FRAMEWORK_DIR);
+    propFrameworkDir.setValue(workDir.getAbsolutePath() + "/fwdir");
+    writeProperty(initFile, propFrameworkDir, false);
+    writeProperty(restartFile, propFrameworkDir, false);
+
     // System properties
     if (systemProperties != null) {
-      for(Iterator i=systemProperties.entrySet().iterator();i.hasNext();) {
-        Map.Entry entry = (Map.Entry) i.next();
-        writeProperty(initFile, (String) entry.getKey(), (String) entry.getValue(), true);
-        writeProperty(restartFile, (String) entry.getKey(), (String) entry.getValue(), true);
+      for (Map.Entry<String, Property> element : systemProperties.entrySet()) {
+        writeProperty(initFile, element.getValue(), true);
+        writeProperty(restartFile, element.getValue(), true);
       }
     }
-    
+
     writeCommand(initFile, "-init", "", true);
-    
+
     // Add install entries
     int currentLevel = -1;
-    for (Iterator i=bundles.entrySet().iterator();i.hasNext();) {
-      Map.Entry entry = (Map.Entry) i.next();
-      Integer initLevel = (Integer) entry.getKey();
-      
+    for (Map.Entry<Integer, List<BundleElement>> element : bundles.entrySet()) {
+      Integer initLevel = element.getKey();
+
       // Set initial start level
       if (currentLevel != initLevel.intValue()) {
         writeCommand(initFile, "-initlevel", initLevel.toString(), true);
         currentLevel = initLevel.intValue();
       }
-      
+
       // Add bundle install entries for this start level
-      ArrayList l = (ArrayList) entry.getValue();
-      for (Iterator j = l.iterator() ; j.hasNext() ;) {
-        BundleElement e = (BundleElement) j.next();
-        writeCommand(initFile, "-install", "file:"+e.getBundle().getPath(), true);
+      List<BundleElement> l = element.getValue();
+      for (BundleElement e : l) {
+        writeCommand(initFile, "-install", "file:" + e.getBundle().getPath(),
+            true);
       }
     }
     // Set start level and launch
     writeCommand(initFile, "-startlevel", Integer.toString(startLevel), true);
     writeCommand(initFile, "-launch", "", true);
-    
-    
+
     // Add start entries
-    for (Iterator i=bundles.entrySet().iterator();i.hasNext();) {
-      Map.Entry entry = (Map.Entry) i.next();
-      
+    for (Map.Entry<Integer, List<BundleElement>> element : bundles.entrySet()) {
+
       // Add bundle install entries for this start level
-      ArrayList l = (ArrayList) entry.getValue();
-      for (Iterator j = l.iterator() ; j.hasNext() ;) {
-        BundleElement e = (BundleElement) j.next();
+      List<BundleElement> l = element.getValue();
+      for (BundleElement e : l) {
         if (e.getLaunchInfo().getMode() == BundleLaunchInfo.MODE_START) {
-          writeCommand(initFile, "-start", "file:"+e.getBundle().getPath(), true);
+          writeCommand(initFile, "-start", "file:" + e.getBundle().getPath(),
+              true);
         }
       }
     }
-    
-    args.setProgramArguments((String[]) programArgs.toArray(new String[programArgs.size()]));
+
+    args.setProgramArguments((String[]) programArgs
+        .toArray(new String[programArgs.size()]));
     return args;
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#getWorkingDirectory()
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkConfiguration#getWorkingDirectory()
    */
-  public File getWorkingDirectory() {
+  public File getWorkingDirectory()
+  {
     return workDir;
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#addBundle(org.knopflerfish.eclipse.core.IOsgiBundle, org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo)
+   * (non-Javadoc)
+   * 
+   * @seeorg.knopflerfish.eclipse.core.IFrameworkConfiguration#addBundle(org.
+   * knopflerfish.eclipse.core.IOsgiBundle,
+   * org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo)
    */
-  public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info) {
+  public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info)
+  {
     Integer startLevel = new Integer(info.getStartLevel());
-    ArrayList l = (ArrayList) bundles.get(startLevel);
+    List<BundleElement> l = bundles.get(startLevel);
     if (l == null) {
-      l = new ArrayList();
+      l = new ArrayList<BundleElement>();
     }
     l.add(new BundleElement(bundle, info));
     bundles.put(startLevel, l);
   }
-  
+
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#setSystemProperties(java.util.Map)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkConfiguration#setSystemProperties
+   * (java.util.Map)
    */
-  public void setSystemProperties(Map properties) {
+  public void setSystemProperties(Map<String, Property> properties)
+  {
     systemProperties = properties;
   }
-  
+
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#setStartClean(boolean)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkConfiguration#setStartClean(boolean
+   * )
    */
-  public void clearBundleCache(boolean clean) {
+  public void clearBundleCache(boolean clean)
+  {
     this.clean = clean;
   }
-  
+
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkConfiguration#setStartLevel(int)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkConfiguration#setStartLevel(int)
    */
-  public void setStartLevel(int startLevel) {
+  public void setStartLevel(int startLevel)
+  {
     this.startLevel = startLevel;
   }
-  
+
   /****************************************************************************
    * Private utility methods
    ***************************************************************************/
-  private void writeCommand(File f, String cmd, String value, boolean append) throws IOException {
+  private void writeCommand(File f, String cmd, String value, boolean append)
+    throws IOException
+  {
     FileWriter writer = null;
     try {
       writer = new FileWriter(f, append);
@@ -207,40 +230,47 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
       buf.append(" ");
       buf.append(value);
       buf.append("\n");
-      
+
       writer.write(buf.toString());
-      
+
     } finally {
       if (writer != null) {
         writer.close();
       }
     }
   }
-  
-  private void writeProperty(File f, String name, String value, boolean append) throws IOException {
+
+  private void writeProperty(File f, Property property, boolean append)
+    throws IOException
+  {
     FileWriter writer = null;
     try {
       writer = new FileWriter(f, append);
       StringBuffer buf = new StringBuffer();
-      buf.append("-D");
-      buf.append(name);
+      if (property.getType().equals(Property.FRAMEWORK_PROPERTY)) {
+        buf.append("-F");
+      } else {
+        buf.append("-D");
+      }
+      buf.append(property.getName());
       buf.append("=");
-      buf.append(value);
+      buf.append(property.getValue());
       buf.append("\n");
-      
+
       writer.write(buf.toString());
-      
+
     } finally {
       if (writer != null) {
         writer.close();
       }
     }
   }
-  
-  public static boolean deleteDir(File dir) {
+
+  public static boolean deleteDir(File dir)
+  {
     if (dir.isDirectory()) {
       String[] children = dir.list();
-      for (int i=0; i<children.length; i++) {
+      for (int i = 0; i < children.length; i++) {
         boolean success = deleteDir(new File(dir, children[i]));
         if (!success) {
           return false;
@@ -249,24 +279,27 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
     }
     return dir.delete();
   }
-  
+
   /****************************************************************************
    * Inner classes
    ***************************************************************************/
   class BundleElement {
     private final IOsgiBundle bundle;
     private final BundleLaunchInfo launchInfo;
-    
-    BundleElement(IOsgiBundle bundle, BundleLaunchInfo info) {
+
+    BundleElement(IOsgiBundle bundle, BundleLaunchInfo info)
+    {
       this.bundle = bundle;
       this.launchInfo = info;
     }
-    
-    public IOsgiBundle getBundle() {
+
+    public IOsgiBundle getBundle()
+    {
       return bundle;
     }
-    
-    public BundleLaunchInfo getLaunchInfo() {
+
+    public BundleLaunchInfo getLaunchInfo()
+    {
       return launchInfo;
     }
   }

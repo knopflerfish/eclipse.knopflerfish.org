@@ -142,27 +142,36 @@ framework.property.24.allowed = true,false
 framework.property.25.name = org.knopflerfish.log.level
 framework.property.25.description = Log level.
 framework.property.25.group = Knopflerfish Log Service
-framework.property.25.default = info
-framework.property.25.allowed = debug,info,warn,error
+framework.property.25.default = warning
+framework.property.25.allowed = debug,info,warning,error
 
 framework.property.26.name = org.knopflerfish.log.grabio
 framework.property.26.description = System out is added to log.
 framework.property.26.group = Knopflerfish Log Service
-framework.property.26.default = true
+framework.property.26.default = false
 framework.property.26.allowed = true,false
 
 framework.property.27.name = org.knopflerfish.log.file
 framework.property.27.description = Save log to file.
 framework.property.27.group = Knopflerfish Log Service
-framework.property.27.default = true
+framework.property.27.default = false
 framework.property.27.allowed = true,false
 
-framework.property.28.name = java.security.manager
-framework.property.28.description = Class name of security manager. If set to empty string, uses "java.lang.SecurityManager". If unset, do not use any security manager.
-framework.property.28.group = Java
+framework.property.28.name = org.knopflerfish.log.file.dir
+framework.property.28.description = The path to the directory to write the cyclic file log to. If empty or not given the data directory of the log-bundles will be used. 
+framework.property.28.group = Knopflerfish Log Service
 
-framework.property.29.name = java.security.policy
-framework.property.29.description = Security policy file. Used by the security manager.
-framework.property.29.group = Java
+framework.property.29.name = org.knopflerfish.log.memory.size
+framework.property.29.description = Number of log records to keep in memory.
+framework.property.29.group = Knopflerfish Log Service
+framework.property.29.default = 250
+
+framework.property.30.name = java.security.manager
+framework.property.30.description = Class name of security manager. If set to empty string, uses "java.lang.SecurityManager". If unset, do not use any security manager.
+framework.property.30.group = Java
+
+framework.property.31.name = java.security.policy
+framework.property.31.description = Security policy file. Used by the security manager.
+framework.property.31.group = Java
 
 
