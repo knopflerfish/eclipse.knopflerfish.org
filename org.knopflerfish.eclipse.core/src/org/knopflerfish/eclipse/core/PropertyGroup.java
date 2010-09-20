@@ -34,7 +34,8 @@
 
 package org.knopflerfish.eclipse.core;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 
@@ -42,71 +43,88 @@ import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class SystemPropertyGroup {
+public class PropertyGroup {
 
   private final String name;
   private FrameworkPreference distribution;
-  private ArrayList properties = new ArrayList();
-  
-  public SystemPropertyGroup(String name) {
+  private Map<String, Property> properties = new HashMap<String, Property>();
+
+  public PropertyGroup(String name)
+  {
     this.name = name;
   }
 
-  public String getName() {
+  public String getName()
+  {
     return name;
   }
 
-  public FrameworkPreference getFrameworkDistribution() {
+  public FrameworkPreference getFrameworkDistribution()
+  {
     return distribution;
   }
 
-  public void setFrameworkDistribution(FrameworkPreference distribution) {
+  public void setFrameworkDistribution(FrameworkPreference distribution)
+  {
     this.distribution = distribution;
   }
-  
-  public SystemProperty[] getProperties() {
-    return (SystemProperty[]) properties.toArray(new SystemProperty[properties.size()]);
+
+  public Property[] getProperties()
+  {
+    return (Property[]) properties.values().toArray(
+        new Property[properties.size()]);
   }
 
-  public boolean contains(SystemProperty property) {
-    return properties.contains(property);
+  public boolean contains(Property property)
+  {
+    if (property == null) {
+      return false;
+    }
+    return properties.containsKey(property.getName());
   }
-  
-  public void clear() {
+
+  public void clear()
+  {
     properties.clear();
   }
-  public SystemProperty findSystemProperty(String name) {
-    int idx = properties.indexOf(new SystemProperty(name));
-    if (idx != -1) {
-      return (SystemProperty) properties.get(idx);
+
+  public Property findSystemProperty(String name)
+  {
+    if (name == null) {
+      return null;
     }
-    return null;
+    return properties.get(name);
   }
 
-  public void addSystemProperty(SystemProperty property) {
-    if (property != null && !properties.contains(property)) {
-      properties.add(property);
+  public void addSystemProperty(Property property)
+  {
+    if (property != null) {
+      properties.put(property.getName(), property);
       property.setSystemPropertyGroup(this);
     }
   }
 
-  public void removeSystemProperty(SystemProperty property) {
-    if (property != null && properties.contains(property)) {
-      properties.remove(property);
+  public void removeSystemProperty(Property property)
+  {
+    if (property != null) {
+      properties.remove(property.getName());
       property.setSystemPropertyGroup(null);
     }
   }
-  
-  /****************************************************************************
-   * java.lang.Object methods
-   ***************************************************************************/
+
+  // ***************************************************************************
+  // java.lang.Object methods
+  // ***************************************************************************
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see java.lang.Object#equals(java.lang.Object)
    */
-  public boolean equals(Object o) {
-    if (o == null || !(o instanceof SystemPropertyGroup)) return false;
-    
-    return ((SystemPropertyGroup) o).getName().equals(getName());
+  public boolean equals(Object o)
+  {
+    if (o == null || !(o instanceof PropertyGroup))
+      return false;
+
+    return ((PropertyGroup) o).getName().equals(getName());
   }
 }

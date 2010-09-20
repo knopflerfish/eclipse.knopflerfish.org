@@ -48,37 +48,40 @@ import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
  */
 public interface IFrameworkConfiguration {
 
-  /** 
-   * Saves this configuration and returns the program arguments
-   * that shall be used when launching the framework.
+  /**
+   * Saves this configuration and returns the program arguments that shall be
+   * used when launching the framework.
    * 
    * @return program arguments
-   * @throws IOException if failure creating configuration
+   * @throws IOException
+   *           if failure creating configuration
    */
   public Arguments create() throws IOException;
-  
-  /** 
-   * Sets the system properties for this configuration.
-   * specifies the bundle state and startlevel.
+
+  /**
+   * Sets the system properties for this configuration. specifies the bundle
+   * state and startlevel.
    * 
-   * @param properties system properties
+   * @param properties
+   *          system properties
    */
-  public void setSystemProperties(Map properties);
-  
+  public void setSystemProperties(Map<String, Property> properties);
+
   public void clearBundleCache(boolean clear);
-  
+
   public void setStartLevel(int startLevel);
-  
-  /** 
-   * Add a bundle to this configuration. The launch info
-   * specifies the bundle state and startlevel.
+
+  /**
+   * Add a bundle to this configuration. The launch info specifies the bundle
+   * state and startlevel.
    * 
-   * @param bundle bundle to add to configuration
-   * @param info bundle launch information
+   * @param bundle
+   *          bundle to add to configuration
+   * @param info
+   *          bundle launch information
    */
   public void addBundle(IOsgiBundle bundle, BundleLaunchInfo info);
-  
+
   public File getWorkingDirectory();
 
 }
-
