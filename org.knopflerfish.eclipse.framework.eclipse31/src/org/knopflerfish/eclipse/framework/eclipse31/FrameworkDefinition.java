@@ -49,8 +49,8 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.OsgiLibrary;
-import org.knopflerfish.eclipse.core.SystemProperty;
-import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.Property;
+import org.knopflerfish.eclipse.core.PropertyGroup;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 public class FrameworkDefinition implements IFrameworkDefinition {
@@ -182,7 +182,7 @@ public class FrameworkDefinition implements IFrameworkDefinition {
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getSystemPropertyGroups()
    */
-  public SystemPropertyGroup[] getSystemPropertyGroups() {
+  public PropertyGroup[] getSystemPropertyGroups() {
     ArrayList groups = new ArrayList();
     
     // Load and set properties
@@ -198,16 +198,16 @@ public class FrameworkDefinition implements IFrameworkDefinition {
           String propBase = "framework.property."+i;
           String group = props.getProperty(propBase+".group");
           if (group != null) {
-            SystemPropertyGroup propertyGroup = new SystemPropertyGroup(group);
+            PropertyGroup propertyGroup = new PropertyGroup(group);
             if (groups.contains(propertyGroup)) {
-              propertyGroup = (SystemPropertyGroup) groups.get(groups.indexOf(propertyGroup));
+              propertyGroup = (PropertyGroup) groups.get(groups.indexOf(propertyGroup));
             } else {
               groups.add(propertyGroup);
             }
             
             String name = props.getProperty(propBase+".name");
             if (name != null) {
-              SystemProperty property = new SystemProperty(name);
+              Property property = new Property(name);
               
               String description = props.getProperty(propBase+".description");
               if (description != null) {
@@ -240,7 +240,7 @@ public class FrameworkDefinition implements IFrameworkDefinition {
       t.printStackTrace();
     }
     
-    return (SystemPropertyGroup[]) groups.toArray(new SystemPropertyGroup[groups.size()]);
+    return (PropertyGroup[]) groups.toArray(new PropertyGroup[groups.size()]);
   }
   
   /*
