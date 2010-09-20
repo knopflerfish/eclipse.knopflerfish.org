@@ -59,7 +59,7 @@ public interface IFrameworkDefinition {
   
   public IOsgiBundle[] getBundles(File dir);
   
-  public SystemPropertyGroup[] getSystemPropertyGroups();
+  public PropertyGroup[] getSystemPropertyGroups();
   
   
   public PackageDescription[] getExportedPackages(IOsgiLibrary[] libraries);

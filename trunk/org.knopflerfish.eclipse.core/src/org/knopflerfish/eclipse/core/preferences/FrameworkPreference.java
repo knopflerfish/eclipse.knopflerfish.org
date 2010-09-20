@@ -36,6 +36,7 @@ package org.knopflerfish.eclipse.core.preferences;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -43,8 +44,8 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.OsgiLibrary;
-import org.knopflerfish.eclipse.core.SystemProperty;
-import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.Property;
+import org.knopflerfish.eclipse.core.PropertyGroup;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
@@ -54,22 +55,23 @@ import org.osgi.service.prefs.Preferences;
  */
 public class FrameworkPreference {
 
-  private static String PREF_LOCATION               = "Location";
+  private static String PREF_LOCATION = "Location";
   private static String PREF_SPECIFICATION_VERISION = "SpecificationVersion";
-  private static String PREF_TYPE                   = "Type";
-  private static String PREF_MAINCLASS              = "MainClass";
-  private static String PREF_RUNTIME_LIBRARIES      = "Libraries";
-  private static String PREF_BUNDLES                = "Bundles";
-  private static String PREF_JAR                    = "Jar";
-  private static String PREF_SOURCE                 = "Source";
-  private static String PREF_USER_DEFINED           = "UserDefined";
-  private static String PREF_DEFAULT_SETTINGS       = "DefaultSettings";
-  private static String PREF_DEFAULT_DEFINITION     = "DefaultDefinition";
-  private static String PREF_PROPERTY_GROUPS        = "PropertyGroups";
-  private static String PREF_PROPERTY_DEFAULT       = "Default";
-  private static String PREF_PROPERTY_DESCRIPTION   = "Description";
-  private static String PREF_PROPERTY_ALLOWED       = "Allowed";
-  
+  private static String PREF_TYPE = "Type";
+  private static String PREF_MAINCLASS = "MainClass";
+  private static String PREF_RUNTIME_LIBRARIES = "Libraries";
+  private static String PREF_BUNDLES = "Bundles";
+  private static String PREF_JAR = "Jar";
+  private static String PREF_SOURCE = "Source";
+  private static String PREF_USER_DEFINED = "UserDefined";
+  private static String PREF_DEFAULT_SETTINGS = "DefaultSettings";
+  private static String PREF_DEFAULT_DEFINITION = "DefaultDefinition";
+  private static String PREF_PROPERTY_GROUPS = "PropertyGroups";
+  private static String PREF_PROPERTY_DEFAULT = "Default";
+  private static String PREF_PROPERTY_DESCRIPTION = "Description";
+  private static String PREF_PROPERTY_ALLOWED = "Allowed";
+  private static String PREF_PROPERTY_TYPE = "Type";
+
   private String name;
   private String specificationVersion;
   private String location;
@@ -77,117 +79,139 @@ public class FrameworkPreference {
   private boolean defaultDefinition;
   private boolean defaultSettings;
   private String mainClass;
-  private ArrayList runtimeLibs = new ArrayList();  
-  private ArrayList bundles = new ArrayList();
-  private ArrayList propertyGroups = new ArrayList();
-  
-  public FrameworkPreference() {
+  private final ArrayList<IOsgiLibrary> runtimeLibs = new ArrayList<IOsgiLibrary>();
+  private final ArrayList<IOsgiBundle> bundles = new ArrayList<IOsgiBundle>();
+  private final ArrayList<PropertyGroup> propertyGroups = new ArrayList<PropertyGroup>();
+
+  public FrameworkPreference()
+  {
   }
-  
-  public FrameworkPreference(Preferences node) throws BackingStoreException {
+
+  public FrameworkPreference(Preferences node) throws BackingStoreException
+  {
     load(node);
   }
-  
-  private void load(Preferences node) throws BackingStoreException {
+
+  private void load(Preferences node) throws BackingStoreException
+  {
     // Load preferences
     name = node.name();
-    
+
     // Type
     type = node.get(PREF_TYPE, "");
-    
-    // Specification Version 
+
+    // Specification Version
     specificationVersion = node.get(PREF_SPECIFICATION_VERISION, null);
-    
+
     // Location
     location = node.get(PREF_LOCATION, "");
-    // Default Settings 
-    defaultSettings = "true".equalsIgnoreCase(node.get(PREF_DEFAULT_SETTINGS, "false"));
+    // Default Settings
+    defaultSettings = "true".equalsIgnoreCase(node.get(PREF_DEFAULT_SETTINGS,
+        "false"));
     // Main class
     mainClass = node.get(PREF_MAINCLASS, "");
-    
+
     // Runtime Libraries
     Preferences librariesNode = node.node(PREF_RUNTIME_LIBRARIES);
     runtimeLibs.clear();
     int idx = 0;
-    while (librariesNode.nodeExists("Library "+idx)) {
-      Preferences libraryNode = librariesNode.node("Library "+idx);
+    while (librariesNode.nodeExists("Library " + idx)) {
+      Preferences libraryNode = librariesNode.node("Library " + idx);
       try {
-        OsgiLibrary library = new OsgiLibrary(new File(libraryNode.get(PREF_JAR, "")));
+        OsgiLibrary library = new OsgiLibrary(new File(libraryNode.get(
+            PREF_JAR, "")));
         library.setSource(libraryNode.get(PREF_SOURCE, null));
-        library.setUserDefined("true".equalsIgnoreCase(libraryNode.get(PREF_USER_DEFINED, "false")));
+        library.setUserDefined("true".equalsIgnoreCase(libraryNode.get(
+            PREF_USER_DEFINED, "false")));
         runtimeLibs.add(library);
-      } catch (Exception e) {}
+      } catch (Exception e) {
+      }
       idx++;
     }
 
     // Default definition
-    defaultDefinition = "true".equalsIgnoreCase(node.get(PREF_DEFAULT_DEFINITION, "false"));
+    defaultDefinition = "true".equalsIgnoreCase(node.get(
+        PREF_DEFAULT_DEFINITION, "false"));
 
     // Bundles
     Preferences bundlesNode = node.node(PREF_BUNDLES);
-    String [] bundleNames = bundlesNode.childrenNames();
+    String[] bundleNames = bundlesNode.childrenNames();
     bundles.clear();
     if (bundleNames != null) {
-      for (int i=0; i<bundleNames.length; i++) {
+      for (int i = 0; i < bundleNames.length; i++) {
         Preferences bundleNode = bundlesNode.node(bundleNames[i]);
         try {
-          OsgiBundle bundle = new OsgiBundle(new File(bundleNode.get(PREF_JAR, "")));
+          OsgiBundle bundle = new OsgiBundle(new File(bundleNode.get(PREF_JAR,
+              "")));
           bundle.setSource(bundleNode.get(PREF_SOURCE, null));
-          bundle.setUserDefined("true".equalsIgnoreCase(bundleNode.get(PREF_USER_DEFINED, "false")));
+          bundle.setUserDefined("true".equalsIgnoreCase(bundleNode.get(
+              PREF_USER_DEFINED, "false")));
           bundles.add(bundle);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
       }
     }
 
-    // Property Groups
+    // System Property Groups
     Preferences propertyGroupsNode = node.node(PREF_PROPERTY_GROUPS);
     propertyGroups.clear();
     String[] propertyGroupNodeNames = propertyGroupsNode.childrenNames();
-    for (int i=0; i<propertyGroupNodeNames.length; i++) {
-      SystemPropertyGroup propertyGroup = new SystemPropertyGroup(propertyGroupNodeNames[i]);
-      Preferences propertyGroupNode = propertyGroupsNode.node(propertyGroup.getName());
-      
+    for (int i = 0; i < propertyGroupNodeNames.length; i++) {
+      PropertyGroup propertyGroup = new PropertyGroup(propertyGroupNodeNames[i]);
+      Preferences propertyGroupNode = propertyGroupsNode.node(propertyGroup
+          .getName());
+
       // Properties
       String[] propertyNodeNames = propertyGroupNode.childrenNames();
-      for (int j=0; j<propertyNodeNames.length; j++) {
-        SystemProperty property = new SystemProperty(propertyNodeNames[j]);
+      for (int j = 0; j < propertyNodeNames.length; j++) {
+        Property property = new Property(propertyNodeNames[j]);
         Preferences propertyNode = propertyGroupNode.node(property.getName());
-        
+
         // Default value
         String value = propertyNode.get(PREF_PROPERTY_DEFAULT, null);
         if (value != null && value.trim().length() > 0) {
           property.setDefaultValue(value);
           property.setValue(value);
         }
+        // Type
+        value = propertyNode.get(PREF_PROPERTY_TYPE, null);
+        if (value != null && value.trim().length() > 0) {
+          if (Property.FRAMEWORK_PROPERTY.equals(value)) {
+            property.setType(value);
+          } else {
+            property.setType(Property.SYSTEM_PROPERTY);
+          }
+        }
         // Description
         value = propertyNode.get(PREF_PROPERTY_DESCRIPTION, null);
         if (value != null && value.trim().length() > 0) {
           property.setDescription(value);
         }
-        
+
         // Allowed values
         value = propertyNode.get(PREF_PROPERTY_ALLOWED, null);
         if (value != null && value.trim().length() > 0) {
-          ArrayList values = new ArrayList();
+          ArrayList<String> values = new ArrayList<String>();
           StringTokenizer st = new StringTokenizer(value, ",");
-          while(st.hasMoreTokens()) {
+          while (st.hasMoreTokens()) {
             String token = st.nextToken();
             values.add(token);
           }
           property.setAllowedValues(values);
         }
-        
+
         propertyGroup.addSystemProperty(property);
       }
-      
+
       addSystemPropertyGroup(propertyGroup);
     }
   }
 
-  protected void save(Preferences node) throws BackingStoreException {
+  protected void save(Preferences node) throws BackingStoreException
+  {
     // Save preferences in node
     Preferences subNode = node.node(name);
-    
+
     // Type
     if (type != null) {
       subNode.put(PREF_TYPE, type);
@@ -208,7 +232,7 @@ public class FrameworkPreference {
     } else {
       subNode.remove(PREF_LOCATION);
     }
-    // Default Settings 
+    // Default Settings
     subNode.putBoolean(PREF_DEFAULT_SETTINGS, defaultSettings);
     // Main class
     if (mainClass != null) {
@@ -219,25 +243,25 @@ public class FrameworkPreference {
     // Runtime Libraries
     subNode.node(PREF_RUNTIME_LIBRARIES).removeNode();
     Preferences librariesNode = subNode.node(PREF_RUNTIME_LIBRARIES);
-    for (int i=0; i<runtimeLibs.size(); i++) {
-      OsgiLibrary library = (OsgiLibrary) runtimeLibs.get(i);
-      Preferences libraryNode = librariesNode.node("Library "+i);
+    for (int i = 0; i < runtimeLibs.size(); i++) {
+      IOsgiLibrary library = runtimeLibs.get(i);
+      Preferences libraryNode = librariesNode.node("Library " + i);
       libraryNode.put(PREF_JAR, library.getPath());
       if (library.getSource() != null) {
         libraryNode.put(PREF_SOURCE, library.getSource());
       }
       libraryNode.putBoolean(PREF_USER_DEFINED, library.isUserDefined());
     }
-    
+
     // Default definition
     subNode.putBoolean(PREF_DEFAULT_DEFINITION, defaultDefinition);
-    
+
     // Bundles
     subNode.node(PREF_BUNDLES).removeNode();
     Preferences bundlesNode = subNode.node(PREF_BUNDLES);
-    for (int i=0; i<bundles.size(); i++) {
-      OsgiBundle bundle = (OsgiBundle) bundles.get(i);
-      Preferences bundleNode = bundlesNode.node("Bundle "+i);
+    for (int i = 0; i < bundles.size(); i++) {
+      IOsgiBundle bundle = bundles.get(i);
+      Preferences bundleNode = bundlesNode.node("Bundle " + i);
       bundleNode.put(PREF_JAR, bundle.getPath());
       if (bundle.getSource() != null) {
         bundleNode.put(PREF_SOURCE, bundle.getSource());
@@ -248,14 +272,15 @@ public class FrameworkPreference {
     // Property Groups
     subNode.node(PREF_PROPERTY_GROUPS).removeNode();
     Preferences propertyGroupsNode = subNode.node(PREF_PROPERTY_GROUPS);
-    for (int i=0; i<propertyGroups.size(); i++) {
-      SystemPropertyGroup propertyGroup = (SystemPropertyGroup) propertyGroups.get(i);
-      Preferences propertyGroupNode = propertyGroupsNode.node(propertyGroup.getName());
-      
+    for (int i = 0; i < propertyGroups.size(); i++) {
+      PropertyGroup propertyGroup = (PropertyGroup) propertyGroups.get(i);
+      Preferences propertyGroupNode = propertyGroupsNode.node(propertyGroup
+          .getName());
+
       // Properties
-      SystemProperty[] properties = propertyGroup.getProperties();
-      for (int j=0; j<properties.length; j++) {
-        SystemProperty property = properties[j];
+      Property[] properties = propertyGroup.getProperties();
+      for (int j = 0; j < properties.length; j++) {
+        Property property = properties[j];
         Preferences propertyNode = propertyGroupNode.node(property.getName());
 
         // Default value
@@ -263,171 +288,202 @@ public class FrameworkPreference {
         if (value != null && value.trim().length() > 0) {
           propertyNode.put(PREF_PROPERTY_DEFAULT, value);
         }
+        // Type
+        value = property.getType();
+        if (value != null && value.trim().length() > 0) {
+          propertyNode.put(PREF_PROPERTY_TYPE, value);
+        }
         // Description
         value = property.getDescription();
         if (value != null && value.trim().length() > 0) {
           propertyNode.put(PREF_PROPERTY_DESCRIPTION, value);
         }
         // Allowed values
-        List values = property.getAllowedValues();
-        if (values != null && values.size() >0) {
+        List<String> values = property.getAllowedValues();
+        if (values != null && values.size() > 0) {
           StringBuffer buf = new StringBuffer();
-          for (int k=0; k<values.size();k++) {
-            buf.append(values.get(k));
+          for (String s : values) {
+            buf.append(s);
             buf.append(",");
           }
           // Remove last ','
-          buf.setLength(buf.length()-1);
+          buf.setLength(buf.length() - 1);
           propertyNode.put(PREF_PROPERTY_ALLOWED, buf.toString());
         }
       }
     }
   }
-  
+
   /****************************************************************************
    * Getters and Setters
    ***************************************************************************/
-  
-  public boolean isDefaultDefinition() {
+
+  public boolean isDefaultDefinition()
+  {
     return defaultDefinition;
   }
-  
+
   /**
-   * @param defaultDefinition The defaultDefinition to set.
+   * @param defaultDefinition
+   *          The defaultDefinition to set.
    */
-  public void setDefaultDefinition(boolean defaultDefinition) {
+  public void setDefaultDefinition(boolean defaultDefinition)
+  {
     this.defaultDefinition = defaultDefinition;
   }
 
   /**
    * @return Returns the type.
    */
-  public String getType() {
+  public String getType()
+  {
     return type;
   }
-  
+
   /**
-   * @param type The type to set.
+   * @param type
+   *          The type to set.
    */
-  public void setType(String type) {
+  public void setType(String type)
+  {
     this.type = type;
   }
 
-  public String getSpecificationVersion() {
+  public String getSpecificationVersion()
+  {
     return specificationVersion;
   }
-  
-  public void setSpecificationVersion(String specificationVersion) {
+
+  public void setSpecificationVersion(String specificationVersion)
+  {
     this.specificationVersion = specificationVersion;
   }
 
-  /* (non-Javadoc)
-   * @see org.gstproject.eclipse.osgi.IOsgiInstall#getName()
-   */
-  public String getName() {
+  public String getName()
+  {
     return name;
   }
-  
+
   /**
-   * @param name The name to set.
+   * @param name
+   *          The name to set.
    */
-  public void setName(String name) {
+  public void setName(String name)
+  {
     this.name = name;
   }
 
   /**
-   * @param location The location to set.
+   * @param location
+   *          The location to set.
    */
-  public void setLocation(String location) {
+  public void setLocation(String location)
+  {
     this.location = location;
   }
+
   /**
    * @return Returns the location.
    */
-  public String getLocation() {
+  public String getLocation()
+  {
     return location;
   }
 
-  public boolean isDefaultSettings() {
+  public boolean isDefaultSettings()
+  {
     return defaultSettings;
   }
-  
-  public void setDefaultSettings(boolean defaultSettings) {
+
+  public void setDefaultSettings(boolean defaultSettings)
+  {
     this.defaultSettings = defaultSettings;
   }
 
-  /* (non-Javadoc)
-   * @see org.gstproject.eclipse.osgi.IOsgiInstall#getMainClass()
-   */
-  public String getMainClass() {
+  public String getMainClass()
+  {
     return mainClass;
   }
 
   /**
-   * @param mainClass The mainClass to set.
+   * @param mainClass
+   *          The mainClass to set.
    */
-  public void setMainClass(String mainClass) {
+  public void setMainClass(String mainClass)
+  {
     this.mainClass = mainClass;
   }
 
-  /* (non-Javadoc)
-   * @see org.gstproject.eclipse.osgi.IOsgiInstall#getLibraries()
-   */
-  public IOsgiLibrary[] getRuntimeLibraries() {
-    return (OsgiLibrary[]) runtimeLibs.toArray(new OsgiLibrary[runtimeLibs.size()]);
+  public IOsgiLibrary[] getRuntimeLibraries()
+  {
+    return runtimeLibs.toArray(new OsgiLibrary[runtimeLibs.size()]);
   }
 
-  public void setRuntimeLibraries(IOsgiLibrary[] libraries) {
+  public void setRuntimeLibraries(IOsgiLibrary[] libraries)
+  {
     runtimeLibs.clear();
-    if (libraries == null) return;
-    for(int i=0; i<libraries.length; i++) {
+    if (libraries == null)
+      return;
+    for (int i = 0; i < libraries.length; i++) {
       runtimeLibs.add(libraries[i]);
     }
   }
 
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see org.knopflerfish.eclipse.core.IOsgiInstall#getBundles()
    */
-  public IOsgiBundle[] getBundles() {
+  public IOsgiBundle[] getBundles()
+  {
     return (OsgiBundle[]) bundles.toArray(new OsgiBundle[bundles.size()]);
   }
 
-  public void setBundles(IOsgiBundle[] libraries) {
+  public void setBundles(IOsgiBundle[] libraries)
+  {
     bundles.clear();
-    if (libraries == null) return;
-    for(int i=0; i<libraries.length; i++) {
+    if (libraries == null)
+      return;
+    for (int i = 0; i < libraries.length; i++) {
       bundles.add(libraries[i]);
     }
   }
 
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see org.knopflerfish.eclipse.core.IOsgiInstall#getSystemProperties()
    */
-  public SystemPropertyGroup[] getSystemPropertyGroups() {
-    return (SystemPropertyGroup[]) propertyGroups.toArray(new SystemPropertyGroup[propertyGroups.size()]);
+  public PropertyGroup[] getSystemPropertyGroups()
+  {
+    return (PropertyGroup[]) propertyGroups
+        .toArray(new PropertyGroup[propertyGroups.size()]);
   }
 
-  public void setSystemPropertyGroups(ArrayList propertyGroups) {
-    this.propertyGroups = propertyGroups;
+  public void setSystemPropertyGroups(Collection<PropertyGroup> groups)
+  {
+    propertyGroups.clear();
+    propertyGroups.addAll(groups);
   }
 
-  public void addSystemPropertyGroup(SystemPropertyGroup group) {
+  public void addSystemPropertyGroup(PropertyGroup group)
+  {
     if (group != null && !propertyGroups.contains(group)) {
       propertyGroups.add(group);
     }
   }
 
-  public void clearSystemPropertyGroups() {
+  public void clearSystemPropertyGroups()
+  {
     propertyGroups.clear();
   }
 
-  public SystemProperty findSystemProperty(String name) {
-    for(int i=0; i<propertyGroups.size();i++) {
-      SystemPropertyGroup group = (SystemPropertyGroup) propertyGroups.get(i);
-      SystemProperty property = group.findSystemProperty(name);
-      if (property != null) return property;
+  public Property findSystemProperty(String name)
+  {
+    for (PropertyGroup group : propertyGroups) {
+      Property property = group.findSystemProperty(name);
+      if (property != null)
+        return property;
     }
     return null;
   }
