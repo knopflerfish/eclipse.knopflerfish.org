@@ -34,10 +34,12 @@
 
 package org.knopflerfish.eclipse.core.ui.launcher.main;
 
+import java.util.Arrays;
+
 import org.eclipse.jface.viewers.ICellModifier;
 import org.eclipse.swt.widgets.Item;
-import org.knopflerfish.eclipse.core.SystemProperty;
-import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.Property;
+import org.knopflerfish.eclipse.core.PropertyGroup;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 
 /**
@@ -45,23 +47,27 @@ import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
  * @see http://www.gatespacetelematics.com/
  */
 public class SystemPropertyCellModifier implements ICellModifier {
-  
+
   private MainTab mainTab;
-  
-  public SystemPropertyCellModifier(MainTab mainTab) {
+
+  public SystemPropertyCellModifier(MainTab mainTab)
+  {
     this.mainTab = mainTab;
   }
-  public boolean canModify(Object element, String cellProperty) {
+
+  public boolean canModify(Object element, String cellProperty)
+  {
     if (element instanceof FrameworkPreference) {
       return false;
-    } else if (element instanceof SystemPropertyGroup) {
+    } else if (element instanceof PropertyGroup) {
       return false;
-    } else if (element instanceof SystemProperty) {
-      SystemProperty p = (SystemProperty) element;
-      if (MainTab.PROP_VALUE.equals(cellProperty)) {
+    } else if (element instanceof Property) {
+      Property p = (Property) element;
+      if (MainTab.PROP_VALUE.equals(cellProperty)
+          || MainTab.PROP_TYPE.equals(cellProperty)) {
         return true;
-      } else if (MainTab.PROP_NAME.equals(cellProperty) && 
-          MainTab.USER_GROUP.equals(p.getSystemPropertyGroup().getName())) {
+      } else if (MainTab.PROP_NAME.equals(cellProperty)
+          && MainTab.USER_GROUP.equals(p.getSystemPropertyGroup().getName())) {
         return true;
       } else {
         return false;
@@ -70,30 +76,44 @@ public class SystemPropertyCellModifier implements ICellModifier {
       return false;
     }
   }
-  
-  public Object getValue(Object element, String cellProperty) {
-    SystemProperty property = (SystemProperty) element;
+
+  public Object getValue(Object element, String cellProperty)
+  {
+    Property property = (Property) element;
     if (MainTab.PROP_NAME.equals(cellProperty)) {
       return property.getName();
     } else if (MainTab.PROP_VALUE.equals(cellProperty)) {
       String value = property.getValue();
-      if (value == null || value.trim().length()==0) {
+      if (value == null || value.trim().length() == 0) {
         value = property.getDefaultValue();
       }
-      if (value == null || value.trim().length()==0) {
+      if (value == null || value.trim().length() == 0) {
         value = "";
       }
       return value;
+    } else if (MainTab.PROP_TYPE.equals(cellProperty)) {
+      String type = property.getType();
+      int idx = Arrays.binarySearch(Property.TYPES, type);
+      if (idx < 0) {
+        idx = 0;
+      }
+      return new Integer(idx);
     } else {
       return null;
     }
   }
-  
-  public void modify(Object element, String cellProperty, Object value) {
-    if (element instanceof Item && ((Item) element).getData() instanceof SystemProperty) {
-      SystemProperty property = (SystemProperty) ((Item) element).getData();
+
+  public void modify(Object element, String cellProperty, Object value)
+  {
+    if (element instanceof Item
+        && ((Item) element).getData() instanceof Property) {
+      Property property = (Property) ((Item) element).getData();
       if (MainTab.PROP_NAME.equals(cellProperty)) {
         property.setName((String) value);
+        mainTab.update(property);
+      } else if (MainTab.PROP_TYPE.equals(cellProperty)) {
+        int type = ((Integer) value).intValue();
+        property.setType(Property.TYPES[type]);
         mainTab.update(property);
       } else if (MainTab.PROP_VALUE.equals(cellProperty)) {
         property.setValue((String) value);
@@ -102,5 +122,5 @@ public class SystemPropertyCellModifier implements ICellModifier {
       }
     }
   }
-  
+
 }

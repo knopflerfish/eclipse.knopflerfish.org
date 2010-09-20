@@ -76,7 +76,7 @@ import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
-import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.PropertyGroup;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.ui.dialogs.ImportLibrariesDialog;
@@ -213,7 +213,7 @@ public class FrameworkDialog extends Dialog {
     distribution.clearSystemPropertyGroups();
     String type = wTypeCombo.getText();
     IFrameworkDefinition def = (IFrameworkDefinition) distributions.get(type);
-    SystemPropertyGroup[] groups = def.getSystemPropertyGroups();
+    PropertyGroup[] groups = def.getSystemPropertyGroups();
     if(groups != null) {
       for (int i=0; i<groups.length; i++) {
         distribution.addSystemPropertyGroup(groups[i]);
