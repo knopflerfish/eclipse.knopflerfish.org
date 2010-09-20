@@ -35,7 +35,6 @@
 package org.knopflerfish.eclipse.core.ui.launcher.main;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -48,6 +47,7 @@ import org.eclipse.debug.core.sourcelookup.ISourcePathComputer;
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.ComboBoxCellEditor;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
@@ -78,8 +78,8 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.knopflerfish.eclipse.core.SystemProperty;
-import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.Property;
+import org.knopflerfish.eclipse.core.PropertyGroup;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.launcher.SourcePathComputer;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
@@ -92,85 +92,100 @@ import org.knopflerfish.eclipse.core.ui.UiUtils;
  * @see http://www.gatespacetelematics.com/
  */
 public class MainTab extends AbstractLaunchConfigurationTab {
-  private static String IMAGE = "icons/obj16/osgi_obj.gif";
-  
+  private static String IMAGE = "icons/obj16/kf-16x16.png";
+
   // Default values
   private static final String DEFAULT_RUNTIME_PATH = "runtime-osgi";
-  public static final int DEFAULT_START_LEVEL     = 10;
-  
+  public static final int DEFAULT_START_LEVEL = 10;
+
   // Column Properties
-  public static String PROP_NAME  = "name";
+  public static String PROP_NAME = "name";
   public static String PROP_VALUE = "value";
-  
+  public static String PROP_TYPE = "type";
+
   private static final int NUM_ROWS_DESCRIPTION = 5;
   private int MARGIN = 5;
-  
-  protected static final String USER_GROUP                 = "User Defined";
+
+  protected static final String USER_GROUP = "User Defined";
   protected static final String DEFAULT_USER_PROPERTY_NAME = "user.property.";
-  
+
   // Widgets
   private Composite wPageComposite;
-  private Combo     wOsgiInstallCombo;
-  Text      wInstanceDirText;
-  private Spinner   wStartLevelSpinner;
-  private Button    wInitButton;
-  private Button    wAddPropertyButton;
-  private Button    wRemovePropertyButton;
-  private Label     wDescriptionLabel;
-  private Label     wDescriptionText;
-  private Label     wDefaultLabel;
-  private Label     wDefaultText;
-  
-  TreeViewer    wPropertyTreeViewer;
+  private Combo wOsgiInstallCombo;
+  Text wInstanceDirText;
+  private Spinner wStartLevelSpinner;
+  private Button wInitButton;
+  private Button wAddPropertyButton;
+  private Button wRemovePropertyButton;
+  private Label wDescriptionLabel;
+  private Label wDescriptionText;
+  private Label wDefaultLabel;
+  private Label wDefaultText;
+
+  TreeViewer wPropertyTreeViewer;
   int treeWidth = -1;
 
   // Resources
   private Image imageTab = null;
-  
-  SystemPropertyGroup userGroup = new SystemPropertyGroup(USER_GROUP);
-  Map systemProperties;
-  
-  public MainTab() {
-    ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui", IMAGE);
+
+  PropertyGroup userGroup = new PropertyGroup(USER_GROUP);
+  Map<String, String> systemProperties;
+
+  public MainTab()
+  {
+    ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin(
+        "org.knopflerfish.eclipse.core.ui", IMAGE);
     if (id != null) {
       imageTab = id.createImage();
     }
   }
-  
+
   /****************************************************************************
    * org.eclipse.debug.ui.ILaunchConfigurationTab Methods
    ***************************************************************************/
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
+   * 
    * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getName()
    */
-  public String getName() {
+  public String getName()
+  {
     return "Main";
   }
-  
+
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getImage()
    */
-  public Image getImage() {
+  public Image getImage()
+  {
     return imageTab;
   }
-  
+
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see org.eclipse.debug.ui.ILaunchConfigurationTab#dispose()
    */
-  public void dispose() {
+  public void dispose()
+  {
     if (imageTab != null) {
       imageTab.dispose();
       imageTab = null;
     }
   }
-  
-  /* (non-Javadoc)
-   * @see org.eclipse.debug.ui.ILaunchConfigurationTab#createControl(org.eclipse.swt.widgets.Composite)
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.debug.ui.ILaunchConfigurationTab#createControl(org.eclipse.
+   * swt.widgets.Composite)
    */
-  public void createControl(Composite parent) {
-    
+  public void createControl(Composite parent)
+  {
+
     wPageComposite = new Composite(parent, 0);
     setControl(wPageComposite);
     GridLayout layout = new GridLayout();
@@ -178,7 +193,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     layout.marginWidth = MARGIN;
     layout.numColumns = 1;
     wPageComposite.setLayout(layout);
-    
+
     // Location Group
     Group wLocationGroup = new Group(wPageComposite, SWT.SHADOW_IN);
     layout = new GridLayout();
@@ -191,10 +206,11 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wLocationGroup.setText("Instance Data");
     Label wLocationLabel = new Label(wLocationGroup, SWT.LEFT | SWT.WRAP);
     wLocationLabel.setText("Location:");
-    //wLocationLabel.setToolTipText(TOOLTIP_LOCATION);
+    // wLocationLabel.setToolTipText(TOOLTIP_LOCATION);
     wInstanceDirText = new Text(wLocationGroup, SWT.SINGLE | SWT.BORDER);
     wInstanceDirText.addModifyListener(new ModifyListener() {
-      public void modifyText(ModifyEvent e) {
+      public void modifyText(ModifyEvent e)
+      {
         updateDialog();
       }
     });
@@ -202,9 +218,11 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wInstanceDirText.setLayoutData(gd);
     Button wBrowseLocationButton = new Button(wLocationGroup, SWT.CENTER);
     wBrowseLocationButton.setText("Browse...");
-    wBrowseLocationButton.addSelectionListener(new SelectionAdapter(){
-      public void widgetSelected(SelectionEvent e) {
-        DirectoryDialog dialog = new DirectoryDialog(((Button) e.widget).getShell());
+    wBrowseLocationButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e)
+      {
+        DirectoryDialog dialog = new DirectoryDialog(((Button) e.widget)
+            .getShell());
         dialog.setFilterPath(wInstanceDirText.getText());
         String path = dialog.open();
         if (path != null) {
@@ -213,7 +231,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         }
       }
     });
-    
+
     // Framework Group
     Group wFrameworkGroup = new Group(wPageComposite, SWT.SHADOW_IN);
     layout = new GridLayout();
@@ -228,9 +246,11 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     // OSGi framework
     Label wFrameworkLabel = new Label(wFrameworkGroup, SWT.LEFT | SWT.WRAP);
     wFrameworkLabel.setText("Framework:");
-    wOsgiInstallCombo = new Combo(wFrameworkGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
+    wOsgiInstallCombo = new Combo(wFrameworkGroup, SWT.DROP_DOWN
+        | SWT.READ_ONLY);
     wOsgiInstallCombo.addSelectionListener(new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e) {
+      public void widgetSelected(SelectionEvent e)
+      {
         updateDialog();
         // Update System Properties accepted by this framework
         initializeSystemProperties(systemProperties);
@@ -241,8 +261,9 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     Label wStartLevelLabel = new Label(wFrameworkGroup, SWT.LEFT | SWT.WRAP);
     wStartLevelLabel.setText("Initial Start Level:");
     wStartLevelSpinner = new Spinner(wFrameworkGroup, SWT.READ_ONLY);
-    wStartLevelSpinner.addSelectionListener(new SelectionAdapter(){
-      public void widgetSelected(SelectionEvent e) {
+    wStartLevelSpinner.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e)
+      {
         updateDialog();
       }
     });
@@ -251,16 +272,17 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
     wInitButton = new Button(wFrameworkGroup, SWT.CHECK);
     wInitButton.setText("Clear bundle cache when starting framework");
-    wInitButton.addSelectionListener(new SelectionAdapter(){
-      public void widgetSelected(SelectionEvent e) {
+    wInitButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e)
+      {
         updateDialog();
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
-    gd.horizontalSpan=2;
+    gd.horizontalSpan = 2;
     wInitButton.setLayoutData(gd);
-    
-    // Properties Group
+
+    // System Properties Group
     Group wPropertyGroup = new Group(wPageComposite, SWT.SHADOW_IN);
     FormLayout formLayout = new FormLayout();
     formLayout.marginHeight = MARGIN;
@@ -268,19 +290,25 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wPropertyGroup.setLayout(formLayout);
     gd = new GridData(GridData.FILL_BOTH);
     wPropertyGroup.setLayoutData(gd);
-    wPropertyGroup.setText("System Properties");
-    
-    Tree wPropertyTree = new Tree(wPropertyGroup, SWT.BORDER | SWT.FULL_SELECTION);
+    wPropertyGroup.setText("Properties");
+
+    Tree wPropertyTree = new Tree(wPropertyGroup, SWT.BORDER
+        | SWT.FULL_SELECTION);
     wPropertyTreeViewer = new TreeViewer(wPropertyTree);
     wPropertyTreeViewer.setContentProvider(new SystemPropertyContentProvider());
     wPropertyTreeViewer.setLabelProvider(new SystemPropertyLabelProvider());
     wPropertyTreeViewer.setSorter(new SystemPropertySorter());
-    wPropertyTreeViewer.setColumnProperties(new String[] {PROP_NAME, PROP_VALUE});
+    wPropertyTreeViewer.setColumnProperties(new String[] { PROP_NAME,
+        PROP_VALUE, PROP_TYPE });
     wPropertyTreeViewer.setCellModifier(new SystemPropertyCellModifier(this));
-    TextCellEditor propertyNameEditor = new TextCellEditor(wPropertyTree, SWT.NONE);
-    TextCellEditor propertyValueEditor = new TextCellEditor(wPropertyTree, SWT.NONE);
-    wPropertyTreeViewer.setCellEditors(
-        new CellEditor[] {propertyNameEditor, propertyValueEditor});
+    TextCellEditor propertyNameEditor = new TextCellEditor(wPropertyTree,
+        SWT.NONE);
+    TextCellEditor propertyValueEditor = new TextCellEditor(wPropertyTree,
+        SWT.NONE);
+    ComboBoxCellEditor propertyTypeEditor = new ComboBoxCellEditor(
+        wPropertyTree, Property.TYPES, SWT.DROP_DOWN | SWT.READ_ONLY);
+    wPropertyTreeViewer.setCellEditors(new CellEditor[] { propertyNameEditor,
+        propertyValueEditor, propertyTypeEditor });
 
     wPropertyTree.setHeaderVisible(true);
     wPropertyTree.setLinesVisible(true);
@@ -289,18 +317,24 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wPropertyTreeColumn.setText("Property");
     TreeColumn wValueTreeColumn = new TreeColumn(wPropertyTree, SWT.LEFT);
     wValueTreeColumn.setText("Value");
-    wPropertyTreeViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-      public void selectionChanged(SelectionChangedEvent event) {
-        // Show property info
-        showPropertyInfo();
-      }
-    });
+    TreeColumn wTypeTreeColumn = new TreeColumn(wPropertyTree, SWT.LEFT);
+    wTypeTreeColumn.setText("Type");
+    wPropertyTreeViewer
+        .addSelectionChangedListener(new ISelectionChangedListener() {
+          public void selectionChanged(SelectionChangedEvent event)
+          {
+            // Show property info
+            showPropertyInfo();
+          }
+        });
     wPropertyTreeViewer.getTree().addControlListener(new ControlListener() {
 
-      public void controlMoved(ControlEvent e) {
+      public void controlMoved(ControlEvent e)
+      {
       }
 
-      public void controlResized(ControlEvent e) {
+      public void controlResized(ControlEvent e)
+      {
         Tree tree = wPropertyTreeViewer.getTree();
         int width = tree.getBounds().width;
         int borderWidth = tree.getBorderWidth();
@@ -309,35 +343,40 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         ScrollBar bar = tree.getVerticalBar();
         if (bar != null && bar.isVisible()) {
           barWidth = bar.getSize().x;
-        }        
-        
-        TreeColumn [] columns = tree.getColumns();
-        width = width-2*borderWidth-(columns.length-1)*gridLineWidth-barWidth;
-        if (width == treeWidth) return;
+        }
+
+        TreeColumn[] columns = tree.getColumns();
+        width = width - 2 * borderWidth - (columns.length - 1) * gridLineWidth
+            - barWidth;
+        if (width == treeWidth)
+          return;
         treeWidth = width;
-        
-        int colWidth = width / 3;
+
+        int colWidth = width / 4;
         // Name columm
-        columns[0].setWidth(2*colWidth);
+        columns[0].setWidth(2 * colWidth);
         // Value columm
         columns[1].setWidth(colWidth);
+        // Type columm
+        columns[2].setWidth(colWidth);
       }
-      
+
     });
-    
+
     wAddPropertyButton = new Button(wPropertyGroup, SWT.PUSH);
-    wAddPropertyButton.setText("Add...");
-    wAddPropertyButton.addSelectionListener(new SelectionAdapter(){
-      public void widgetSelected(SelectionEvent e) {
+    wAddPropertyButton.setText("Add");
+    wAddPropertyButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e)
+      {
         // Find unused property name
         StringBuffer buf = new StringBuffer(DEFAULT_USER_PROPERTY_NAME);
         int idx = 0;
-        SystemProperty property = null;
+        Property property = null;
         do {
           buf.setLength(DEFAULT_USER_PROPERTY_NAME.length());
           buf.append(idx++);
-          property = new SystemProperty(buf.toString());
-        } while(userGroup.contains(property)); 
+          property = new Property(buf.toString());
+        } while (userGroup.contains(property));
 
         // System property and start edit property name
         userGroup.addSystemProperty(property);
@@ -349,16 +388,18 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     });
     wRemovePropertyButton = new Button(wPropertyGroup, SWT.PUSH);
     wRemovePropertyButton.setText("Remove");
-    wRemovePropertyButton.addSelectionListener(new SelectionAdapter(){
-      public void widgetSelected(SelectionEvent e) {
-        IStructuredSelection selection = 
-          (IStructuredSelection) wPropertyTreeViewer.getSelection();
+    wRemovePropertyButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e)
+      {
+        IStructuredSelection selection = (IStructuredSelection) wPropertyTreeViewer
+            .getSelection();
 
-        SystemProperty property = null;
-        if (selection != null && !selection.isEmpty() && selection.getFirstElement() instanceof SystemProperty) {
-          property = (SystemProperty) selection.getFirstElement();
+        Property property = null;
+        if (selection != null && !selection.isEmpty()
+            && selection.getFirstElement() instanceof Property) {
+          property = (Property) selection.getFirstElement();
         }
-        
+
         if (property != null) {
           userGroup.removeSystemProperty(property);
           wPropertyTreeViewer.refresh();
@@ -366,46 +407,47 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         }
       }
     });
-    
-    //Description
+
+    // Description
     wDescriptionLabel = new Label(wPropertyGroup, SWT.LEFT);
     wDescriptionLabel.setText("Description:");
-    wDescriptionText = new Label(wPropertyGroup, SWT.LEFT| SWT.WRAP);
+    wDescriptionText = new Label(wPropertyGroup, SWT.LEFT | SWT.WRAP);
     wDefaultLabel = new Label(wPropertyGroup, SWT.LEFT);
     wDefaultLabel.setText("Default Value:");
     wDefaultText = new Label(wPropertyGroup, SWT.LEFT);
 
     // Layout
     FormData fd = new FormData();
-    fd.left = new FormAttachment(0,0);
-    fd.top = new FormAttachment(0,0);
-    fd.right = new FormAttachment(wRemovePropertyButton,-5,SWT.LEFT);
+    fd.left = new FormAttachment(0, 0);
+    fd.top = new FormAttachment(0, 0);
+    fd.right = new FormAttachment(wRemovePropertyButton, -5, SWT.LEFT);
     fd.bottom = new FormAttachment(wDescriptionLabel, -5, SWT.TOP);
     wPropertyTree.setLayoutData(fd);
-    
+
     fd = new FormData();
-    //data.left = new FormAttachment(wBundleAttachButton, 0, SWT.LEFT);
+    // data.left = new FormAttachment(wBundleAttachButton, 0, SWT.LEFT);
     fd.right = new FormAttachment(100, 0);
-    fd.top = new FormAttachment(wPropertyTree,0,SWT.TOP);
+    fd.top = new FormAttachment(wPropertyTree, 0, SWT.TOP);
     wRemovePropertyButton.setLayoutData(fd);
-    
+
     fd = new FormData();
     fd.left = new FormAttachment(wRemovePropertyButton, 0, SWT.LEFT);
     fd.right = new FormAttachment(100, 0);
-    fd.top = new FormAttachment(wRemovePropertyButton,5,SWT.BOTTOM);
+    fd.top = new FormAttachment(wRemovePropertyButton, 5, SWT.BOTTOM);
     wAddPropertyButton.setLayoutData(fd);
 
     fd = new FormData();
     fd.left = new FormAttachment(0, 0);
     fd.right = new FormAttachment(wPropertyTree, 0, SWT.RIGHT);
-    fd.bottom = new FormAttachment(wDescriptionText, -5,SWT.TOP);
+    fd.bottom = new FormAttachment(wDescriptionText, -5, SWT.TOP);
     wDescriptionLabel.setLayoutData(fd);
 
     fd = new FormData();
     fd.left = new FormAttachment(0, 0);
     fd.right = new FormAttachment(wPropertyTree, 0, SWT.RIGHT);
-    fd.bottom = new FormAttachment(wDefaultText, -5,SWT.TOP);
-    fd.height = UiUtils.convertHeightInCharsToPixels(wDescriptionText, NUM_ROWS_DESCRIPTION);
+    fd.bottom = new FormAttachment(wDefaultText, -5, SWT.TOP);
+    fd.height = UiUtils.convertHeightInCharsToPixels(wDescriptionText,
+        NUM_ROWS_DESCRIPTION);
     wDescriptionText.setLayoutData(fd);
 
     fd = new FormData();
@@ -422,167 +464,225 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
     showPropertyInfo();
   }
-  
-  /* (non-Javadoc)
-   * @see org.eclipse.debug.ui.ILaunchConfigurationTab#setDefaults(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.debug.ui.ILaunchConfigurationTab#setDefaults(org.eclipse.debug
+   * .core.ILaunchConfigurationWorkingCopy)
    */
-  public void setDefaults(ILaunchConfigurationWorkingCopy configuration) {
+  public void setDefaults(ILaunchConfigurationWorkingCopy configuration)
+  {
     // New configuration created, set default values
 
     // Set default framework
     FrameworkPreference distribution = OsgiPreferences.getDefaultFramework();
     if (distribution != null) {
-      configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, distribution.getName());
+      configuration.setAttribute(
+          IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, distribution
+              .getName());
     }
-    
-    // Set default instance directory 
+
+    // Set default instance directory
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
     IPath path = root.getLocation();
     path = path.append(DEFAULT_RUNTIME_PATH);
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, path.toString());
-    
+    configuration.setAttribute(
+        IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, path.toString());
+
     // Set default instance settings
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, true);
-    
+    configuration.setAttribute(
+        IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, true);
+
     // Set default start level
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, DEFAULT_START_LEVEL);
-    
-    // Set default properties 
-    HashMap properties = new HashMap();
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, properties);   
-    
-    configuration.setAttribute(ISourcePathComputer.ATTR_SOURCE_PATH_COMPUTER_ID, SourcePathComputer.ID);
+    configuration
+        .setAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL,
+            DEFAULT_START_LEVEL);
+
+    // Set default properties
+    HashMap<String, String> properties = new HashMap<String, String>();
+    configuration.setAttribute(
+        IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, properties);
+
+    configuration
+        .setAttribute(ISourcePathComputer.ATTR_SOURCE_PATH_COMPUTER_ID,
+            SourcePathComputer.ID);
   }
 
-  /* (non-Javadoc)
-   * @see org.eclipse.debug.ui.ILaunchConfigurationTab#initializeFrom(org.eclipse.debug.core.ILaunchConfiguration)
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.debug.ui.ILaunchConfigurationTab#initializeFrom(org.eclipse
+   * .debug.core.ILaunchConfiguration)
    */
-  public void initializeFrom(ILaunchConfiguration configuration) {
+  public void initializeFrom(ILaunchConfiguration configuration)
+  {
     // Set values to GUI widgets
 
     // OSGi install
     updateOsgiInstalls();
     String installName = null;
     try {
-      installName = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
+      installName = configuration.getAttribute(
+          IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
     int idx = 0;
     if (installName != null) {
       idx = wOsgiInstallCombo.indexOf(installName);
-      if (idx < 0) idx = 0;
+      if (idx < 0)
+        idx = 0;
     }
     wOsgiInstallCombo.select(idx);
-    
-    // Instance directory 
+
+    // Instance directory
     String instanceDir = null;
     try {
-      instanceDir = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, "");
+      instanceDir = configuration.getAttribute(
+          IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, "");
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
     wInstanceDirText.setText(instanceDir);
-    
+
     // Clear bundle cache
     boolean instanceInit = false;
     try {
       // Instance settings
-      instanceInit = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, false);
+      instanceInit = configuration.getAttribute(
+          IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, false);
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
     wInitButton.setSelection(instanceInit);
-    
+
     // Start level
     int startLevel = DEFAULT_START_LEVEL;
     try {
-      startLevel = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, DEFAULT_START_LEVEL);
+      startLevel = configuration.getAttribute(
+          IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL,
+          DEFAULT_START_LEVEL);
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
     wStartLevelSpinner.setSelection(startLevel);
-    
+
     // Initialize default system properties list
     try {
-      systemProperties = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, (Map) null);
+      systemProperties = configuration.getAttribute(
+          IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES,
+          (Map<String, String>) null);
       initializeSystemProperties(systemProperties);
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
   }
 
-  /* (non-Javadoc)
-   * @see org.eclipse.debug.ui.ILaunchConfigurationTab#performApply(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.debug.ui.ILaunchConfigurationTab#performApply(org.eclipse.debug
+   * .core.ILaunchConfigurationWorkingCopy)
    */
-  public void performApply(ILaunchConfigurationWorkingCopy configuration) {
+  public void performApply(ILaunchConfigurationWorkingCopy configuration)
+  {
 
     // Read values from GUI widgets
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, 
-        wOsgiInstallCombo.getText());
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, 
-        wInstanceDirText.getText());
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, 
-        wInitButton.getSelection());
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, 
-        wStartLevelSpinner.getSelection());
-    configuration.setAttribute(ISourcePathComputer.ATTR_SOURCE_PATH_COMPUTER_ID, SourcePathComputer.ID);
-    
+    configuration.setAttribute(
+        IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, wOsgiInstallCombo
+            .getText());
+    configuration.setAttribute(
+        IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, wInstanceDirText
+            .getText());
+    configuration.setAttribute(
+        IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, wInitButton
+            .getSelection());
+    configuration.setAttribute(
+        IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, wStartLevelSpinner
+            .getSelection());
+    configuration
+        .setAttribute(ISourcePathComputer.ATTR_SOURCE_PATH_COMPUTER_ID,
+            SourcePathComputer.ID);
+
     // System Properties
     systemProperties = getSystemProperties();
-    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, systemProperties);
+    configuration.setAttribute(
+        IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, systemProperties);
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.debug.ui.ILaunchConfigurationTab#isValid(org.eclipse.debug.core.ILaunchConfiguration)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.debug.ui.ILaunchConfigurationTab#isValid(org.eclipse.debug.
+   * core.ILaunchConfiguration)
    */
-  public boolean isValid(ILaunchConfiguration configuration) {
+  public boolean isValid(ILaunchConfiguration configuration)
+  {
     // Verify Osgi install
     String name = null;
     try {
-      name = configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
+      name = configuration.getAttribute(
+          IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
-    if(OsgiPreferences.getFramework(name) == null) {
+    if (OsgiPreferences.getFramework(name) == null) {
       setErrorMessage("No framework selected.");
       return false;
     }
-    
-    
+
     // TODO: Verify instance directory
-    
+
     setErrorMessage(null);
     return true;
   }
-  
+
   /****************************************************************************
    * Private utility methods
    ***************************************************************************/
-  private void updateOsgiInstalls() {
+  private void updateOsgiInstalls()
+  {
     wOsgiInstallCombo.removeAll();
     FrameworkPreference[] distributions = OsgiPreferences.getFrameworks();
-    
-    for(int i=0; i<distributions.length;i++) {
+
+    for (int i = 0; i < distributions.length; i++) {
       wOsgiInstallCombo.add(distributions[i].getName());
     }
   }
-  
-  void initializeSystemProperties(Map properties) {
-    FrameworkPreference distribution = OsgiPreferences.getFramework(wOsgiInstallCombo.getText());
-    if (distribution == null) return;
+
+  void initializeSystemProperties(Map<String, String> properties)
+  {
+    FrameworkPreference distribution = OsgiPreferences
+        .getFramework(wOsgiInstallCombo.getText());
+    if (distribution == null)
+      return;
     distribution.addSystemPropertyGroup(userGroup);
     userGroup.clear();
     if (properties != null) {
-      for(Iterator i=properties.entrySet().iterator(); i.hasNext();) {
-        Map.Entry entry = (Map.Entry) i.next();
-        SystemProperty property = distribution.findSystemProperty((String) entry.getKey());
+      for (Map.Entry<String, String> element : properties.entrySet()) {
+        String name = element.getKey();
+        Property property = distribution.findSystemProperty(name);
+        String value = element.getValue();
+        String type = Property.SYSTEM_PROPERTY;
+        if (value.startsWith(Property.SYSTEM_PROPERTY + ":")) {
+          type = Property.SYSTEM_PROPERTY;
+          value = value.substring(Property.SYSTEM_PROPERTY.length() + 1);
+        } else if (value.startsWith(Property.FRAMEWORK_PROPERTY + ":")) {
+          type = Property.FRAMEWORK_PROPERTY;
+          value = value.substring(Property.FRAMEWORK_PROPERTY.length() + 1);
+        }
         if (property != null) {
-          property.setValue((String) entry.getValue());
+          property.setValue(value);
+          property.setType(type);
         } else {
-          property = new SystemProperty((String) entry.getKey());
-          property.setValue((String) entry.getValue());
+          property = new Property(name);
+          property.setValue(value);
+          property.setType(type);
           userGroup.addSystemProperty(property);
         }
       }
@@ -590,56 +690,73 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wPropertyTreeViewer.setInput(distribution);
   }
 
-  private Map getSystemProperties() {
-    FrameworkPreference distribution = (FrameworkPreference) wPropertyTreeViewer.getInput();
-    if (distribution == null) return null;
-    
-    SystemPropertyGroup[] groups = distribution.getSystemPropertyGroups();
-    if (groups == null) return null;
-    
-    HashMap map = new HashMap();
-    for (int i=0; i<groups.length; i++) {
-      SystemProperty[] properties = groups[i].getProperties();
-      if (properties == null) continue;
-      for (int j=0; j<properties.length; j++) {
+  private Map<String, String> getSystemProperties()
+  {
+    FrameworkPreference distribution = (FrameworkPreference) wPropertyTreeViewer
+        .getInput();
+    if (distribution == null)
+      return null;
+
+    PropertyGroup[] groups = distribution.getSystemPropertyGroups();
+    if (groups == null)
+      return null;
+
+    HashMap<String, String> map = new HashMap<String, String>();
+    for (int i = 0; i < groups.length; i++) {
+      Property[] properties = groups[i].getProperties();
+      if (properties == null)
+        continue;
+      for (int j = 0; j < properties.length; j++) {
         if (!isDefaultProperty(properties[j])) {
-          map.put(properties[j].getName(), properties[j].getValue());
+          String name = properties[j].getName();
+          StringBuffer value = new StringBuffer(properties[j].getType());
+          value.append(':');
+          value.append(properties[j].getValue());
+          map.put(name, value.toString());
         }
       }
     }
     return map;
   }
-  
-  protected static boolean isDefaultProperty(SystemProperty property) {
-    if (property == null) return false;
-    
-    if (MainTab.USER_GROUP.equals(property.getSystemPropertyGroup().getName())) return false;
-      
+
+  protected static boolean isDefaultProperty(Property property)
+  {
+    if (property == null)
+      return false;
+
+    if (MainTab.USER_GROUP.equals(property.getSystemPropertyGroup().getName()))
+      return false;
+
     String value = property.getValue();
-    if (value == null) value = "";
+    if (value == null)
+      value = "";
     String defaultValue = property.getDefaultValue();
-    if (defaultValue == null) defaultValue = "";
-    
-    if (value.equals(defaultValue)) return true;
-    
+    if (defaultValue == null)
+      defaultValue = "";
+
+    if (value.equals(defaultValue))
+      return true;
+
     return false;
   }
-  
-  void showPropertyInfo() {
-    IStructuredSelection selection = 
-      (IStructuredSelection) wPropertyTreeViewer.getSelection();
 
-    SystemProperty property = null;
-    if (selection != null && !selection.isEmpty() && selection.getFirstElement() instanceof SystemProperty) {
-      property = (SystemProperty) selection.getFirstElement();
+  void showPropertyInfo()
+  {
+    IStructuredSelection selection = (IStructuredSelection) wPropertyTreeViewer
+        .getSelection();
+
+    Property property = null;
+    if (selection != null && !selection.isEmpty()
+        && selection.getFirstElement() instanceof Property) {
+      property = (Property) selection.getFirstElement();
     }
-    
+
     if (property == null) {
       wDescriptionLabel.setEnabled(false);
       wDescriptionText.setText("");
       wDefaultLabel.setEnabled(false);
       wDefaultText.setText("");
-      
+
       wRemovePropertyButton.setEnabled(false);
     } else {
       // Description
@@ -649,7 +766,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
       } else {
         wDescriptionText.setText("");
       }
-      
+
       // Default value
       wDefaultLabel.setEnabled(true);
       if (property.getDefaultValue() != null) {
@@ -657,7 +774,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
       } else {
         wDefaultText.setText("");
       }
-      
+
       // Buttons
       if (USER_GROUP.equals(property.getSystemPropertyGroup().getName())) {
         wRemovePropertyButton.setEnabled(true);
@@ -667,12 +784,14 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     }
   }
 
-  protected void update(Object element) {
+  protected void update(Object element)
+  {
     wPropertyTreeViewer.update(element, null);
     updateLaunchConfigurationDialog();
   }
-  
-  protected void updateDialog() {
+
+  protected void updateDialog()
+  {
     updateLaunchConfigurationDialog();
   }
 }

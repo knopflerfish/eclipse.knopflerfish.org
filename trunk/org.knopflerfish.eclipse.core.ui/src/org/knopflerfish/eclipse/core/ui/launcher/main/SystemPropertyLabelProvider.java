@@ -42,20 +42,22 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
-import org.knopflerfish.eclipse.core.SystemProperty;
-import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.Property;
+import org.knopflerfish.eclipse.core.PropertyGroup;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
  * @see http://www.gatespacetelematics.com/
  */
-public class SystemPropertyLabelProvider implements ITableLabelProvider, IFontProvider {
+public class SystemPropertyLabelProvider
+    implements ITableLabelProvider, IFontProvider {
 
-  private Font  fontUser = null;
+  private Font fontUser = null;
 
-  public SystemPropertyLabelProvider() {
-    
+  public SystemPropertyLabelProvider()
+  {
+
     // Create font used in property tree for non-default values
     if (fontUser == null) {
       Font font = Display.getCurrent().getSystemFont();
@@ -64,33 +66,41 @@ public class SystemPropertyLabelProvider implements ITableLabelProvider, IFontPr
       fontUser = new Font(Display.getCurrent(), fontData);
     }
   }
-  
+
   /****************************************************************************
    * org.eclipse.jface.viewers.ITableLabelProvider methods
    ***************************************************************************/
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.Object, int)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.
+   * Object, int)
    */
-  public Image getColumnImage(Object element, int columnIndex) {
+  public Image getColumnImage(Object element, int columnIndex)
+  {
     return null;
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object, int)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object
+   * , int)
    */
-  public String getColumnText(Object o, int columnIndex) {
-    
+  public String getColumnText(Object o, int columnIndex)
+  {
+
     if (columnIndex == 0) {
       if (o instanceof FrameworkPreference) {
         FrameworkPreference distribution = (FrameworkPreference) o;
         return distribution.getName();
-      } else if (o instanceof SystemPropertyGroup) {
-        SystemPropertyGroup group = (SystemPropertyGroup) o;
+      } else if (o instanceof PropertyGroup) {
+        PropertyGroup group = (PropertyGroup) o;
         return group.getName();
-      } else if (o instanceof SystemProperty) {
-        SystemProperty property = (SystemProperty) o;
+      } else if (o instanceof Property) {
+        Property property = (Property) o;
         return property.getName();
       } else {
         return "";
@@ -98,18 +108,30 @@ public class SystemPropertyLabelProvider implements ITableLabelProvider, IFontPr
     } else if (columnIndex == 1) {
       if (o instanceof FrameworkPreference) {
         return "";
-      } else if (o instanceof SystemPropertyGroup) {
+      } else if (o instanceof PropertyGroup) {
         return "";
-      } else if (o instanceof SystemProperty) {
-        SystemProperty property = (SystemProperty) o;
+      } else if (o instanceof Property) {
+        Property property = (Property) o;
         String value = property.getValue();
-        if (value == null || value.trim().length()==0) {
+        if (value == null || value.trim().length() == 0) {
           value = property.getDefaultValue();
         }
-        if (value == null || value.trim().length()==0) {
+        if (value == null || value.trim().length() == 0) {
           value = "";
         }
         return value;
+      } else {
+        return "";
+      }
+    } else if (columnIndex == 2) {
+      if (o instanceof FrameworkPreference) {
+        return "";
+      } else if (o instanceof PropertyGroup) {
+        return "";
+      } else if (o instanceof Property) {
+        Property property = (Property) o;
+        String type = property.getType();
+        return type;
       } else {
         return "";
       }
@@ -122,61 +144,77 @@ public class SystemPropertyLabelProvider implements ITableLabelProvider, IFontPr
    * org.eclipse.jface.viewers.IBaseLabelProvider methods
    ***************************************************************************/
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface
+   * .viewers.ILabelProviderListener)
    */
-  public void addListener(ILabelProviderListener listener) {
+  public void addListener(ILabelProviderListener listener)
+  {
   }
 
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
    */
-  public void dispose() {
+  public void dispose()
+  {
     if (fontUser != null) {
       fontUser.dispose();
       fontUser = null;
-     }
+    }
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.
+   * Object, java.lang.String)
    */
-  public boolean isLabelProperty(Object element, String property) {
+  public boolean isLabelProperty(Object element, String property)
+  {
     return false;
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse
+   * .jface.viewers.ILabelProviderListener)
    */
-  public void removeListener(ILabelProviderListener listener) {
+  public void removeListener(ILabelProviderListener listener)
+  {
   }
 
   /****************************************************************************
    * org.eclipse.jface.viewers.IFontProvider methods
    ***************************************************************************/
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see org.eclipse.jface.viewers.IFontProvider#getFont(java.lang.Object)
    */
-  public Font getFont(Object o) {
-    if (o instanceof SystemProperty) {
-      SystemProperty property = (SystemProperty) o;
-      
+  public Font getFont(Object o)
+  {
+    if (o instanceof Property) {
+      Property property = (Property) o;
+
       if (!MainTab.isDefaultProperty(property)) {
         return fontUser;
       }
       return null;
-    } else if (o instanceof SystemPropertyGroup){
-      SystemPropertyGroup group = (SystemPropertyGroup) o;
+    } else if (o instanceof PropertyGroup) {
+      PropertyGroup group = (PropertyGroup) o;
       boolean isDefault = true;
-      SystemProperty[] properties = group.getProperties();
-      for(int i=0; i<properties.length && isDefault; i++) {
+      Property[] properties = group.getProperties();
+      for (int i = 0; i < properties.length && isDefault; i++) {
         isDefault = MainTab.isDefaultProperty(properties[i]);
       }
-      
+
       if (isDefault) {
         return null;
       }

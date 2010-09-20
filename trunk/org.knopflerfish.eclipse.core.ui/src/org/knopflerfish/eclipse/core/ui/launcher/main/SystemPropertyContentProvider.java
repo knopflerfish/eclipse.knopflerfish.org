@@ -36,8 +36,8 @@ package org.knopflerfish.eclipse.core.ui.launcher.main;
 
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
-import org.knopflerfish.eclipse.core.SystemProperty;
-import org.knopflerfish.eclipse.core.SystemPropertyGroup;
+import org.knopflerfish.eclipse.core.Property;
+import org.knopflerfish.eclipse.core.PropertyGroup;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 
 /**
@@ -53,8 +53,8 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
     if (parentElement instanceof FrameworkPreference) {
       FrameworkPreference distribution = (FrameworkPreference) parentElement;
       return distribution.getSystemPropertyGroups();
-    } else if (parentElement instanceof SystemPropertyGroup) {
-      SystemPropertyGroup group = (SystemPropertyGroup) parentElement;
+    } else if (parentElement instanceof PropertyGroup) {
+      PropertyGroup group = (PropertyGroup) parentElement;
       return group.getProperties();
     } else {
       return null;
@@ -67,11 +67,11 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
   public Object getParent(Object element) {
     if (element instanceof FrameworkPreference) {
       return null;
-    } else if (element instanceof SystemPropertyGroup) {
-      SystemPropertyGroup group = (SystemPropertyGroup) element;
+    } else if (element instanceof PropertyGroup) {
+      PropertyGroup group = (PropertyGroup) element;
       return group.getFrameworkDistribution();
-    } else if (element instanceof SystemProperty) {
-      SystemProperty property = (SystemProperty) element;
+    } else if (element instanceof Property) {
+      Property property = (Property) element;
       return property.getSystemPropertyGroup();
     } else {
       return null;
@@ -85,10 +85,10 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
     if (element instanceof FrameworkPreference) {
       FrameworkPreference distribution = (FrameworkPreference) element;
       return distribution.getSystemPropertyGroups().length > 0;
-    } else if (element instanceof SystemPropertyGroup) {
-      SystemPropertyGroup group = (SystemPropertyGroup) element;
+    } else if (element instanceof PropertyGroup) {
+      PropertyGroup group = (PropertyGroup) element;
       return group.getProperties().length > 0;
-    } else if (element instanceof SystemProperty) {
+    } else if (element instanceof Property) {
       return false;
     } else {
       return false;
@@ -102,8 +102,8 @@ public class SystemPropertyContentProvider implements ITreeContentProvider {
     if (inputElement instanceof FrameworkPreference) {
       FrameworkPreference distribution = (FrameworkPreference) inputElement;
       return distribution.getSystemPropertyGroups();
-    } else if (inputElement instanceof SystemPropertyGroup) {
-      SystemPropertyGroup group = (SystemPropertyGroup) inputElement;
+    } else if (inputElement instanceof PropertyGroup) {
+      PropertyGroup group = (PropertyGroup) inputElement;
       return group.getProperties();
     } else {
       return null;
