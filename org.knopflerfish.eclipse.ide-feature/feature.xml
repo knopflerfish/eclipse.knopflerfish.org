@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="org.knopflerfish.eclipse.ide-feature"
+      id="org.knopflerfish.eclipse.ide_feature"
       label="Knopflerfish OSGi IDE"
       version="1.0.17"
       provider-name="Knopflerfish">
@@ -83,20 +83,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
    <plugin
          id="org.knopflerfish.eclipse.framework.knopflerfish13"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.knopflerfish.eclipse.framework.oscar10"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.knopflerfish.eclipse.framework.eclipse31"
          download-size="0"
          install-size="0"
          version="0.0.0"

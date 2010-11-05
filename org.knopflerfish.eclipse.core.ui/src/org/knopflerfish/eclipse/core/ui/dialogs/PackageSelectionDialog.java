@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,132 +34,55 @@
 
 package org.knopflerfish.eclipse.core.ui.dialogs;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
-import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class PackageSelectionDialog extends ElementListSelectionDialog {
 
-  private Map packages;
-  private Version version = Version.emptyVersion;
-  
-  // Widgets
-  private Combo wVersionCombo;
-  
-  public PackageSelectionDialog(Shell activeShell, PackageLabelProvider provider) {
+  //private Map<String, List<PackageDescription>> packages;
+
+  public PackageSelectionDialog(Shell activeShell, PackageLabelProvider provider)
+  {
     super(activeShell, provider);
   }
 
-  public void setPackages(Map map) {
-    packages = map;
+  public void setPackages(Map<String, List<PackageDescription>> map)
+  {
+    //packages = map;
     setElements(map.keySet().toArray(new String[map.size()]));
   }
-  
-  
-  public Version getVersion() {
-    return version;
-  }
-  
-  /****************************************************************************
-   * org.eclipse.jface.dialogs.Dialog methods
-   ***************************************************************************/
+
+  // ***************************************************************************
+  // org.eclipse.jface.dialogs.Dialog methods
+  // ***************************************************************************
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets.Composite)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets
+   * .Composite)
    */
-  protected Control createDialogArea(Composite parent) {
+  protected Control createDialogArea(Composite parent)
+  {
     Composite wDialogComposite = new Composite(parent, SWT.NONE);
     GridLayout layout = new GridLayout();
     wDialogComposite.setLayout(layout);
-    
+
     // Add default dialog area
     super.createDialogArea(wDialogComposite);
-    
-    // Version composite
-    Composite wVersionComposite = new Composite(wDialogComposite, SWT.NONE);
-    layout = new GridLayout();
-    layout.numColumns = 2;
-    wVersionComposite.setLayout(layout);
-    GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-    wVersionComposite.setLayoutData(gd);
-    Label wVersionLabel = new Label(wVersionComposite, SWT.LEFT);
-    wVersionLabel.setText("Version:");
-    wVersionCombo = new Combo(wVersionComposite, SWT.DROP_DOWN);
-    gd = new GridData(GridData.FILL_HORIZONTAL);
-    wVersionCombo.setLayoutData(gd);
-    
+
     return wDialogComposite;
   }
-
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.dialogs.Dialog#okPressed()
-   */
-  protected void okPressed() {
-    // Set version
-    if (!wVersionCombo.isEnabled()) {
-      version = Version.emptyVersion;
-    } else {
-      try {
-        version = Version.parseVersion(wVersionCombo.getText());
-      } catch (IllegalArgumentException e) {
-        version = Version.emptyVersion;
-      }
-    }
-    
-    super.okPressed();
-  }
-    
-  /****************************************************************************
-   * org.eclipse.ui.dialogs.AbstractElementListSelectionDialog methods
-   ***************************************************************************/
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.ui.dialogs.AbstractElementListSelectionDialog#handleSelectionChanged()
-   */
-  protected void handleSelectionChanged() {
-    super.handleSelectionChanged();
-    
-    Object[] elements = getSelectedElements();
-    if (elements == null || elements.length != 1) {
-      wVersionCombo.setEnabled(false);
-    } else {
-      try {
-        wVersionCombo.setEnabled(true);
-        String name =(String) elements[0];
-        List l = (List) packages.get(name);
-        ArrayList versions = new ArrayList();
-        if (l != null) {
-          for (Iterator i=l.iterator(); i.hasNext(); ) {
-            PackageDescription pd = (PackageDescription) i.next();
-            Version version = pd.getSpecificationVersion();
-            if (version != null && !version.equals(Version.emptyVersion)) {
-              versions.add(version.toString());
-            }
-          }
-        }
-        wVersionCombo.setItems((String[]) versions.toArray(new String[versions.size()]));
-      } catch (Throwable t) {
-        wVersionCombo.setEnabled(false);
-      }
-    }
-  }
-
 }

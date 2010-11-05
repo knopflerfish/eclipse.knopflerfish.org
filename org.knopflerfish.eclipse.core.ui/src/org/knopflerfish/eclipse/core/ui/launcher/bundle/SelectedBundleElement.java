@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,8 @@
 
 package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 
+import java.util.List;
+
 import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
@@ -41,93 +43,113 @@ import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class SelectedBundleElement {
-  static public int TYPE_BUNDLE_PROJECT    = 0;
-  static public int TYPE_BUNDLE            = 1;
-  
+  static public int TYPE_BUNDLE_PROJECT = 0;
+  static public int TYPE_BUNDLE = 1;
+
   private IOsgiBundle bundle;
   private IBundleProject project;
   private final BundleLaunchInfo launchInfo;
-  private String error;
+  private PackageDescription[] missingPackages;
 
-  public SelectedBundleElement(IOsgiBundle bundle, BundleLaunchInfo info) {
+  public SelectedBundleElement(IOsgiBundle bundle, BundleLaunchInfo info)
+  {
     // Bundle
     this.bundle = bundle;
     this.launchInfo = info;
   }
 
-  public SelectedBundleElement(IBundleProject project, BundleLaunchInfo info) {
+  public SelectedBundleElement(IBundleProject project, BundleLaunchInfo info)
+  {
     // Bundle Project
     this.project = project;
     this.launchInfo = info;
   }
-  
-  public BundleLaunchInfo getLaunchInfo() {
+
+  public BundleLaunchInfo getLaunchInfo()
+  {
     return launchInfo;
   }
 
-  public IOsgiBundle getBundle() {
+  public IOsgiBundle getBundle()
+  {
     return bundle;
   }
 
-  public String getPath() {
+  public String getPath()
+  {
     if (bundle != null) {
       return bundle.getPath();
     }
     return project.getJavaProject().getProject().getName();
   }
-  
-  public int getType() {
+
+  public int getType()
+  {
     if (bundle != null) {
       return TYPE_BUNDLE;
     }
     return TYPE_BUNDLE_PROJECT;
   }
-  
-  public String getName() {
+
+  public String getName()
+  {
     if (bundle != null) {
       return bundle.getName();
     }
     return project.getBundleManifest().getName();
   }
-  
-  public Version getVersion() {
+
+  public Version getVersion()
+  {
     if (bundle != null) {
-      if (bundle.getBundleManifest() == null) return null;
+      if (bundle.getBundleManifest() == null)
+        return null;
       return bundle.getBundleManifest().getVersion();
     }
     return project.getBundleManifest().getVersion();
   }
-  
-  public PackageDescription[] getImportedPackages() {
+
+  public PackageDescription[] getImportedPackages()
+  {
     if (bundle != null) {
-      if (bundle.getBundleManifest() == null) return null;
+      if (bundle.getBundleManifest() == null)
+        return null;
       return bundle.getBundleManifest().getImportedPackages();
     }
     return project.getBundleManifest().getImportedPackages();
   }
-  
 
-  public PackageDescription[] getExportedPackages() {
+  public PackageDescription[] getExportedPackages()
+  {
     if (bundle != null) {
-      if (bundle.getBundleManifest() == null) return null;
+      if (bundle.getBundleManifest() == null)
+        return null;
       return bundle.getBundleManifest().getExportedPackages();
     }
     return project.getBundleManifest().getExportedPackages();
   }
-  
-  public String getError() {
-    return error;
+
+  public void setMissingPackages(List<PackageDescription> p)
+  {
+    if (p != null) {
+      missingPackages = p.toArray(new PackageDescription[p.size()]);
+    } else {
+      missingPackages = new PackageDescription[0];
+    }
   }
-  
-  public void setError(String error) {
-    this.error = error;
+
+  public PackageDescription[] getMissingPackages()
+  {
+    return missingPackages;
   }
-  
-  public String toString() {
+
+  public String toString()
+  {
     return getName();
   }
+
 }

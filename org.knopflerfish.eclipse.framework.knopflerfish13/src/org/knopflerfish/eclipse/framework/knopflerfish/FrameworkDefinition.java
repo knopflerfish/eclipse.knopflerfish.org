@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,10 +40,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
 import org.knopflerfish.eclipse.core.IFrameworkConfiguration;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
@@ -55,53 +57,60 @@ import org.knopflerfish.eclipse.core.Property;
 import org.knopflerfish.eclipse.core.PropertyGroup;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class FrameworkDefinition implements IFrameworkDefinition {
-  
+
   // System properties used for exporting system packages
   private final static String SYSPKG = "org.osgi.framework.system.packages";
   private final static String SYSPKG_FILE = "org.osgi.framework.system.packages.file";
   private final static String EXPORT13 = "org.knopflerfish.framework.system.export.all_13";
-  
-  private final static String PATH_PROPERTY_FILE = "resources/framework.props";
-  
-  private final static String [] PATH_FRAMEWORK_LIB = new String [] {
-    "knopflerfish.org/osgi/framework.jar",
-    "osgi/framework.jar",
-    "framework.jar"
-  };
-  
-  // Paths relative root directory for definition  
-  private final static String PATH_MAINLIB     = "framework.jar";
-  private final static String PATH_MAINLIB_SRC = "framework/src";
-  private final static String PATH_PACKAGES13  = "packages1.3.txt";
 
-  private final static String PATH_JAR_DIR            ="jars";
-  private final static String PATH_BUNDLE_DIR         ="bundles";
-  
+  private final static String PATH_PROPERTY_FILE = "resources/framework.props";
+
+  private final static String[] PATH_FRAMEWORK_LIB = new String[] {
+      "knopflerfish.org/osgi/framework.jar", "osgi/framework.jar",
+      "framework.jar" };
+
+  // Paths relative root directory for definition
+  private final static String PATH_MAINLIB = "framework.jar";
+  private final static String PATH_MAINLIB_SRC = "framework/src";
+  private final static String PATH_PACKAGES13 = "packages1.3.txt";
+
+  private final static String PATH_JAR_DIR = "jars";
+  private final static String PATH_BUNDLE_DIR = "bundles";
+
   /****************************************************************************
    * org.knopflerfish.eclipse.core.IFrameworkDefinition methods
    ***************************************************************************/
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#isValidDir(java.io.File)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkDefinition#isValidDir(java.io.File)
    */
-  public boolean isValidDir(File dir) {
+  public boolean isValidDir(File dir)
+  {
     return getRootDir(dir) != null;
   }
-  
+
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getMainLibrary(java.io.File)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkDefinition#getMainLibrary(java.
+   * io.File)
    */
-  public IOsgiLibrary getMainLibrary(File dir) {
+  public IOsgiLibrary getMainLibrary(File dir)
+  {
     File root = getRootDir(dir);
-    if (root == null) return null;
-    
+    if (root == null)
+      return null;
+
     File file = new File(root, PATH_MAINLIB);
     OsgiLibrary mainLib = null;
     try {
@@ -110,45 +119,54 @@ public class FrameworkDefinition implements IFrameworkDefinition {
       if (src.exists()) {
         mainLib.setSource(src.getAbsolutePath());
       }
-    } catch (IOException e) {}
-    
+    } catch (IOException e) {
+    }
+
     return mainLib;
   }
-  
+
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getRuntimeLibraries(java.io.File)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkDefinition#getRuntimeLibraries(
+   * java.io.File)
    */
-  public IOsgiLibrary[] getRuntimeLibraries(File dir) {
-    ArrayList libraries = new ArrayList();
-    
+  public IOsgiLibrary[] getRuntimeLibraries(File dir)
+  {
+    List<IOsgiLibrary> libraries = new ArrayList<IOsgiLibrary>();
+
     IOsgiLibrary mainLib = getMainLibrary(dir);
     if (mainLib != null) {
       libraries.add(mainLib);
     }
-    
-    return (IOsgiLibrary[]) libraries.toArray(new IOsgiLibrary[libraries.size()]);
+
+    return libraries.toArray(new IOsgiLibrary[libraries.size()]);
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getBundles(java.io.File)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkDefinition#getBundles(java.io.File)
    */
-  public IOsgiBundle[] getBundles(File dir) {
-    ArrayList bundles = new ArrayList();
-    
+  public IOsgiBundle[] getBundles(File dir)
+  {
+    List<IOsgiBundle> bundles = new ArrayList<IOsgiBundle>();
+
     // Add bundles
     File root = getRootDir(dir);
     if (root != null) {
       File jarDir = new File(root, PATH_JAR_DIR);
-      ArrayList jars = getJars(jarDir);
-      for (int i=0 ; i<jars.size(); i++) {
+      List<File> jars = getJars(jarDir);
+      for (int i = 0; i < jars.size(); i++) {
         try {
           OsgiBundle bundle = new OsgiBundle((File) jars.get(i));
           // Find source
           String builtFrom = null;
           if (bundle.getBundleManifest() != null) {
-            builtFrom = bundle.getBundleManifest().getAttribute(BundleManifest.BUILT_FROM);
+            builtFrom = bundle.getBundleManifest().getAttribute(
+                BundleManifest.BUILT_FROM);
           }
           if (builtFrom != null) {
             int idx = builtFrom.lastIndexOf(PATH_BUNDLE_DIR);
@@ -160,113 +178,136 @@ public class FrameworkDefinition implements IFrameworkDefinition {
               }
             }
           }
-          
+
           bundles.add(bundle);
-        } catch(IOException e) {
+        } catch (IOException e) {
           // Failed to create bundle from file
         }
       }
     }
-    
-    return (IOsgiBundle[]) bundles.toArray(new IOsgiBundle[bundles.size()]);
+
+    return bundles.toArray(new IOsgiBundle[bundles.size()]);
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getSystemPropertyGroups()
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkDefinition#getSystemPropertyGroups
+   * ()
    */
-  public PropertyGroup[] getSystemPropertyGroups() {
-    ArrayList groups = new ArrayList();
+  public PropertyGroup[] getSystemPropertyGroups()
+  {
+    List<PropertyGroup> groups = new ArrayList<PropertyGroup>();
 
     // Load and set properties
     InputStream is = null;
     try {
       try {
-        is = KnopflerfishPlugin.getDefault().openStream(new Path(PATH_PROPERTY_FILE));
+        /*
+         * is = KnopflerfishPlugin.getDefault().openStream( new
+         * Path(PATH_PROPERTY_FILE));
+         */
+        is = FileLocator.openStream(
+            KnopflerfishPlugin.getDefault().getBundle(), new Path(
+                PATH_PROPERTY_FILE), false);
         Properties props = new Properties();
         props.load(is);
-        
-        int numProps = Integer.parseInt(props.getProperty("framework.property.num", "0"));
-        for (int i=0; i<numProps; i++) {
-          String propBase = "framework.property."+i;
-          String group = props.getProperty(propBase+".group");
+
+        int numProps = Integer.parseInt(props.getProperty(
+            "framework.property.num", "0"));
+        for (int i = 0; i < numProps; i++) {
+          String propBase = "framework.property." + i;
+          String group = props.getProperty(propBase + ".group");
           if (group != null) {
             PropertyGroup propertyGroup = new PropertyGroup(group);
             if (groups.contains(propertyGroup)) {
-              propertyGroup = (PropertyGroup) groups.get(groups.indexOf(propertyGroup));
+              propertyGroup = (PropertyGroup) groups.get(groups
+                  .indexOf(propertyGroup));
             } else {
               groups.add(propertyGroup);
             }
 
-            String name = props.getProperty(propBase+".name");
+            String name = props.getProperty(propBase + ".name");
             if (name != null) {
               Property property = new Property(name);
 
-              String description = props.getProperty(propBase+".description");
+              String description = props.getProperty(propBase + ".description");
               if (description != null) {
                 property.setDescription(description);
               }
-              String defaultValue = props.getProperty(propBase+".default");
+              String defaultValue = props.getProperty(propBase + ".default");
               if (defaultValue != null) {
                 property.setDefaultValue(defaultValue);
                 property.setValue(defaultValue);
               }
-              String allowedValues = props.getProperty(propBase+".allowed");
+              String allowedValues = props.getProperty(propBase + ".allowed");
               if (allowedValues != null) {
-                ArrayList values = new ArrayList();
+                List<String> values = new ArrayList<String>();
                 StringTokenizer st = new StringTokenizer(allowedValues, ",");
-                while(st.hasMoreTokens()) {
+                while (st.hasMoreTokens()) {
                   String token = st.nextToken();
                   values.add(token);
                 }
                 property.setAllowedValues(values);
               }
-              
+
               propertyGroup.addSystemProperty(property);
             }
           }
         }
       } finally {
-        if (is != null) is.close();
+        if (is != null)
+          is.close();
       }
     } catch (Throwable t) {
       t.printStackTrace();
     }
 
-    return (PropertyGroup[]) groups.toArray(new PropertyGroup[groups.size()]);
+    return groups.toArray(new PropertyGroup[groups.size()]);
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#createConfiguration()
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkDefinition#createConfiguration()
    */
-  public IFrameworkConfiguration createConfiguration(String installDir, String workDir) {
-    if (workDir == null) return null;
-    
+  public IFrameworkConfiguration createConfiguration(String installDir,
+                                                     String workDir)
+  {
+    if (workDir == null)
+      return null;
+
     File dir = new File(workDir);
-    if (!dir.exists() || !dir.isDirectory()) return null;
-    
+    if (!dir.exists() || !dir.isDirectory())
+      return null;
+
     return new FrameworkConfiguration(dir);
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getExportedPackages(org.knopflerfish.eclipse.core.IOsgiLibrary[])
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkDefinition#getExportedPackages(
+   * org.knopflerfish.eclipse.core.IOsgiLibrary[])
    */
-  public PackageDescription[] getExportedPackages(IOsgiLibrary[] libraries) {
-    ArrayList descriptions = new ArrayList();
-    
+  public PackageDescription[] getExportedPackages(IOsgiLibrary[] libraries)
+  {
+    List<PackageDescription> descriptions = new ArrayList<PackageDescription>();
+
     if (libraries != null) {
-      for (int i=0; i<libraries.length; i++) {
+      for (int i = 0; i < libraries.length; i++) {
         try {
           OsgiBundle bundle = new OsgiBundle(new File(libraries[i].getPath()));
-          
-          PackageDescription [] packages = null;
+
+          PackageDescription[] packages = null;
           if (bundle.getBundleManifest() != null) {
             packages = bundle.getBundleManifest().getExportedPackages();
           }
           if (packages != null) {
-            for (int j=0; j<packages.length; j++) {
+            for (int j = 0; j < packages.length; j++) {
               descriptions.add(packages[j]);
             }
           }
@@ -275,102 +316,125 @@ public class FrameworkDefinition implements IFrameworkDefinition {
         }
       }
     }
-    
-    return (PackageDescription[]) descriptions.toArray(new PackageDescription[descriptions.size()]);
+
+    return descriptions.toArray(new PackageDescription[descriptions.size()]);
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getSystemPackages(java.io.File, java.util.Map)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IFrameworkDefinition#getSystemPackages(java
+   * .io.File, java.util.Map)
    */
-  public PackageDescription[] getSystemPackages(File dir, Map systemProperties) {
-    if (systemProperties == null) return null;
-    
+  public PackageDescription[] getSystemPackages(File dir,
+                                                Map<String, String> systemProperties)
+  {
+    if (systemProperties == null)
+      return null;
+
     StringBuffer sp = new StringBuffer();
     String sysPkg = (String) systemProperties.get(SYSPKG);
     if (sysPkg != null) {
       sp.append(sysPkg);
     }
-    
+
     if (sp.length() > 0) {
       sp.append(",");
     }
-    
+
+    // TODO : Check what jre is used and get file
     String export13 = (String) systemProperties.get(EXPORT13);
     if (dir != null && export13 != null && "true".equals(export13.trim())) {
       File root = getRootDir(dir);
       File file = new File(root, PATH_PACKAGES13);
       addSysPackagesFromFile(sp, file);
     }
-    
+
+    // TODO : IF system packages or file is set then this overrides the auto
+    // select based on jre
+    // If system packages is set the also this overrides the manifest of
+    // framework.jar
+    // But there exists an KF property to override this override
     String sysPkgFile = (String) systemProperties.get(SYSPKG_FILE);
     if (sysPkgFile != null) {
       addSysPackagesFromFile(sp, new File(sysPkgFile));
     }
-    
-    ArrayList packages = new ArrayList();
+
+    // TODO: Add system.packages.extra
+
+    List<PackageDescription> packages = new ArrayList<PackageDescription>();
     StringTokenizer st = new StringTokenizer(sp.toString(), ",");
-    while(st.hasMoreTokens()) {
+    while (st.hasMoreTokens()) {
       try {
-        packages.add(new PackageDescription(st.nextToken()));
-      } catch(Exception e) {}
+        packages.add(new PackageDescription(st.nextToken(),
+            Version.emptyVersion));
+      } catch (Exception e) {
+      }
     }
-    
-    return (PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]);
+
+    return packages.toArray(new PackageDescription[packages.size()]);
   }
 
   /****************************************************************************
    * Private utility methods
    ***************************************************************************/
-  public File getRootDir(File dir) {
-    if (dir == null || !dir.isDirectory()) return null;
-    
+  public File getRootDir(File dir)
+  {
+    if (dir == null || !dir.isDirectory())
+      return null;
+
     File root = null;
-    for (int i=0; i<PATH_FRAMEWORK_LIB.length; i++) {
+    for (int i = 0; i < PATH_FRAMEWORK_LIB.length; i++) {
       File libFile = new File(dir, PATH_FRAMEWORK_LIB[i]);
-      if ( libFile.exists() && libFile.isFile()) {
+      if (libFile.exists() && libFile.isFile()) {
         root = libFile.getParentFile();
       }
     }
-    
+
     return root;
   }
 
-  private ArrayList getJars(File f) { 
-    ArrayList jars = new ArrayList();
+  private List<File> getJars(File f)
+  {
+    List<File> jars = new ArrayList<File>();
     if (f.isFile() && f.getName().toLowerCase().endsWith("jar")) {
-      jars.add(f); 
+      jars.add(f);
     } else if (f.isDirectory()) {
-      File [] list = f.listFiles();
-      for(int i=0; list != null && i<list.length; i++) {
+      File[] list = f.listFiles();
+      for (int i = 0; list != null && i < list.length; i++) {
         jars.addAll(getJars(list[i]));
       }
     }
     return jars;
   }
-  
+
   /**
    * Read a file with package names and add them to a stringbuffer.
    */
-  void addSysPackagesFromFile(StringBuffer sp, File f) {
-    if (f == null || !f.exists() || !f.isFile()) return;
-    
+  void addSysPackagesFromFile(StringBuffer sp, File f)
+  {
+    if (f == null || !f.exists() || !f.isFile())
+      return;
+
     BufferedReader in = null;
     try {
       in = new BufferedReader(new FileReader(f));
       String line;
-      for(line = in.readLine(); line != null; 
-      line = in.readLine()) {
+      for (line = in.readLine(); line != null; line = in.readLine()) {
         line = line.trim();
-        if(line.length() > 0 && !line.startsWith("#")) {
+        if (line.length() > 0 && !line.startsWith("#")) {
           sp.append(line);
           sp.append(",");
         }
-      } 
+      }
     } catch (IOException e) {
       // Failed to read file, ignore this
     } finally {
-      try {   in.close();  } catch (Exception ignored) { }
+      try {
+        in.close();
+      } catch (Exception ignored) {
+      }
     }
   }
 }

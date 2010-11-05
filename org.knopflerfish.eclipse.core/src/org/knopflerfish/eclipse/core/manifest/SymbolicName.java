@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,96 +40,107 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class SymbolicName {
-  
+
   public static String SEPARATOR = ";";
   public static String HEADER_SINGELTON = "singelton";
   public static String HEADER_FRAGMENT_ATTACHMENT = "fragment-attachment";
 
   private String symbolicName;
-  private Map attributes = new HashMap();
+  private Map<String, String> attributes = new HashMap<String, String>();
 
-  public SymbolicName(String name) {
+  public SymbolicName(String name)
+  {
     StringTokenizer st = new StringTokenizer(name, SEPARATOR);
-    
+
     // First token is symbolic name
     symbolicName = st.nextToken().trim();
-    
+
     // Attributes
-    while(st.hasMoreTokens()) {
+    while (st.hasMoreTokens()) {
       String parameter = st.nextToken();
       int idx = parameter.indexOf('=');
       if (idx != -1) {
         String attr = parameter.substring(0, idx).trim();
-        String value = parameter.substring(idx+1).trim();
+        String value = parameter.substring(idx + 1).trim();
         // Removes qoutes if qouted
-        if (value.startsWith("\"") && value.endsWith("\"") ) {
-          value = value.substring(1, value.length()-1);
+        if (value.startsWith("\"") && value.endsWith("\"")) {
+          value = value.substring(1, value.length() - 1);
         }
         attributes.put(attr, value);
       }
     }
   }
 
-  /****************************************************************************
-   * Getters and setters
-   ***************************************************************************/
-  
-  public String getSymbolicName() {
+  // ***************************************************************************
+  // Getters and setters
+  // ***************************************************************************
+
+  public String getSymbolicName()
+  {
     return symbolicName;
   }
-  
-  public boolean isSingelton() {
+
+  public boolean isSingelton()
+  {
     return Boolean.valueOf(getAttribute(HEADER_SINGELTON)).booleanValue();
   }
-  
-  public String getFragmentAttachment() {
+
+  public String getFragmentAttachment()
+  {
     return getAttribute(HEADER_FRAGMENT_ATTACHMENT);
   }
-  
-  public String getAttribute(String attr) {
+
+  public String getAttribute(String attr)
+  {
     return (String) attributes.get(attr);
   }
 
-  public void setAttribute(String attr, String value) {
-    if (attr == null) return;
-    
-    if (value == null || value.trim().length() ==0 ) {
+  public void setAttribute(String attr, String value)
+  {
+    if (attr == null)
+      return;
+
+    if (value == null || value.trim().length() == 0) {
       attributes.remove(attr);
     } else {
       attributes.put(attr, value);
     }
   }
 
-  /****************************************************************************
-   * java.lang.Object methods
-   ***************************************************************************/
+  // ***************************************************************************
+  // java.lang.Object methods
+  // ***************************************************************************
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see java.lang.Object#equals(java.lang.Object)
    */
-  public boolean equals(Object obj) {
+  public boolean equals(Object obj)
+  {
     if (obj == null || !(obj instanceof SymbolicName)) {
       return false;
     }
-    
+
     SymbolicName sn = (SymbolicName) obj;
-    
+
     return symbolicName.equals(sn.symbolicName);
   }
-  
-  public String toString() {
+
+  public String toString()
+  {
     StringBuffer buf = new StringBuffer(symbolicName);
-    
-    for(Iterator i=attributes.entrySet().iterator(); i.hasNext();) {
-      Map.Entry entry = (Map.Entry) i.next();
+
+    for (Iterator<Map.Entry<String, String>> i = attributes.entrySet()
+        .iterator(); i.hasNext();) {
+      Map.Entry<String, String> entry = i.next();
       buf.append(SEPARATOR);
       buf.append(entry.getKey());
       buf.append("=");
-      String value = (String) entry.getValue();
+      String value = entry.getValue();
       boolean qoute = value.indexOf(" ") != -1;
       if (qoute) {
         buf.append("\"");
@@ -139,7 +150,7 @@ public class SymbolicName {
         buf.append("\"");
       }
     }
-    
+
     return buf.toString();
   }
 }

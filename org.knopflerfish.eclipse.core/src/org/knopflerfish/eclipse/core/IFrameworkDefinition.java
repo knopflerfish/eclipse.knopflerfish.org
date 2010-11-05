@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,8 @@ import java.util.Map;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public interface IFrameworkDefinition {
 
@@ -64,7 +64,7 @@ public interface IFrameworkDefinition {
   
   public PackageDescription[] getExportedPackages(IOsgiLibrary[] libraries);
   
-  public PackageDescription[] getSystemPackages(File dir, Map systemProperties);
+  public PackageDescription[] getSystemPackages(File dir, Map<String, String> systemProperties);
   
   /** 
    * Create a runtime framework configuration.

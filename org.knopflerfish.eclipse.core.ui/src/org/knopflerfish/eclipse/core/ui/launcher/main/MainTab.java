@@ -128,7 +128,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   // Resources
   private Image imageTab = null;
 
-  PropertyGroup userGroup = new PropertyGroup(USER_GROUP);
+  private final PropertyGroup userGroup = new PropertyGroup(USER_GROUP);
   Map<String, String> systemProperties;
 
   public MainTab()
