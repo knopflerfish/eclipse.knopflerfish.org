@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,49 +58,60 @@ import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
-public class ExportProvider extends ViewerSorter implements IStructuredContentProvider, ITableLabelProvider, ITableColorProvider {
+public class ExportProvider extends ViewerSorter
+    implements IStructuredContentProvider, ITableLabelProvider,
+    ITableColorProvider {
 
   private final BundleProject project;
-  private List packages;
-  
-  // Images 
+  private List<String> packages;
+
+  // Images
   private Image imgPackageError;
-  
-  public ExportProvider(BundleProject project) {
+
+  public ExportProvider(BundleProject project)
+  {
     this.project = project;
-    
+
     imgPackageError = UiUtils.ovrImage(
-        JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE),
-        OsgiUiPlugin.getSharedImages().getImage(SharedImages.IMG_OVR_ERROR),
-        UiUtils.LEFT, UiUtils.BOTTOM
-    );
+        JavaUI.getSharedImages().getImage(
+            org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE), OsgiUiPlugin
+            .getSharedImages().getImage(SharedImages.IMG_OVR_ERROR),
+        UiUtils.LEFT, UiUtils.BOTTOM);
   }
 
-  /****************************************************************************
-   * org.eclipse.jface.viewers.ViewerSorter methods
-   ***************************************************************************/
+  // ***************************************************************************
+  // org.eclipse.jface.viewers.ViewerSorter methods
+  // ***************************************************************************
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ViewerSorter#compare(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.ViewerSorter#compare(org.eclipse.jface.viewers
+   * .Viewer, java.lang.Object, java.lang.Object)
    */
-  public int compare(Viewer viewer, Object o1, Object o2) {
+  public int compare(Viewer viewer, Object o1, Object o2)
+  {
     PackageDescription pd1 = (PackageDescription) o1;
     PackageDescription pd2 = (PackageDescription) o2;
-    
+
     return pd1.getPackageName().compareTo(pd2.getPackageName());
   }
-  
-  /****************************************************************************
-   * org.eclipse.jface.viewers.IStructuredContentProvider methods
-   ***************************************************************************/
+
+  // ***************************************************************************
+  // org.eclipse.jface.viewers.IStructuredContentProvider methods
+  // ***************************************************************************
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface
+   * .viewers.Viewer, java.lang.Object, java.lang.Object)
    */
-  public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+  public void inputChanged(Viewer viewer, Object oldInput, Object newInput)
+  {
     packages = null;
     try {
       packages = Arrays.asList(project.getExportablePackageNames());
@@ -110,92 +121,124 @@ public class ExportProvider extends ViewerSorter implements IStructuredContentPr
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang
+   * .Object)
    */
-  public Object[] getElements(Object inputElement) {
-    if ( !(inputElement instanceof BundleManifest)) return null;
-    
-    BundleManifest manifest = (BundleManifest) inputElement; 
+  public Object[] getElements(Object inputElement)
+  {
+    if (!(inputElement instanceof BundleManifest))
+      return null;
+
+    BundleManifest manifest = (BundleManifest) inputElement;
     return manifest.getExportedPackages();
+  }
+
+  // ***************************************************************************
+  // org.eclipse.jface.viewers.ITableLabelProvider methods
+  // ***************************************************************************
+  /*
+   * (non-Javadoc)
+   * 
+   * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
+   */
+  public void dispose()
+  {
+    if (imgPackageError != null) {
+      imgPackageError.dispose();
+      imgPackageError = null;
+    }
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface
+   * .viewers.ILabelProviderListener)
+   */
+  public void addListener(ILabelProviderListener listener)
+  {
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.
+   * Object, java.lang.String)
+   */
+  public boolean isLabelProperty(Object element, String property)
+  {
+    return false;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse
+   * .jface.viewers.ILabelProviderListener)
+   */
+  public void removeListener(ILabelProviderListener listener)
+  {
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.
+   * Object, int)
+   */
+  public Image getColumnImage(Object element, int columnIndex)
+  {
+    if (columnIndex == 0) {
+      PackageDescription pd = (PackageDescription) element;
+      if (packages != null && packages.contains(pd.getPackageName())) {
+        return JavaUI.getSharedImages().getImage(
+            org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
+      }
+      return imgPackageError;
+    }
+    return null;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object
+   * , int)
+   */
+  public String getColumnText(Object element, int columnIndex)
+  {
+    PackageDescription pd = (PackageDescription) element;
+
+    switch (columnIndex) {
+    case 0:
+      return pd.getPackageName();
+    case 1:
+      Version version = pd.getVersion();
+      return version.toString();
+    }
+    return "";
   }
 
   /****************************************************************************
    * org.eclipse.jface.viewers.ITableLabelProvider methods
    ***************************************************************************/
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.ITableColorProvider#getForeground(java.lang.Object
+   * , int)
    */
-  public void dispose() {
-    if (imgPackageError != null) {
-      imgPackageError.dispose();
-      imgPackageError = null;
-    }
-  }
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
-   */
-  public void addListener(ILabelProviderListener listener) {
-  }
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
-   */
-  public boolean isLabelProperty(Object element, String property) {
-    return false;
-  }
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
-   */
-  public void removeListener(ILabelProviderListener listener) {
-  }
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.Object, int)
-   */
-  public Image getColumnImage(Object element, int columnIndex) {
-    if (columnIndex == 0) {
-      PackageDescription pd = (PackageDescription) element;
-      if (packages != null && packages.contains(pd.getPackageName())) {
-        return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_PACKAGE);
-      }
-      return imgPackageError;
-    }
-    return null;
-  }
-  
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object, int)
-   */
-  public String getColumnText(Object element, int columnIndex) {
-    PackageDescription pd = (PackageDescription) element;
-    
-    switch(columnIndex){
-    case 0:
-      return pd.getPackageName();
-    case 1:
-      Version version = pd.getSpecificationVersion();
-      return version.toString();
-    }
-    return "";
-  }
-  
-  /****************************************************************************
-   * org.eclipse.jface.viewers.ITableLabelProvider methods
-   ***************************************************************************/
-  /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ITableColorProvider#getForeground(java.lang.Object, int)
-   */
-  public Color getForeground(Object element, int columnIndex) {
+  public Color getForeground(Object element, int columnIndex)
+  {
     PackageDescription pd = (PackageDescription) element;
     if (packages != null && packages.contains(pd.getPackageName())) {
       return null;
@@ -204,10 +247,14 @@ public class ExportProvider extends ViewerSorter implements IStructuredContentPr
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.jface.viewers.ITableColorProvider#getBackground(java.lang.Object, int)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.ITableColorProvider#getBackground(java.lang.Object
+   * , int)
    */
-  public Color getBackground(Object element, int columnIndex) {
+  public Color getBackground(Object element, int columnIndex)
+  {
     return null;
   }
 }

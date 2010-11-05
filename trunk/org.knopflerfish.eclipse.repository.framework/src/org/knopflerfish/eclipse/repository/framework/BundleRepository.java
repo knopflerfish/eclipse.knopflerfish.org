@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -59,26 +59,28 @@ import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class BundleRepository implements IBundleRepository {
 
   private final String name;
-  
-  private ArrayList packages = new ArrayList();
-  private HashMap symbolicNames = new HashMap(); // String, ArrayList of paths
-  private HashMap libraries = new HashMap(); // BundleIdentity, ArrayList of String
-  private ArrayList manifests = new ArrayList(); // BundleIdentity, String
-  
-  public BundleRepository(String name) {
+
+  private List<PackageDescription> packages = new ArrayList<PackageDescription>();
+  private Map<String, List<String>> symbolicNames = new HashMap<String, List<String>>();
+  private Map<String, List<String>> libraries = new HashMap<String, List<String>>();
+  private List<BundleManifest> manifests = new ArrayList<BundleManifest>();
+
+  public BundleRepository(String name)
+  {
 
     this.name = name;
-    
+
     // Initialize caches
-    FrameworkPreference frameworkPreference = OsgiPreferences.getFramework(name);
-    IOsgiBundle [] bundles = frameworkPreference.getBundles();
-    for (int i=0; i<bundles.length; i++) {
+    FrameworkPreference frameworkPreference = OsgiPreferences
+        .getFramework(name);
+    IOsgiBundle[] bundles = frameworkPreference.getBundles();
+    for (int i = 0; i < bundles.length; i++) {
       BundleManifest bm = bundles[i].getBundleManifest();
       // Bundles, skip bundles with no symbolic name
       SymbolicName symbolicName = bm.getSymbolicName();
@@ -86,20 +88,21 @@ public class BundleRepository implements IBundleRepository {
       if (symbolicName == null && bm.getName() != null) {
         symbolicName = new SymbolicName(bm.getName());
       }
-      // Skip if Symbolic name is not set 
-      if (symbolicName == null) continue;
-      
-      ArrayList paths = (ArrayList) symbolicNames.get(symbolicName.getSymbolicName());
+      // Skip if Symbolic name is not set
+      if (symbolicName == null)
+        continue;
+
+      List<String> paths = symbolicNames.get(symbolicName.getSymbolicName());
       if (paths == null) {
-        paths = new ArrayList();
+        paths = new ArrayList<String>();
       }
       paths.add(bundles[i].getPath());
       symbolicNames.put(symbolicName.getSymbolicName(), paths);
-      
+
       BundleIdentity id = new BundleIdentity(symbolicName, bm.getVersion());
       // Manifests
       manifests.add(bm);
-      // Packages 
+      // Packages
       this.packages.addAll(Arrays.asList(bm.getExportedPackages()));
       // Check if this bundles has any more libraries to extract
       String[] classPaths = bm.getBundleClassPath();
@@ -107,21 +110,23 @@ public class BundleRepository implements IBundleRepository {
         JarFile jarFile = null;
         try {
           jarFile = new JarFile(bundles[i].getPath());
-          ArrayList libs = new ArrayList();
-          for (int j=0; j<classPaths.length; j++) {
-            if (".".equals(classPaths[j])) continue;
-            
+          List<String> libs = new ArrayList<String>();
+          for (int j = 0; j < classPaths.length; j++) {
+            if (".".equals(classPaths[j]))
+              continue;
+
             ZipEntry entry = jarFile.getEntry(classPaths[j]);
             if (entry != null) {
               InputStream is = jarFile.getInputStream(entry);
-              String path = RepositoryPlugin.getDefault().storeFile(is, classPaths[j], id);
+              String path = RepositoryPlugin.getDefault().storeFile(is,
+                  classPaths[j], id);
               if (path != null) {
                 libs.add(path);
               }
               is.close();
             }
           }
-          
+
           libraries.put(bundles[i].getPath(), libs);
         } finally {
           if (jarFile != null) {
@@ -134,62 +139,73 @@ public class BundleRepository implements IBundleRepository {
       }
     }
   }
-  
+
   /****************************************************************************
    * org.knopflerfish.eclipse.core.IBundleRepositoryType methods
    ***************************************************************************/
-  
+
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see org.knopflerfish.eclipse.core.IBundleRepository#getExportedPackages()
    */
-  public PackageDescription[] getExportedPackages() {
-    return (PackageDescription[]) packages.toArray(new PackageDescription[packages.size()]);
+  public PackageDescription[] getExportedPackages()
+  {
+    return packages.toArray(new PackageDescription[packages.size()]);
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepository#getExportingBundles(org.knopflerfish.eclipse.core.manifest.PackageDescription)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IBundleRepository#getExportingBundles(org
+   * .knopflerfish.eclipse.core.manifest.PackageDescription)
    */
-  public BundleManifest[] getExportingBundles(PackageDescription pd) {
-    ArrayList manifests = new ArrayList(); 
-    for (Iterator i=this.manifests.iterator(); i.hasNext();) {
-      BundleManifest manifest = (BundleManifest) i.next();
+  public BundleManifest[] getExportingBundles(PackageDescription pd)
+  {
+    List<BundleManifest> manifests = new ArrayList<BundleManifest>();
+    for (BundleManifest manifest : this.manifests) {
       if (manifest.hasExportedPackage(pd)) {
         manifests.add(manifest);
       }
     }
-    return (BundleManifest[]) manifests.toArray(new BundleManifest[manifests.size()]);
+    return manifests.toArray(new BundleManifest[manifests.size()]);
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepository#getBundleLibraries(org.knopflerfish.eclipse.core.manifest.SymbolicName, org.knopflerfish.eclipse.core.manifest.PackageDescription[])
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IBundleRepository#getBundleLibraries(org.
+   * knopflerfish.eclipse.core.manifest.SymbolicName,
+   * org.knopflerfish.eclipse.core.manifest.PackageDescription[])
    */
-  public IOsgiLibrary[] getBundleLibraries(SymbolicName symbolicName, PackageDescription[] packages) {
-    if (symbolicName == null) return null;
-    
-    List paths = (List) symbolicNames.get(symbolicName.getSymbolicName());
-    if (paths == null || paths.size() == 0) return null;
-    
-    for(Iterator i=paths.iterator(); i.hasNext();) {
-      String path = (String) i.next();
+  public IOsgiLibrary[] getBundleLibraries(SymbolicName symbolicName,
+                                           PackageDescription[] packages)
+  {
+    if (symbolicName == null)
+      return null;
+
+    List<String> paths = symbolicNames.get(symbolicName.getSymbolicName());
+    if (paths == null || paths.size() == 0)
+      return null;
+
+    for (String path : paths) {
       try {
         OsgiBundle bundle = new OsgiBundle(new File(path));
         boolean hasPackages = true;
-        for(int j=0; packages!= null && j<packages.length; j++) {
+        for (int j = 0; packages != null && j < packages.length; j++) {
           if (!bundle.hasExportedPackage(packages[j])) {
             hasPackages = false;
             break;
           }
         }
         if (hasPackages) {
-          ArrayList libs =  new ArrayList();
+          List<IOsgiLibrary> libs = new ArrayList<IOsgiLibrary>();
           libs.add(bundle);
-          ArrayList libraryPaths = (ArrayList) libraries.get(path);
+          List<String> libraryPaths = libraries.get(path);
           if (libraryPaths != null) {
-            for (Iterator k=libraryPaths.iterator(); k.hasNext();) {
-              String libraryPath = (String) k.next();
+            for (String libraryPath : libraryPaths) {
               try {
                 libs.add(new OsgiLibrary(new File(libraryPath)));
               } catch (IOException e) {
@@ -197,7 +213,7 @@ public class BundleRepository implements IBundleRepository {
               }
             }
           }
-          return (IOsgiLibrary[]) libs.toArray(new IOsgiLibrary[libs.size()]);
+          return libs.toArray(new IOsgiLibrary[libs.size()]);
         }
       } catch (IOException e) {
         e.printStackTrace();
@@ -205,34 +221,41 @@ public class BundleRepository implements IBundleRepository {
     }
     return null;
   }
-  
+
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see org.knopflerfish.eclipse.core.IBundleRepository#getBundles()
    */
-  public IOsgiBundle[] getBundles() {
-    FrameworkPreference frameworkPreference = OsgiPreferences.getFramework(name);
+  public IOsgiBundle[] getBundles()
+  {
+    FrameworkPreference frameworkPreference = OsgiPreferences
+        .getFramework(name);
     return frameworkPreference.getBundles();
   }
 
   /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepository#getPackageVersions(java.lang.String)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.knopflerfish.eclipse.core.IBundleRepository#getPackageVersions(java
+   * .lang.String)
    */
-  public Version[] getPackageVersions(String packageName) {
-    if (packageName == null) return null;
-    ArrayList versions =  new ArrayList();
-      
-    for(Iterator i=packages.iterator(); i.hasNext();) {
-      PackageDescription pd = (PackageDescription) i.next();
+  public Version[] getPackageVersions(String packageName)
+  {
+    if (packageName == null)
+      return null;
+    ArrayList<Version> versions = new ArrayList<Version>();
+
+    for (PackageDescription pd : packages) {
       if (packageName.equals(pd.getPackageName())) {
-        if (!versions.contains(pd.getSpecificationVersion())) {
-          versions.add(pd.getSpecificationVersion());
+        if (!versions.contains(pd.getVersion())) {
+          versions.add(pd.getVersion());
         }
       }
     }
-    
-    return (Version[]) versions.toArray(new Version[versions.size()]);
+
+    return versions.toArray(new Version[versions.size()]);
   }
 
 }

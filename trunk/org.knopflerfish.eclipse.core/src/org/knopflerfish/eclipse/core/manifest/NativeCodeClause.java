@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,35 +35,36 @@
 package org.knopflerfish.eclipse.core.manifest;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class NativeCodeClause {
   private static final String SEPARATOR = ";";
-  private static final String ENV_PARAM_PROCESSOR = "processor"; 
-  private static final String ENV_PARAM_OSNAME    = "osname"; 
-  private static final String ENV_PARAM_OSVERSION = "osversion"; 
-  private static final String ENV_PARAM_LANGUAGE  = "language"; 
-  
-  private ArrayList nativePaths = new ArrayList();
-  private ArrayList processorDef = new ArrayList();
-  private ArrayList osNameDef = new ArrayList();
-  private ArrayList osVersionDef = new ArrayList();
-  private ArrayList languageDef = new ArrayList();
-  
-  public NativeCodeClause() {
+  private static final String ENV_PARAM_PROCESSOR = "processor";
+  private static final String ENV_PARAM_OSNAME = "osname";
+  private static final String ENV_PARAM_OSVERSION = "osversion";
+  private static final String ENV_PARAM_LANGUAGE = "language";
+
+  private List<String> nativePaths = new ArrayList<String>();
+  private List<String> processorDef = new ArrayList<String>();
+  private List<String> osNameDef = new ArrayList<String>();
+  private List<String> osVersionDef = new ArrayList<String>();
+  private List<String> languageDef = new ArrayList<String>();
+
+  public NativeCodeClause()
+  {
     // Create empty native code clause
   }
-  
-  public NativeCodeClause(String s) {
+
+  public NativeCodeClause(String s)
+  {
     // Parse native code clause from string
     StringTokenizer st = new StringTokenizer(s, SEPARATOR);
-    
+
     boolean pathAllowed = true;
     while (st.hasMoreTokens()) {
       String token = st.nextToken().trim();
@@ -71,19 +72,19 @@ public class NativeCodeClause {
       if (idx != -1) {
         // Found environment parameter, no native paths allowed after this
         pathAllowed = false;
-        
+
         // Extract attribute and value
         String attr = "";
         if (idx > 0) {
           attr = token.substring(0, idx).trim();
         }
         String value = "";
-        if (idx+1 < token.length()) {
-          value = token.substring(idx+1).trim();
+        if (idx + 1 < token.length()) {
+          value = token.substring(idx + 1).trim();
         }
         // Removes qoutes if qouted
-        if (value.startsWith("\"") && value.endsWith("\"") ) {
-          value = value.substring(1, value.length()-1);
+        if (value.startsWith("\"") && value.endsWith("\"")) {
+          value = value.substring(1, value.length() - 1);
         }
 
         // Check what attribute this is
@@ -105,160 +106,184 @@ public class NativeCodeClause {
       }
     }
   }
-  
-  /****************************************************************************
-   * java.lang.Object methods
-   ***************************************************************************/
+
+  // ***************************************************************************
+  // java.lang.Object methods
+  // ***************************************************************************
   /*
-   *  (non-Javadoc)
+   * (non-Javadoc)
+   * 
    * @see java.lang.Object#toString()
    */
-  public String toString() {
+  public String toString()
+  {
     StringBuffer buf = new StringBuffer();
-    
+
     // Add all native paths
-    for(Iterator i=nativePaths.iterator();i.hasNext();) {
+    for (String path : nativePaths) {
       if (buf.length() > 0) {
         buf.append(SEPARATOR);
       }
-      buf.append((String) i.next());
+      buf.append(path);
     }
 
     // Add all processor defs
-    for(Iterator i=processorDef.iterator();i.hasNext();) {
-      append(buf, ENV_PARAM_PROCESSOR, (String) i.next());
+    for (String proc : processorDef) {
+      append(buf, ENV_PARAM_PROCESSOR, proc);
     }
 
     // Add all OS name defs
-    for(Iterator i=osNameDef.iterator();i.hasNext();) {
-      append(buf, ENV_PARAM_OSNAME, (String) i.next());
+    for (String os : osNameDef) {
+      append(buf, ENV_PARAM_OSNAME, os);
     }
-    
+
     // Add all OS version defs
-    for(Iterator i=osVersionDef.iterator();i.hasNext();) {
-      append(buf, ENV_PARAM_OSVERSION, (String) i.next());
+    for (String version : osVersionDef) {
+      append(buf, ENV_PARAM_OSVERSION, version);
     }
-    
+
     // Add all language defs
-    for(Iterator i=languageDef.iterator();i.hasNext();) {
-      append(buf, ENV_PARAM_LANGUAGE, (String) i.next());
+    for (String lang : languageDef) {
+      append(buf, ENV_PARAM_LANGUAGE, lang);
     }
-    
+
     return buf.toString();
   }
-  
-  /****************************************************************************
-   * Native path methods
-   ***************************************************************************/
-  
-  public void addNativePath(String path) {
+
+  // ***************************************************************************
+  // Native path methods
+  // ***************************************************************************
+
+  public void addNativePath(String path)
+  {
     add(nativePaths, path);
   }
-  
-  public void removeNativePath(String path) {
+
+  public void removeNativePath(String path)
+  {
     remove(nativePaths, path);
   }
-  
-  public String[] getNativePaths() {
+
+  public String[] getNativePaths()
+  {
     return getValues(nativePaths);
   }
-  
-  /****************************************************************************
-   * Processor environment parameter methods
-   ***************************************************************************/
-  
-  public void addProcessorDef(String def) {
+
+  // ***************************************************************************
+  // Processor environment parameter methods
+  // ***************************************************************************
+
+  public void addProcessorDef(String def)
+  {
     add(processorDef, def);
   }
-  
-  public void removeProcessorDef(String def) {
+
+  public void removeProcessorDef(String def)
+  {
     remove(processorDef, def);
   }
-  
-  public String[] getProcessorDefs() {
+
+  public String[] getProcessorDefs()
+  {
     return getValues(processorDef);
   }
-  
-  /****************************************************************************
-   * OS name environment parameter methods
-   ***************************************************************************/
-  
-  public void addOSNameDef(String def) {
+
+  // ***************************************************************************
+  // OS name environment parameter methods
+  // ***************************************************************************
+
+  public void addOSNameDef(String def)
+  {
     add(osNameDef, def);
   }
-  
-  public void removeOSNameDef(String def) {
+
+  public void removeOSNameDef(String def)
+  {
     remove(osNameDef, def);
   }
-  
-  public String[] getOSNameDefs() {
+
+  public String[] getOSNameDefs()
+  {
     return getValues(osNameDef);
   }
-  
-  /****************************************************************************
-   * OS version environment parameter methods
-   ***************************************************************************/
-  
-  public void addOSVersionDef(String def) {
+
+  // ***************************************************************************
+  // OS version environment parameter methods
+  // ***************************************************************************
+
+  public void addOSVersionDef(String def)
+  {
     add(osVersionDef, def);
   }
-  
-  public void removeOSVersionDef(String def) {
+
+  public void removeOSVersionDef(String def)
+  {
     remove(osVersionDef, def);
   }
-  
-  public String[] getOSVersionDefs() {
+
+  public String[] getOSVersionDefs()
+  {
     return getValues(osVersionDef);
   }
-  
-  /****************************************************************************
-   * Language environment parameter methods
-   ***************************************************************************/
-  
-  public void addLanguageDef(String def) {
+
+  // ***************************************************************************
+  // Language environment parameter methods
+  // ***************************************************************************
+
+  public void addLanguageDef(String def)
+  {
     add(languageDef, def);
   }
-  
-  public void removeLanguageDef(String def) {
+
+  public void removeLanguageDef(String def)
+  {
     remove(languageDef, def);
   }
-  
-  public String[] getLanguageDefs() {
+
+  public String[] getLanguageDefs()
+  {
     return getValues(languageDef);
   }
-  
-  /****************************************************************************
-   * Private utility methods
-   ***************************************************************************/
-  
-  private void add(List list, String value) {
-    if (list == null || value == null) return;
-    
+
+  // ***************************************************************************
+  // Private utility methods
+  // ***************************************************************************
+
+  private void add(List<String> list, String value)
+  {
+    if (list == null || value == null)
+      return;
+
     if (!list.contains(value)) {
       list.add(value);
     }
   }
-  
-  private void remove(List list, String value) {
-    if (list == null || value == null) return;
-    
+
+  private void remove(List<String> list, String value)
+  {
+    if (list == null || value == null)
+      return;
+
     if (list.contains(value)) {
       list.remove(value);
     }
   }
-  
-  public String[] getValues(List list) {
-    if (list == null) return new String[0];
-    
-    return (String[]) list.toArray(new String[list.size()]);
+
+  private String[] getValues(List<String> list)
+  {
+    if (list == null)
+      return new String[0];
+
+    return list.toArray(new String[list.size()]);
   }
 
-  private void append(StringBuffer buf, String attr, String value) {
-    
+  private void append(StringBuffer buf, String attr, String value)
+  {
+
     if (buf.length() > 0) {
       buf.append(SEPARATOR);
     }
-    
+
     buf.append(attr);
     buf.append("=");
     boolean qoute = value.indexOf(" ") != -1;

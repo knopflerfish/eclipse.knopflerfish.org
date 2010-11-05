@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 package org.knopflerfish.eclipse.repository.framework;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.knopflerfish.eclipse.core.IBundleRepository;
 import org.knopflerfish.eclipse.core.IBundleRepositoryType;
@@ -42,8 +43,8 @@ import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class BundleRepositoryType implements IBundleRepositoryType {
 
@@ -65,12 +66,12 @@ public class BundleRepositoryType implements IBundleRepositoryType {
    * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#getConfigSuggestions()
    */
   public String[] getConfigSuggestions() {
-    ArrayList names = new ArrayList();
+    List<String> names = new ArrayList<String>();
     FrameworkPreference[] frameworks = OsgiPreferences.getFrameworks();
     for(int i=0; i<frameworks.length;i++) {
       names.add(frameworks[i].getName());
     }
-    return (String[]) names.toArray(new String[names.size()]);
+    return names.toArray(new String[names.size()]);
   }
 
   /*
@@ -78,7 +79,7 @@ public class BundleRepositoryType implements IBundleRepositoryType {
    * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#createRepository(java.lang.String)
    */
   public IBundleRepository createRepository(String config) {
-    IBundleRepository repository = (IBundleRepository) RepositoryPlugin.repositoriesCache.get(config);
+    IBundleRepository repository = RepositoryPlugin.repositoriesCache.get(config);
     if (repository == null) {
       repository = new BundleRepository(config);
       RepositoryPlugin.repositoriesCache.put(config, repository);

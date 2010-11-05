@@ -307,7 +307,7 @@ public class BundleProject implements IBundleProject {
    * @see org.knopflerfish.eclipse.core.project.IBundleProject#getReferencedPackageNames()
    */
   public String[] getReferencedPackageNames() throws JavaModelException {
-    TreeSet packageNames = new TreeSet();
+    TreeSet<String> packageNames = new TreeSet<String>();
     
     IPackageFragmentRoot[] roots = getFragmentRoots();
     TreeSet packages = new TreeSet();
@@ -334,7 +334,7 @@ public class BundleProject implements IBundleProject {
         }
       }
     }
-    return (String[]) packageNames.toArray(new String[packageNames.size()]);
+    return packageNames.toArray(new String[packageNames.size()]);
   }
 
   /*
@@ -476,307 +476,303 @@ public class BundleProject implements IBundleProject {
    * Update Classpath methods
    ***************************************************************************/
   
-  private void importFrameworkPackage(PackageDescription pd, boolean updateManifest) throws CoreException {
-    
+  private void importFrameworkPackage(PackageDescription pd,
+                                      boolean updateManifest)
+    throws CoreException
+  {
+
     // Update access rules for framework container
-    ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+    ArrayList<IClasspathEntry> entries = new ArrayList<IClasspathEntry>(
+        Arrays.asList(javaProject.getRawClasspath()));
     int idx = -1;
-    for(int i=0;i<entries.size();i++) {
+    for (int i = 0; i < entries.size(); i++) {
       // Find framework container
-      IClasspathEntry entry = (IClasspathEntry) entries.get(i);
-      if (entry.getPath().toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
+      IClasspathEntry entry = entries.get(i);
+      if (entry.getPath().toString()
+          .startsWith(FrameworkContainer.CONTAINER_PATH)) {
         idx = i;
         break;
       }
     }
-    
+
     // Check if access rule aleady exist
     IAccessRule rule = ClasspathUtil.createAccessRule(pd);
-    IClasspathAttribute attr =
-      JavaCore.newClasspathAttribute(pd.getPackageName(), pd.getSpecificationVersion().toString());
     if (idx != -1) {
       boolean exist = false;
-      IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
-      
-      ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
-      ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
+      IClasspathEntry oldEntry = entries.get(idx);
+
+      ArrayList<IAccessRule> rules = new ArrayList<IAccessRule>(
+          Arrays.asList(oldEntry.getAccessRules()));
       // Check if rule exists
-      for(int i=0;i<rules.size();i++) {
+      for (int i = 0; i < rules.size(); i++) {
         if (rule.equals(rules.get(i))) {
           exist = true;
           break;
         }
       }
-      
+
       // Update classpath
       if (!exist) {
         rules.add(0, rule);
-        attributes.add(attr);
-        
-        IClasspathEntry newEntry = JavaCore.newContainerEntry(
-            new Path(FrameworkContainer.CONTAINER_PATH),
-            (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-            (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
-            false
-        );
+
+        IClasspathEntry newEntry = JavaCore.newContainerEntry(new Path(
+            FrameworkContainer.CONTAINER_PATH), rules
+            .toArray(new IAccessRule[rules.size()]), null, false);
         entries.remove(idx);
         entries.add(idx, newEntry);
-        
+
         javaProject.setRawClasspath(
-            (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
-            null);
+            entries.toArray(new IClasspathEntry[entries.size()]), null);
       }
     }
-    
+
     // Update manifest
     if (updateManifest) {
       // Add package to manifest
       BundleManifest manifest = getBundleManifest();
-      ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+      ArrayList<PackageDescription> importedPackages = new ArrayList<PackageDescription>(
+          Arrays.asList(manifest.getImportedPackages()));
       boolean changed = false;
       if (!importedPackages.contains(pd)) {
         importedPackages.add(pd);
         changed = true;
       }
-      
-      if(changed) {
-        manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+
+      if (changed) {
+        manifest.setImportedPackages(importedPackages
+            .toArray(new PackageDescription[importedPackages.size()]));
         setBundleManifest(manifest);
       }
     }
   }
   
-  public void removeFrameworkPackage(PackageDescription pd, boolean updateManifest) throws CoreException {
-    
+  public void removeFrameworkPackage(PackageDescription pd,
+                                     boolean updateManifest)
+    throws CoreException
+  {
+
     // Update access rules for framework container
-    ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+    ArrayList<IClasspathEntry> entries = new ArrayList<IClasspathEntry>(
+        Arrays.asList(javaProject.getRawClasspath()));
     int idx = -1;
-    for(int i=0;i<entries.size();i++) {
+    for (int i = 0; i < entries.size(); i++) {
       // Find framework container
-      IClasspathEntry entry = (IClasspathEntry) entries.get(i);
-      if (entry.getPath().toString().startsWith(FrameworkContainer.CONTAINER_PATH)) {
+      IClasspathEntry entry = entries.get(i);
+      if (entry.getPath().toString()
+          .startsWith(FrameworkContainer.CONTAINER_PATH)) {
         idx = i;
         break;
       }
     }
-    
+
     // Check if access rule exist
     IAccessRule rule = ClasspathUtil.createAccessRule(pd);
-    IClasspathAttribute attr =
-      JavaCore.newClasspathAttribute(pd.getPackageName(), pd.getSpecificationVersion().toString());
     if (idx != -1) {
       boolean exist = false;
-      IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
-      
-      ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
-      ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
+      IClasspathEntry oldEntry = entries.get(idx);
+
+      ArrayList<IAccessRule> rules = new ArrayList<IAccessRule>(
+          Arrays.asList(oldEntry.getAccessRules()));
       // Check if rule exists
-      for(int i=0;i<rules.size();i++) {
+      for (int i = 0; i < rules.size(); i++) {
         if (rule.equals(rules.get(i))) {
           exist = true;
           break;
         }
       }
-      
+
       // Update classpath
       if (exist) {
         rules.remove(rule);
-        attributes.remove(attr);
-        IClasspathEntry newEntry = JavaCore.newContainerEntry(
-            new Path(FrameworkContainer.CONTAINER_PATH),
-            (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-            (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
-            false
-        );
+        IClasspathEntry newEntry = JavaCore.newContainerEntry(new Path(
+            FrameworkContainer.CONTAINER_PATH), rules
+            .toArray(new IAccessRule[rules.size()]), null, false);
         entries.remove(idx);
         entries.add(idx, newEntry);
-        
+
         javaProject.setRawClasspath(
-            (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
-            null);
+            entries.toArray(new IClasspathEntry[entries.size()]), null);
       }
     }
-    
+
     // Update manifest
     if (updateManifest) {
       // Add package to manifest
       BundleManifest manifest = getBundleManifest();
-      ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+      ArrayList<PackageDescription> importedPackages = new ArrayList<PackageDescription>(
+          Arrays.asList(manifest.getImportedPackages()));
       boolean changed = false;
       if (importedPackages.contains(pd)) {
         importedPackages.remove(pd);
         changed = true;
       }
-      
-      if(changed) {
-        manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+
+      if (changed) {
+        manifest.setImportedPackages(importedPackages
+            .toArray(new PackageDescription[importedPackages.size()]));
         setBundleManifest(manifest);
       }
     }
   }
   
-  public void importBundlePackage(BuildPath bp, boolean updateManifest) throws CoreException {
-    
+  public void importBundlePackage(BuildPath bp, boolean updateManifest)
+    throws CoreException
+  {
+
     // Update access rules for bundle container
-    ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+    ArrayList<IClasspathEntry> entries = new ArrayList<IClasspathEntry>(
+        Arrays.asList(javaProject.getRawClasspath()));
     int idx = -1;
-    for(int i=0;i<entries.size();i++) {
+    for (int i = 0; i < entries.size(); i++) {
       // Find bundle container
-      IClasspathEntry entry = (IClasspathEntry) entries.get(i);
+      IClasspathEntry entry = entries.get(i);
       if (entry.getPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
-        if (bp.getBundleIdentity().getSymbolicName().equals(BundleContainerInitializer.getBundleIdentity(entry.getPath()).getSymbolicName())) {
+        if (bp
+            .getBundleIdentity()
+            .getSymbolicName()
+            .equals(
+                BundleContainerInitializer.getBundleIdentity(entry.getPath())
+                    .getSymbolicName())) {
           idx = i;
           break;
         }
       }
     }
-    
-    // Check if access rule aleady exist
-    IAccessRule rule = ClasspathUtil.createAccessRule(bp.getPackageDescription());
-    IClasspathAttribute attr =
-      JavaCore.newClasspathAttribute(
-          bp.getPackageDescription().getPackageName(), 
-          bp.getPackageDescription().getSpecificationVersion().toString());
+
+    // Check if access rule already exist
+    IAccessRule rule = ClasspathUtil.createAccessRule(bp
+        .getPackageDescription());
     if (idx != -1) {
       boolean exist = false;
       IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
-      
-      ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
-      ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
+
+      ArrayList<IAccessRule> rules = new ArrayList<IAccessRule>(
+          Arrays.asList(oldEntry.getAccessRules()));
       // Check if rule exists
-      for(int i=0;i<rules.size();i++) {
+      for (int i = 0; i < rules.size(); i++) {
         if (rule.equals(rules.get(i))) {
           exist = true;
           break;
         }
       }
-      
+
       // Update classpath
       if (!exist) {
         rules.add(0, rule);
-        attributes.add(attr);
-        IClasspathEntry newEntry = JavaCore.newContainerEntry(
-            new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().getSymbolicName().toString()),
-            (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-            (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
-            false
-        );
+        IClasspathEntry newEntry = JavaCore.newContainerEntry(new Path(
+            BundleContainer.CONTAINER_PATH + "/"
+                + bp.getBundleIdentity().getSymbolicName().toString()), rules
+            .toArray(new IAccessRule[rules.size()]), null, false);
         entries.remove(idx);
         entries.add(idx, newEntry);
-        
+
         javaProject.setRawClasspath(
-            (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
-            null);
+            entries.toArray(new IClasspathEntry[entries.size()]), null);
       }
     } else {
       // Add new entry
-      IAccessRule defaultRule = JavaCore.newAccessRule(new Path("**/*"), IAccessRule.K_NON_ACCESSIBLE);
-      ArrayList attributes = new ArrayList();
-      attributes.add(JavaCore.newClasspathAttribute(ClasspathUtil.ATTR_BUNDLENAME, bp.getBundleName()));
-      attributes.add(attr);
-      IClasspathEntry newEntry = JavaCore.newContainerEntry(
-          new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().getSymbolicName().toString()),
-          new IAccessRule[] {rule, defaultRule},
-          (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
-          false
-      );
+      IAccessRule defaultRule = JavaCore.newAccessRule(new Path("**/*"),
+          IAccessRule.K_NON_ACCESSIBLE);
+      IClasspathEntry newEntry = JavaCore.newContainerEntry(new Path(
+          BundleContainer.CONTAINER_PATH + "/"
+              + bp.getBundleIdentity().getSymbolicName().toString()),
+          new IAccessRule[] { rule, defaultRule }, null, false);
       entries.add(newEntry);
-      
-      javaProject.setRawClasspath(
-          (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
-          null);
+
+      javaProject.setRawClasspath((IClasspathEntry[]) entries
+          .toArray(new IClasspathEntry[entries.size()]), null);
     }
-    
+
     // Update manifest
     if (updateManifest) {
       // Add package to manifest
       BundleManifest manifest = getBundleManifest();
-      ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+      ArrayList<PackageDescription> importedPackages = new ArrayList<PackageDescription>(
+          Arrays.asList(manifest.getImportedPackages()));
       boolean changed = false;
       if (!importedPackages.contains(bp.getPackageDescription())) {
         importedPackages.add(bp.getPackageDescription());
         changed = true;
       }
-      
-      if(changed) {
-        manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+
+      if (changed) {
+        manifest.setImportedPackages(importedPackages
+            .toArray(new PackageDescription[importedPackages.size()]));
         setBundleManifest(manifest);
       }
     }
   }
   
-  
-  public void removeBundlePackage(BuildPath bp, boolean updateManifest) throws CoreException {
-    
+  public void removeBundlePackage(BuildPath bp, boolean updateManifest)
+    throws CoreException
+  {
+
     // Update access rules for bundle container
-    ArrayList entries = new ArrayList(Arrays.asList(javaProject.getRawClasspath()));
+    ArrayList<IClasspathEntry> entries = new ArrayList<IClasspathEntry>(
+        Arrays.asList(javaProject.getRawClasspath()));
     int idx = -1;
-    for(int i=0;i<entries.size();i++) {
+    for (int i = 0; i < entries.size(); i++) {
       // Find bundle container
-      IClasspathEntry entry = (IClasspathEntry) entries.get(i);
+      IClasspathEntry entry = entries.get(i);
       if (entry.getPath().toString().startsWith(BundleContainer.CONTAINER_PATH)) {
-        if (bp.getBundleIdentity().equals(BundleContainerInitializer.getBundleIdentity(entry.getPath()))) {
+        if (bp.getBundleIdentity().equals(
+            BundleContainerInitializer.getBundleIdentity(entry.getPath()))) {
           idx = i;
           break;
         }
       }
     }
-    
+
     // Check if access rule aleady exist
-    IAccessRule rule = ClasspathUtil.createAccessRule(bp.getPackageDescription());
-    IClasspathAttribute attr =
-      JavaCore.newClasspathAttribute(
-          bp.getPackageDescription().getPackageName(), 
-          bp.getPackageDescription().getSpecificationVersion().toString());
+    IAccessRule rule = ClasspathUtil.createAccessRule(bp
+        .getPackageDescription());
     if (idx != -1) {
       boolean exist = false;
       IClasspathEntry oldEntry = (IClasspathEntry) entries.get(idx);
-      
-      ArrayList rules = new ArrayList(Arrays.asList(oldEntry.getAccessRules()));
-      ArrayList attributes = new ArrayList(Arrays.asList(oldEntry.getExtraAttributes()));
+
+      ArrayList<IAccessRule> rules = new ArrayList<IAccessRule>(
+          Arrays.asList(oldEntry.getAccessRules()));
       // Check if rule exists
-      for(int i=0;i<rules.size();i++) {
+      for (int i = 0; i < rules.size(); i++) {
         if (rule.equals(rules.get(i))) {
           exist = true;
           break;
         }
       }
-      
+
       // Update classpath
       if (exist) {
-        attributes.remove(attr);
         rules.remove(rule);
         entries.remove(idx);
         if (rules.size() > 1) {
           // Update entry
-          IClasspathEntry newEntry = JavaCore.newContainerEntry(
-              new Path(BundleContainer.CONTAINER_PATH+"/"+bp.getBundleIdentity().toString()),
-              (IAccessRule []) rules.toArray(new IAccessRule[rules.size()]),
-              (IClasspathAttribute []) attributes.toArray(new IClasspathAttribute[attributes.size()]),
-              false
-          );
+          IClasspathEntry newEntry = JavaCore.newContainerEntry(new Path(
+              BundleContainer.CONTAINER_PATH + "/"
+                  + bp.getBundleIdentity().toString()), rules
+              .toArray(new IAccessRule[rules.size()]), null, false);
           entries.add(idx, newEntry);
         }
-        
+
         javaProject.setRawClasspath(
-            (IClasspathEntry []) entries.toArray(new IClasspathEntry[entries.size()]),
-            null);
+            entries.toArray(new IClasspathEntry[entries.size()]), null);
       }
     }
-    
+
     // Update manifest
     if (updateManifest) {
       // Add package to manifest
       BundleManifest manifest = getBundleManifest();
-      ArrayList importedPackages = new ArrayList(Arrays.asList(manifest.getImportedPackages()));
+      ArrayList<PackageDescription> importedPackages = new ArrayList<PackageDescription>(
+          Arrays.asList(manifest.getImportedPackages()));
       boolean changed = false;
       if (importedPackages.contains(bp.getPackageDescription())) {
         importedPackages.remove(bp.getPackageDescription());
         changed = true;
       }
-      
-      if(changed) {
-        manifest.setImportedPackages((PackageDescription[]) importedPackages.toArray(new PackageDescription[importedPackages.size()]));
+
+      if (changed) {
+        manifest.setImportedPackages(importedPackages
+            .toArray(new PackageDescription[importedPackages.size()]));
         setBundleManifest(manifest);
       }
     }
