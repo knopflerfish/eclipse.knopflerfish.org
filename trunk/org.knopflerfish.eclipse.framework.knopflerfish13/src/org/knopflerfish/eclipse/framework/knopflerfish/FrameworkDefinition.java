@@ -46,7 +46,9 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 
 import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Status;
 import org.knopflerfish.eclipse.core.IFrameworkConfiguration;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
@@ -57,6 +59,7 @@ import org.knopflerfish.eclipse.core.Property;
 import org.knopflerfish.eclipse.core.PropertyGroup;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
+import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
 /**
@@ -65,10 +68,25 @@ import org.osgi.framework.Version;
  */
 public class FrameworkDefinition implements IFrameworkDefinition {
 
-  // System properties used for exporting system packages
-  private final static String SYSPKG = "org.osgi.framework.system.packages";
-  private final static String SYSPKG_FILE = "org.osgi.framework.system.packages.file";
-  private final static String EXPORT13 = "org.knopflerfish.framework.system.export.all_13";
+  // FWProps
+  /**
+   * Name of system property for basic system packages to be exported. The
+   * normal OSGi exports will be added to this list.
+   */
+  public final static String SYSTEM_PACKAGES_BASE_PROP = "org.knopflerfish.framework.system.packages.base";
+
+  /**
+   * Property name pointing to file listing of system-exported packages
+   */
+  public final static String SYSTEM_PACKAGES_FILE_PROP = "org.knopflerfish.framework.system.packages.file";
+
+  /**
+   * Property name for selecting exporting profile of system packages.
+   */
+  public final static String SYSTEM_PACKAGES_VERSION_PROP = "org.knopflerfish.framework.system.packages.version";
+
+  public static int javaVersionMajor = 1;
+  public static int javaVersionMinor = 6;
 
   private final static String PATH_PROPERTY_FILE = "resources/framework.props";
 
@@ -79,14 +97,13 @@ public class FrameworkDefinition implements IFrameworkDefinition {
   // Paths relative root directory for definition
   private final static String PATH_MAINLIB = "framework.jar";
   private final static String PATH_MAINLIB_SRC = "framework/src";
-  private final static String PATH_PACKAGES13 = "packages1.3.txt";
 
   private final static String PATH_JAR_DIR = "jars";
   private final static String PATH_BUNDLE_DIR = "bundles";
 
-  /****************************************************************************
-   * org.knopflerfish.eclipse.core.IFrameworkDefinition methods
-   ***************************************************************************/
+  // ***************************************************************************
+  // org.knopflerfish.eclipse.core.IFrameworkDefinition methods
+  // ***************************************************************************/
   /*
    * (non-Javadoc)
    * 
@@ -330,38 +347,64 @@ public class FrameworkDefinition implements IFrameworkDefinition {
   public PackageDescription[] getSystemPackages(File dir,
                                                 Map<String, String> systemProperties)
   {
-    if (systemProperties == null)
-      return null;
+    // TODO : Cache this
+    final StringBuffer sp = new StringBuffer();
 
-    StringBuffer sp = new StringBuffer();
-    String sysPkg = (String) systemProperties.get(SYSPKG);
+    // Read properties
+    final String sysPkg = getProperty(systemProperties,
+        Constants.FRAMEWORK_SYSTEMPACKAGES);
+    final String extraPkgs = getProperty(systemProperties,
+        Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA);
+    final String kfSysPkgFile = getProperty(systemProperties,
+        SYSTEM_PACKAGES_FILE_PROP);
+    final String kfSysPkgBase = getProperty(systemProperties,
+        SYSTEM_PACKAGES_BASE_PROP);
+    String jver = getProperty(systemProperties,
+        SYSTEM_PACKAGES_VERSION_PROP);
+    if (jver == null) {
+      jver = Integer.toString(javaVersionMajor) + "." + javaVersionMinor;
+    }
+
     if (sysPkg != null) {
       sp.append(sysPkg);
     }
+    if (sp.length() == 0) {
+      // Try the system packages file
+      if (kfSysPkgFile != null) {
+        addSysPackagesFromFile(sp, dir, kfSysPkgFile);
+      }
+      if (sp.length() == 0) {
+        // Try the system packages base property.
+        if (kfSysPkgBase != null) {
+          sp.append(kfSysPkgBase);
+        }
+        if (sp.length() == 0) {
+          // use default set of packages.
+          if (!addSysPackagesFromFile(sp, dir, "packages" + jver + ".txt")) {
+            String message = "No built in list of Java packages to be exported "
+                + "by the system bundle for JRE with version '"
+                + jver
+                + "', using the list for 1.6.";
+            IStatus status = new Status(IStatus.ERROR,
+                "org.knopflerfish.eclipse.framework", IStatus.OK, message, null);
+            KnopflerfishPlugin.getDefault().getLog().log(status);
+            addSysPackagesFromFile(sp, dir, "packages1.6.txt");
+          }
+        }
+        // The system packages are exported through the manifest and does not
+        // need to be added here
+        // addSystemPackages(sp);
 
-    if (sp.length() > 0) {
-      sp.append(",");
+        if (sp.length() > 0 && ',' == sp.charAt(sp.length() - 1)) {
+          sp.setLength(sp.length() - 1);
+        }
+      }
     }
 
-    // TODO : Check what jre is used and get file
-    String export13 = (String) systemProperties.get(EXPORT13);
-    if (dir != null && export13 != null && "true".equals(export13.trim())) {
-      File root = getRootDir(dir);
-      File file = new File(root, PATH_PACKAGES13);
-      addSysPackagesFromFile(sp, file);
+    // Add system.packages.extra
+    if (extraPkgs != null && extraPkgs.length() > 0) {
+      sp.append(",").append(extraPkgs);
     }
-
-    // TODO : IF system packages or file is set then this overrides the auto
-    // select based on jre
-    // If system packages is set the also this overrides the manifest of
-    // framework.jar
-    // But there exists an KF property to override this override
-    String sysPkgFile = (String) systemProperties.get(SYSPKG_FILE);
-    if (sysPkgFile != null) {
-      addSysPackagesFromFile(sp, new File(sysPkgFile));
-    }
-
-    // TODO: Add system.packages.extra
 
     List<PackageDescription> packages = new ArrayList<PackageDescription>();
     StringTokenizer st = new StringTokenizer(sp.toString(), ",");
@@ -376,9 +419,9 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     return packages.toArray(new PackageDescription[packages.size()]);
   }
 
-  /****************************************************************************
-   * Private utility methods
-   ***************************************************************************/
+  // ***************************************************************************
+  // Private utility methods
+  // ***************************************************************************
   public File getRootDir(File dir)
   {
     if (dir == null || !dir.isDirectory())
@@ -412,10 +455,20 @@ public class FrameworkDefinition implements IFrameworkDefinition {
   /**
    * Read a file with package names and add them to a stringbuffer.
    */
-  void addSysPackagesFromFile(StringBuffer sp, File f)
+  private boolean addSysPackagesFromFile(StringBuffer sp,
+                                         File dir,
+                                         String sysPkgFile)
   {
-    if (f == null || !f.exists() || !f.isFile())
-      return;
+
+    File f = new File(new File(sysPkgFile).getAbsolutePath());
+
+    if (!f.exists() || !f.isFile()) {
+      // Try resource directory
+      f = new File(dir, "osgi/framework/resources/" + sysPkgFile);
+      if (!f.exists() || !f.isFile()) {
+        return false;
+      }
+    }
 
     BufferedReader in = null;
     try {
@@ -428,13 +481,24 @@ public class FrameworkDefinition implements IFrameworkDefinition {
           sp.append(",");
         }
       }
+      return true;
     } catch (IOException e) {
-      // Failed to read file, ignore this
+      return false;
     } finally {
       try {
         in.close();
-      } catch (Exception ignored) {
+      } catch (IOException e) {
       }
     }
   }
+
+  private String getProperty(final Map<String, String> props, final String key)
+  {
+    if (props == null) {
+      return null;
+    } else {
+      return props.get(key);
+    }
+  }
+
 }
