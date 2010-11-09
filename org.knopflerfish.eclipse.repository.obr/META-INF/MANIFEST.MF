@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: OBR Repository Plug-in
 Bundle-SymbolicName: org.knopflerfish.eclipse.repository.obr; singleton:=true
-Bundle-Version: 0.1.3
+Bundle-Version: 0.1.4
 Bundle-Activator: org.knopflerfish.eclipse.repository.obr.RepositoryPlugin
 Require-Bundle: org.eclipse.core.runtime,
  org.knopflerfish.eclipse.core
