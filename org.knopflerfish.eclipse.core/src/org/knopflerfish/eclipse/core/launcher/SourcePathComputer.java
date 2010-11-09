@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,10 @@ package org.knopflerfish.eclipse.core.launcher;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -49,6 +50,7 @@ import org.eclipse.debug.core.sourcelookup.ISourceContainer;
 import org.eclipse.debug.core.sourcelookup.ISourcePathComputer;
 import org.eclipse.debug.core.sourcelookup.containers.DirectorySourceContainer;
 import org.eclipse.debug.core.sourcelookup.containers.ExternalArchiveSourceContainer;
+import org.eclipse.debug.core.sourcelookup.containers.FolderSourceContainer;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.sourcelookup.containers.JavaProjectSourceContainer;
@@ -58,83 +60,123 @@ import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
-public class SourcePathComputer extends JavaSourcePathComputer implements ISourcePathComputer {
-  public static String ID="org.knopflerfish.eclipse.core.launcher.SourcePathComputer";
+public class SourcePathComputer extends JavaSourcePathComputer
+    implements ISourcePathComputer {
+  public static String ID = "org.knopflerfish.eclipse.core.launcher.SourcePathComputer";
 
-  public SourcePathComputer() {
+  public SourcePathComputer()
+  {
   }
-  
-  /* (non-Javadoc)
+
+  /*
+   * (non-Javadoc)
+   * 
    * @see org.eclipse.debug.core.sourcelookup.ISourcePathComputer#getId()
    */
-  public String getId() {
+  public String getId()
+  {
     return ID;
   }
 
-  /* (non-Javadoc)
-   * @see org.eclipse.debug.core.sourcelookup.ISourcePathComputerDelegate#computeSourceContainers(org.eclipse.debug.core.ILaunchConfiguration, org.eclipse.core.runtime.IProgressMonitor)
+  /*
+   * (non-Javadoc)
+   * 
+   * @see org.eclipse.debug.core.sourcelookup.ISourcePathComputerDelegate#
+   * computeSourceContainers(org.eclipse.debug.core.ILaunchConfiguration,
+   * org.eclipse.core.runtime.IProgressMonitor)
    */
-  public ISourceContainer[] computeSourceContainers(ILaunchConfiguration configuration, IProgressMonitor monitor) throws CoreException {
-    ISourceContainer[] containers = super.computeSourceContainers(configuration, monitor);
+  public ISourceContainer[] computeSourceContainers(ILaunchConfiguration configuration,
+                                                    IProgressMonitor monitor)
+    throws CoreException
+  {
+    final List<ISourceContainer> containerList = new ArrayList<ISourceContainer>();
+    /*
+    ISourceContainer[] containers = super.computeSourceContainers(
+        configuration, monitor);
 
-    ArrayList containerList = new ArrayList();
     if (containers != null) {
-      for (int i=0; i<containers.length;i++) {
+      for (int i = 0; i < containers.length; i++) {
         containerList.add(containers[i]);
       }
     }
-    
+    */
+
     // Add project source code
-    Map projectMap = OsgiLaunchDelegate.getProjects(configuration);
+    Map<String, String> projectMap = OsgiLaunchDelegate
+        .getProjects(configuration);
     if (projectMap != null) {
       IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-      for (Iterator i = projectMap.keySet().iterator();i.hasNext();) {
-        String name = (String) i.next();
+      for (String name : projectMap.keySet()) {
         IProject project = root.getProject(name);
         IJavaProject javaProject = JavaCore.create(project);
         containerList.add(new JavaProjectSourceContainer(javaProject));
       }
     }
-    
+
     // Add bundle source code
-    Map bundleMap = OsgiLaunchDelegate.getBundles(configuration);
+    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+    Map<String, String> bundleMap = OsgiLaunchDelegate.getBundles(configuration);
     if (bundleMap != null) {
-      for (Iterator i = bundleMap.entrySet().iterator();i.hasNext();) {
-        Map.Entry entry = (Map.Entry) i.next();
-        BundleLaunchInfo info = new BundleLaunchInfo((String) entry.getValue());
+      for (Map.Entry<String, String> entry : bundleMap.entrySet()) {
+        BundleLaunchInfo info = new BundleLaunchInfo(entry.getValue());
         String src = info.getSource();
         if (src != null) {
           File file = new File(src);
           if (file.isDirectory()) {
-            containerList.add(new DirectorySourceContainer(file, true));
+            // Check if file exists in current workspace
+            IContainer[] containers = root.findContainersForLocationURI(file.toURI());
+            if (containers != null && containers.length > 0) {
+              // Source found in workspace
+              for(int i=0; i<containers.length; i++) {
+                containerList.add(new FolderSourceContainer(containers[i], true));
+              }
+            } else {
+              // Source not found in workspace, add source as an external directory
+              containerList.add(new DirectorySourceContainer(file, true));
+            }
           } else {
-            containerList.add(new ExternalArchiveSourceContainer(file.getAbsolutePath(), true));
+            containerList.add(new ExternalArchiveSourceContainer(file
+                .getAbsolutePath(), true));
           }
         }
       }
     }
-    
+
     // Add framework libraries source code
-    String distributionName = OsgiLaunchDelegate.getFrameworkDistributionName(configuration);
-    FrameworkPreference distribution = OsgiPreferences.getFramework(distributionName);
-    IOsgiLibrary [] libraries = distribution.getRuntimeLibraries();
+    String distributionName = OsgiLaunchDelegate
+        .getFrameworkDistributionName(configuration);
+    FrameworkPreference distribution = OsgiPreferences
+        .getFramework(distributionName);
+    IOsgiLibrary[] libraries = distribution.getRuntimeLibraries();
     if (libraries != null) {
-      for (int i=0; i<libraries.length;i++) {
+      for (int i = 0; i < libraries.length; i++) {
         String src = libraries[i].getSource();
         if (src != null) {
           File file = new File(src);
           if (file.isDirectory()) {
-            containerList.add(new DirectorySourceContainer(file, true));
+            // Check if file exists in current workspace
+            IContainer[] containers = root.findContainersForLocationURI(file.toURI());
+            if (containers != null && containers.length > 0) {
+              // Source found in workspace
+              for(int j=0; j<containers.length; j++) {
+                containerList.add(new FolderSourceContainer(containers[j], true));
+              }
+            } else {
+              // Source not found in workspace, add source as an external directory
+              containerList.add(new DirectorySourceContainer(file, true));
+            }
           } else {
-            containerList.add(new ExternalArchiveSourceContainer(file.getAbsolutePath(), true));
+            containerList.add(new ExternalArchiveSourceContainer(file
+                .getAbsolutePath(), true));
           }
         }
       }
     }
-    
-    return (ISourceContainer []) containerList.toArray(new ISourceContainer[containerList.size()]);
+
+    return (ISourceContainer[]) containerList
+        .toArray(new ISourceContainer[containerList.size()]);
   }
 }

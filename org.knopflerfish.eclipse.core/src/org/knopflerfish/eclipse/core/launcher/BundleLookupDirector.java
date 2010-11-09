@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,15 +45,15 @@ import org.eclipse.debug.core.sourcelookup.containers.WorkspaceSourceContainer;
 import org.eclipse.jdt.launching.sourcelookup.containers.JavaSourceLookupParticipant;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class BundleLookupDirector extends AbstractSourceLookupDirector {
 
-  private static Set fFilteredTypes;
+  private static Set<String> fFilteredTypes;
   
   static {
-    fFilteredTypes = new HashSet();
+    fFilteredTypes = new HashSet<String>();
     fFilteredTypes.add(ProjectSourceContainer.TYPE_ID);
     fFilteredTypes.add(WorkspaceSourceContainer.TYPE_ID);
     // can't reference UI constant

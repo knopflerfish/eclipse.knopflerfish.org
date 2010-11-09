@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2010, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.IFolder;
@@ -72,8 +72,8 @@ import org.knopflerfish.eclipse.core.project.ProjectUtil;
 /**
  * Implementation of OSGi launch configuration delegate.
  * 
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
 
@@ -98,26 +98,26 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     File instanceDir = verifyInstanceDirectory(configuration);
 
     // Bundles
-    Map bundleMap = verifyBundles(configuration);
-    Map projectMap = verifyProjects(configuration);
+    Map<IOsgiBundle, BundleLaunchInfo> bundleMap = verifyBundles(configuration);
+    Map<IJavaProject, BundleLaunchInfo> projectMap = verifyProjects(configuration);
 
     // Create configuration
     IOsgiLibrary[] osgiLibraries = distribution.getRuntimeLibraries();
-    ArrayList libraries = new ArrayList();
+    List<String> libraries = new ArrayList<String>();
     if (osgiLibraries != null) {
       for (int i = 0; i < osgiLibraries.length; i++) {
         libraries.add(osgiLibraries[i].getPath());
       }
     }
-    VMRunnerConfiguration runConfig = new VMRunnerConfiguration(distribution
-        .getMainClass(), (String[]) libraries.toArray(new String[libraries
-        .size()]));
+    VMRunnerConfiguration runConfig = new VMRunnerConfiguration(
+        distribution.getMainClass(), libraries.toArray(new String[libraries
+            .size()]));
 
     // Create framework configuration
     IFrameworkDefinition framework = Osgi.getFrameworkDefinition(distribution
         .getType());
-    IFrameworkConfiguration conf = framework.createConfiguration(distribution
-        .getLocation(), instanceDir.getAbsolutePath());
+    IFrameworkConfiguration conf = framework.createConfiguration(
+        distribution.getLocation(), instanceDir.getAbsolutePath());
 
     // Set system properties
     conf.setSystemProperties(getSystemProperties(configuration));
@@ -130,26 +130,25 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
 
     // Add bundles to be launched
     if (bundleMap != null) {
-      for (Iterator i = bundleMap.entrySet().iterator(); i.hasNext();) {
-        Map.Entry entry = (Map.Entry) i.next();
-        conf.addBundle((IOsgiBundle) entry.getKey(), (BundleLaunchInfo) entry
-            .getValue());
+      for (Map.Entry<IOsgiBundle, BundleLaunchInfo> entry : bundleMap
+          .entrySet()) {
+        conf.addBundle(entry.getKey(), entry.getValue());
       }
     }
 
     // Add projects to be launched
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
     if (projectMap != null) {
-      for (Iterator i = projectMap.entrySet().iterator(); i.hasNext();) {
-        Map.Entry entry = (Map.Entry) i.next();
-        IJavaProject project = (IJavaProject) entry.getKey();
+      for (Map.Entry<IJavaProject, BundleLaunchInfo> entry : projectMap
+          .entrySet()) {
+        IJavaProject project = entry.getKey();
         try {
           BundleProject bundleProject = new BundleProject(project);
           IFolder folder = root.getFolder(project.getOutputLocation());
-          File jarFile = new File(folder.getLocation().toString(), ProjectUtil
-              .createFileName(bundleProject));
+          File jarFile = new File(folder.getLocation().toString(),
+              ProjectUtil.createFileName(bundleProject));
           IOsgiBundle bundle = new OsgiBundle(jarFile);
-          conf.addBundle(bundle, (BundleLaunchInfo) entry.getValue());
+          conf.addBundle(bundle, entry.getValue());
         } catch (IOException e) {
           abort("Error reading JAR file for bundle project ["
               + project.getProject().getName() + "].", e,
@@ -251,16 +250,15 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
    *              if unable to retrieve the attribute or the attribute is
    *              unspecified
    */
-  public Map verifyBundles(ILaunchConfiguration configuration)
+  public Map<IOsgiBundle, BundleLaunchInfo> verifyBundles(ILaunchConfiguration configuration)
     throws CoreException
   {
-    Map map = getBundles(configuration);
-    HashMap bundles = new HashMap();
-    for (Iterator i = map.entrySet().iterator(); i.hasNext();) {
+    Map<String, String> map = getBundles(configuration);
+    Map<IOsgiBundle, BundleLaunchInfo> bundles = new HashMap<IOsgiBundle, BundleLaunchInfo>();
+    for (Map.Entry<String, String> entry : map.entrySet()) {
       try {
-        Map.Entry entry = (Map.Entry) i.next();
-        OsgiBundle bundle = new OsgiBundle(new File((String) entry.getKey()));
-        BundleLaunchInfo info = new BundleLaunchInfo((String) entry.getValue());
+        OsgiBundle bundle = new OsgiBundle(new File(entry.getKey()));
+        BundleLaunchInfo info = new BundleLaunchInfo(entry.getValue());
         bundles.put(bundle, info);
       } catch (Exception e) {
         abort("Error in selected bundles.", e,
@@ -281,17 +279,15 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
    *              if unable to retrieve the attribute or the attribute is
    *              unspecified
    */
-  public Map verifyProjects(ILaunchConfiguration configuration)
+  public Map<IJavaProject, BundleLaunchInfo> verifyProjects(ILaunchConfiguration configuration)
     throws CoreException
   {
-    Map map = getProjects(configuration);
-    HashMap projects = new HashMap();
+    Map<String, String> map = getProjects(configuration);
+    Map<IJavaProject, BundleLaunchInfo> projects = new HashMap<IJavaProject, BundleLaunchInfo>();
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-    for (Iterator i = map.entrySet().iterator(); i.hasNext();) {
+    for (Map.Entry<String, String> entry : map.entrySet()) {
       try {
-        Map.Entry entry = (Map.Entry) i.next();
-        String name = (String) entry.getKey();
-
+        String name = entry.getKey();
         IProject project = root.getProject(name);
         if (!project.exists()) {
           continue;
@@ -331,19 +327,19 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     return location;
   }
 
-  public static Map getBundles(ILaunchConfiguration configuration)
+  public static Map<String, String> getBundles(ILaunchConfiguration configuration)
     throws CoreException
   {
-    Map bundles = configuration.getAttribute(
+    Map<String, String> bundles = configuration.getAttribute(
         IOsgiLaunchConfigurationConstants.ATTR_BUNDLES, (Map) null);
 
     return bundles;
   }
 
-  public static Map getProjects(ILaunchConfiguration configuration)
+  public static Map<String, String> getProjects(ILaunchConfiguration configuration)
     throws CoreException
   {
-    Map projects = configuration.getAttribute(
+    Map<String, String> projects = configuration.getAttribute(
         IOsgiLaunchConfigurationConstants.ATTR_BUNDLE_PROJECTS, (Map) null);
 
     return projects;
@@ -353,8 +349,7 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
     throws CoreException
   {
     Map<String, String> p = configuration.getAttribute(
-        IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES,
-        (Map<String, String>) null);
+        IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, (Map) null);
     if (p == null) {
       return null;
     }
