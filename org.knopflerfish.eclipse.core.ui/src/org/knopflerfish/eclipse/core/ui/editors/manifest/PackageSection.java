@@ -229,9 +229,9 @@ public class PackageSection extends SectionPart {
     super.refresh();
   }
 
-  /****************************************************************************
-   * Private utility methods
-   ***************************************************************************/
+  // ***************************************************************************
+  // Private utility methods
+  // ***************************************************************************
 
   private void createClient(Section section, FormToolkit toolkit)
   {
@@ -352,19 +352,18 @@ public class PackageSection extends SectionPart {
     wExportPackageAddButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e)
       {
-        ArrayList exportablePackageNames = new ArrayList();
+        List<String> exportablePackageNames = new ArrayList<String>();
         try {
           exportablePackageNames.addAll(Arrays.asList(project
               .getExportablePackageNames()));
         } catch (JavaModelException jme) {
           OsgiUiPlugin.log(jme.getStatus());
         }
-        ArrayList exportedPackages = new ArrayList(Arrays.asList(manifest
-            .getExportedPackages()));
+        List<PackageDescription> exportedPackages = new ArrayList<PackageDescription>(
+            Arrays.asList(manifest.getExportedPackages()));
 
         // Remove already exported packages from list of exportable
-        for (Iterator i = exportedPackages.iterator(); i.hasNext();) {
-          PackageDescription pd = (PackageDescription) i.next();
+        for (PackageDescription pd : exportedPackages) {
           exportablePackageNames.remove(pd.getPackageName());
         }
 

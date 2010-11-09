@@ -147,9 +147,9 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     }
   }
 
-  /****************************************************************************
-   * org.eclipse.debug.ui.ILaunchConfigurationTab Methods
-   ***************************************************************************/
+  //***************************************************************************
+  // org.eclipse.debug.ui.ILaunchConfigurationTab Methods
+  //***************************************************************************
   /*
    * (non-Javadoc)
    * 
@@ -490,7 +490,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
-
+    
     // Update packages
     updatePackages();
 
@@ -587,8 +587,8 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     IStructuredSelection selection = (IStructuredSelection) wSelectedBundleTableViewer
         .getSelection();
 
-    for (Iterator i = selection.iterator(); i.hasNext();) {
-      SelectedBundleElement element = (SelectedBundleElement) i.next();
+    for (Iterator<SelectedBundleElement> i = selection.iterator(); i.hasNext();) {
+      SelectedBundleElement element = i.next();
       selectedBundlesModel.remove(wSelectedBundleTableViewer, element);
     }
 
@@ -702,9 +702,9 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     updateLaunchConfigurationDialog();
   }
 
-  /****************************************************************************
-   * Inner classes
-   ***************************************************************************/
+  //***************************************************************************
+  // Inner classes
+  //***************************************************************************
   class StartLevelValidator implements ICellEditorValidator {
 
     /*
