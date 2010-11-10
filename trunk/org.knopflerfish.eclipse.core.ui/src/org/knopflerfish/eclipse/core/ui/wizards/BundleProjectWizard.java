@@ -64,7 +64,6 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
 import org.knopflerfish.eclipse.core.Osgi;
-import org.knopflerfish.eclipse.core.internal.OsgiPlugin;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.project.BuildPath;
@@ -150,7 +149,7 @@ public class BundleProjectWizard extends Wizard implements INewWizard {
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
     IProject project = root.getProject(name);
     if (project.exists()) {
-      OsgiPlugin.throwCoreException("Project \"" + name + "\" already exists.", null);
+      OsgiUiPlugin.throwCoreException("Project \"" + name + "\" already exists.", null);
     }
     
     // Create project description
