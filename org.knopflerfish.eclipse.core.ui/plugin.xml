@@ -1,37 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
-<plugin
-   id="org.knopflerfish.eclipse.core.ui"
-   name="Osgi Ui Plug-in"
-   version="1.0.9"
-   provider-name=""
-   class="org.knopflerfish.eclipse.core.ui.OsgiUiPlugin">
+<plugin>
 
-   <runtime>
-      <library name="osgiui.jar">
-         <export name="org.knopflerfish.eclipse.core.ui.launcher.*"/>
-      </library> 
-   </runtime>
-
-   <requires>
-      <import plugin="org.eclipse.ui"/>
-      <import plugin="org.eclipse.core.runtime"/>
-      <import plugin="org.eclipse.debug.ui"/>
-      <import plugin="org.eclipse.jdt.debug.ui"/>
-      <import plugin="org.eclipse.debug.core"/>
-      <import plugin="org.knopflerfish.eclipse.core"/>
-      <import plugin="org.eclipse.core.resources"/>
-      <import plugin="org.eclipse.ui.ide"/>
-      <import plugin="org.eclipse.jdt.core"/>
-      <import plugin="org.eclipse.jdt.launching"/>
-      <import plugin="org.eclipse.jface.text"/>
-      <import plugin="org.eclipse.ui.editors"/>
-      <import plugin="org.eclipse.ui.forms"/>
-      <import plugin="org.eclipse.jdt.ui"/>
-      <import plugin="org.eclipse.ui.workbench.texteditor"/>
-   </requires>
-   
-   <extension
+     <extension
          point="org.eclipse.debug.ui.launchConfigurationTypeImages">
     <launchConfigurationTypeImage
           icon="icons/obj16/kf-16x16.png"
