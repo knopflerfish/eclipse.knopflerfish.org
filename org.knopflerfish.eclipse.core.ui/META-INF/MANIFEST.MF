@@ -1,0 +1,26 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Osgi Ui Plug-in
+Bundle-SymbolicName: org.knopflerfish.eclipse.core.ui; singleton:=true
+Bundle-Version: 1.0.11
+Bundle-ClassPath: osgiui.jar
+Bundle-Activator: org.knopflerfish.eclipse.core.ui.OsgiUiPlugin
+Bundle-Localization: plugin
+Export-Package: org.knopflerfish.eclipse.core.ui.launcher
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.debug.ui,
+ org.eclipse.jdt.debug.ui,
+ org.eclipse.debug.core,
+ org.knopflerfish.eclipse.core,
+ org.eclipse.core.resources,
+ org.eclipse.ui.ide,
+ org.eclipse.jdt.core,
+ org.eclipse.jdt.launching,
+ org.eclipse.jface.text,
+ org.eclipse.ui.editors,
+ org.eclipse.ui.forms,
+ org.eclipse.jdt.ui,
+ org.eclipse.ui.workbench.texteditor
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: J2SE-1.5

@@ -71,6 +71,11 @@ public class PackageDescription {
     }
   }
 
+  public PackageDescription(String name)
+  {
+    this(name, Version.emptyVersion);
+  }
+
   public PackageDescription(String name, VersionRange versionRange,
       boolean optional)
   {
