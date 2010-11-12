@@ -28,7 +28,7 @@
 	   <launchConfigurationType
           delegate="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
           public="true"
-          name="OSGi"
+          name="Knopflerfish"
           id="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
           modes="run, debug">
 	   </launchConfigurationType>

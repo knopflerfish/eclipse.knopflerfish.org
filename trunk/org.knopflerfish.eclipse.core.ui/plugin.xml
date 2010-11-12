@@ -21,7 +21,7 @@
  <extension
        point="org.eclipse.ui.newWizards">
     <category
-          name="OSGi"
+          name="Knopflerfish"
           id="org.knopflerfish.eclipse.core.ui"/>
     <wizard
           category="org.knopflerfish.eclipse.core.ui"
@@ -54,7 +54,7 @@
        point="org.eclipse.ui.preferencePages">
     <page
           class="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"
-          name="OSGi"
+          name="Knopflerfish"
           id="org.knopflerfish.eclipse.core.ui.preferences.OsgiPage"/>
     <page
           class="org.knopflerfish.eclipse.core.ui.preferences.BundleRepositoryPage"
@@ -82,8 +82,8 @@
  </extension>
  <extension point="org.eclipse.ui.preferenceTransfer">
        <transfer
-            name="OSGi settings"
-		    icon="icons/obj16/knopflerfish_obj.gif"
+            name="Knopflerfish Preferences"
+		    icon="icons/obj16/kf-16x16.png"
             id="org.knopflerfish.eclipse.core.ui.exportOSGiPreferences">
             <mapping scope="instance">
 	          <entry node="org.knopflerfish.eclipse.core.osgi"/>
