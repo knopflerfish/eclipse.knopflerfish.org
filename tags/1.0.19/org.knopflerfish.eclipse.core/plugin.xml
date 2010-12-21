@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+
+     <extension-point id="frameworkDefinition" name="Framework Definition" schema="schema/frameworkDefinition.exsd"/>
+   <extension-point id="bundleRepositoryType" name="Bundle Repository Type" schema="schema/bundleRepositoryType.exsd"/>
+
+   <extension point="org.eclipse.debug.core.sourcePathComputers">
+	<sourcePathComputer 
+        id="org.knopflerfish.eclipse.core.launcher.SourcePathComputer" 
+        class="org.knopflerfish.eclipse.core.launcher.SourcePathComputer">
+    </sourcePathComputer>
+   </extension>
+   <!--
+          sourcePathComputerId="org.gstproject.eclipse.osgi.launcher.SourcePathComputer"
+   -->
+   <extension
+         point="org.eclipse.debug.core.sourceLocators">
+		<sourceLocator 
+			id="org.knopflerfish.eclipse.core.launcher.BundleLookupDirector"
+			class="org.knopflerfish.eclipse.core.launcher.BundleLookupDirector"
+			name="Bundle Source Locator">
+		</sourceLocator>
+
+   </extension>
+          <!--sourceLocatorId="org.gstproject.eclipse.osgi.launcher.BundleLookupDirector"-->
+   <extension point="org.eclipse.debug.core.launchConfigurationTypes">
+	   <launchConfigurationType
+          delegate="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
+          public="true"
+          name="Knopflerfish"
+          id="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
+          modes="run, debug">
+	   </launchConfigurationType>
+   </extension>
+   <extension
+         id="bundlebuilder"
+         name="Bundle Builder"
+         point="org.eclipse.core.resources.builders">
+      <builder hasNature="true">
+         <run class="org.knopflerfish.eclipse.core.project.BundleBuilder"/>
+      </builder>
+   </extension>
+   <extension
+         id="bundlenature"
+         name="Bundle Nature"
+         point="org.eclipse.core.resources.natures">
+	  <runtime>
+		<run class="org.knopflerfish.eclipse.core.project.BundleNature">
+		  <parameter name="installBuilder" value="true"/>
+		</run>
+	  </runtime>
+	  <requires-nature id="org.eclipse.jdt.core.javanature"/>
+	  <builder id="org.knopflerfish.eclipse.core.bundlebuilder"/>
+   </extension>
+   <extension
+         point="org.eclipse.jdt.core.classpathContainerInitializer">
+		<classpathContainerInitializer 
+		  id="org.knopflerfish.eclipse.core.EXECUTION_ENVIRONMENT_CONTAINER"
+		  class="org.knopflerfish.eclipse.core.project.classpath.ExecutionEnvironmentContainer"/>
+		<classpathContainerInitializer 
+		  id="org.knopflerfish.eclipse.core.FRAMEWORK_CONTAINER"
+		  class="org.knopflerfish.eclipse.core.project.classpath.FrameworkContainer"/>
+		<classpathContainerInitializer 
+		  id="org.knopflerfish.eclipse.core.BUNDLE_CONTAINER"
+		  class="org.knopflerfish.eclipse.core.project.classpath.BundleContainerInitializer"/>
+   </extension>
+   <extension
+      id="activator"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="myAttribute" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="name"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="myAttribute" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="symbolicName"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="myAttribute" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="version"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="myAttribute" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="updateLocation"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="myAttribute" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="docUrl"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="myAttribute" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="execEnv"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="myAttribute" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="packageExports"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="package" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="packageImports"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="package" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="packageDynamicImports"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="package" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+      id="classpath"
+      point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <!--attribute name="package" /-->
+      <persistent value="true" />
+   </extension>
+   <extension
+         id="symbolicNameVersionClash"
+         point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <persistent value="true"/>
+   </extension>
+
+</plugin>

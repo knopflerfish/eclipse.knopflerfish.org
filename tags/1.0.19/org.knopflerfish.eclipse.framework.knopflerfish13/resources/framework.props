@@ -1,0 +1,177 @@
+framework.property.num = 30
+framework.property.0.name = org.osgi.framework.dir
+framework.property.0.description = Where we store persistent data.
+framework.property.0.group = OSGi Framework
+
+framework.property.1.name = org.osgi.framework.system.packages
+framework.property.1.description = List of packages exported from system classloader, other than java.* and org.osgi.framework.
+framework.property.1.group = OSGi Framework
+
+framework.property.2.name = org.osgi.framework.system.packages.file
+framework.property.2.description = File containing list of packages exported from system classloader, other than java.* and org.osgi.framework.
+framework.property.2.group = OSGi Framework
+
+framework.property.3.name = org.knopflerfish.gosg.jars
+framework.property.3.description = Base URL for relative install commands
+framework.property.3.group = Knopflerfish Framework
+framework.property.3.default = file:jars/*
+
+framework.property.4.name = org.knopflerfish.framework.debug.classloader
+framework.property.4.description = Print debug information from classloader.
+framework.property.4.group = Knopflerfish Framework
+framework.property.4.default = false
+framework.property.4.allowed = true,false
+
+framework.property.5.name = org.knopflerfish.framework.debug.errors
+framework.property.5.description = Print all FrameworkEvents of type ERROR.
+framework.property.5.group = Knopflerfish Framework
+framework.property.5.default = false
+framework.property.5.allowed = true,false
+
+framework.property.6.name = org.knopflerfish.framework.debug.packages
+framework.property.6.description = Print debug information about packages.
+framework.property.6.group = Knopflerfish Framework
+framework.property.6.default = false
+framework.property.6.allowed = true,false
+
+framework.property.7.name = org.knopflerfish.framework.debug.startlevel
+framework.property.7.description = Print debug information about startlevel service.
+framework.property.7.group = Knopflerfish Framework
+framework.property.7.default = false
+framework.property.7.allowed = true,false
+
+framework.property.8.name = org.knopflerfish.framework.debug.url
+framework.property.8.description = Print debug information about URL services.
+framework.property.8.group = Knopflerfish Framework
+framework.property.8.default = false
+framework.property.8.allowed = true,false
+
+framework.property.9.name = org.knopflerfish.framework.debug.ldap
+framework.property.9.description = Print debug information about LDAP filters.
+framework.property.9.group = Knopflerfish Framework
+framework.property.9.default = false
+framework.property.9.allowed = true,false
+
+framework.property.10.name = org.knopflerfish.framework.ldap.nocache
+framework.property.10.description = Disable LDAP caching for simple filters. LDAP caching speeds up framework filters considerably, but uses more memory.
+framework.property.10.group = Knopflerfish Framework
+framework.property.10.default = false
+framework.property.10.allowed = true,false
+
+framework.property.11.name = org.knopflerfish.framework.bundlestorage
+framework.property.11.description = Storage implementation for bundles.
+framework.property.11.group = Knopflerfish Framework
+framework.property.11.default = file
+framework.property.11.allowed = file,memory
+
+framework.property.12.name = org.knopflerfish.framework.bundlestorage.file.reference
+framework.property.12.description =  When using file bundle storage, file: URLs can optionally be referenced only, not copied to the persistant area. If set to true, file: URLs are referenced only.
+framework.property.12.group = Knopflerfish Framework
+framework.property.12.default = false
+framework.property.12.allowed = true,false
+
+framework.property.13.name = org.knopflerfish.framework.bundlestorage.file.unpack
+framework.property.13.description = When using file bundle storage, bundle jars can be unpacked or copied as-is. Unpacking leads to faster restart and class loading but takes longer for initial startup. If set to true, unpack bundle jars.
+framework.property.13.group = Knopflerfish Framework
+framework.property.13.default = true
+framework.property.13.allowed = true,false
+      
+framework.property.14.name = org.knopflerfish.framework.system.export.all_13
+framework.property.14.description = Make system classloader export all standard JVM 1.3 packages as javax.swing.*.
+framework.property.14.group = Knopflerfish Framework
+framework.property.14.default = false
+framework.property.14.allowed = true,false
+
+framework.property.15.name = org.knopflerfish.verbosity
+framework.property.15.description = Framework verbosity level. 0 means few messages.
+framework.property.15.group = Knopflerfish Framework
+framework.property.15.default = 0
+
+framework.property.16.name = org.knopflerfish.startlevel.use
+framework.property.16.description = Use the Start Level service.
+framework.property.16.group = Knopflerfish Framework
+framework.property.16.default = true
+framework.property.16.allowed = true,false
+
+framework.property.17.name = org.knopflerfish.framework.version.fuzzy
+framework.property.17.description = If set to true, consider package version numbers "x.y.0" = "x.y" otherwise consider "x.y.0" > "x.y".
+framework.property.17.group = Knopflerfish Framework
+framework.property.17.default = true
+framework.property.17.allowed = true,false
+
+framework.property.18.name = org.knopflerfish.osgi.r3.testcompliant
+framework.property.18.description = If set to "true", make sure that all test in the OSGi R3 test suite pass, even if the tests are buggy and break the spec itself. This affects some very special (due to bugs in the test) handling of filters and conflict between the spec concerning CM and the actual tests. Bundles knowning abouth these conflicts should check the testcompliant flag and act appropiately.
+framework.property.18.group = Knopflerfish Framework
+framework.property.18.default = false
+framework.property.18.allowed = true,false
+
+framework.property.19.name = org.knopflerfish.framework.restart.allow
+framework.property.19.description = If set to "true", allow restart of framework by calling getBundle(0).update(). If "false", exit framework with exit code = 2. This can be useful when a wrapper script is better at restarting cleanly than the JVM itself.
+framework.property.19.group = Knopflerfish Framework
+framework.property.19.default = true
+framework.property.19.allowed = true,false
+  
+framework.property.20.name = org.knopflerfish.osgi.setcontextclassloader
+framework.property.20.description = If set to "true", set the bundle startup thread's context class loader to the bundle's class loader. This is useful for checking if an external lib will work better with a wrapped startup.
+framework.property.20.group = Knopflerfish Framework
+framework.property.20.default = false
+framework.property.20.allowed = true,false
+
+framework.property.21.name = org.osgi.service.http.port
+framework.property.21.description = This property specifies the port used for servlets and resources accessible via HTTP.
+framework.property.21.group = OSGi Web Server
+framework.property.21.default = 80
+
+framework.property.22.name = org.osgi.service.http.port.secure
+framework.property.22.description = This property specifies the port used for servlets and resources accessible via HTTPS.
+framework.property.22.group = OSGi Web Server
+framework.property.22.default = 443
+
+framework.property.23.name = org.knopflerfish.http.dnslookup
+framework.property.23.description = Use DNS to lookup names.
+framework.property.23.group = Knopflerfish Web Server
+framework.property.23.default = false
+framework.property.23.allowed = true,false
+
+framework.property.24.name = org.knopflerfish.log.out
+framework.property.24.description = Print log on std out.
+framework.property.24.group = Knopflerfish Log Service
+framework.property.24.default = false
+framework.property.24.allowed = true,false
+
+framework.property.25.name = org.knopflerfish.log.level
+framework.property.25.description = Log level.
+framework.property.25.group = Knopflerfish Log Service
+framework.property.25.default = warning
+framework.property.25.allowed = debug,info,warning,error
+
+framework.property.26.name = org.knopflerfish.log.grabio
+framework.property.26.description = System out is added to log.
+framework.property.26.group = Knopflerfish Log Service
+framework.property.26.default = false
+framework.property.26.allowed = true,false
+
+framework.property.27.name = org.knopflerfish.log.file
+framework.property.27.description = Save log to file.
+framework.property.27.group = Knopflerfish Log Service
+framework.property.27.default = false
+framework.property.27.allowed = true,false
+
+framework.property.28.name = org.knopflerfish.log.file.dir
+framework.property.28.description = The path to the directory to write the cyclic file log to. If empty or not given the data directory of the log-bundles will be used. 
+framework.property.28.group = Knopflerfish Log Service
+
+framework.property.29.name = org.knopflerfish.log.memory.size
+framework.property.29.description = Number of log records to keep in memory.
+framework.property.29.group = Knopflerfish Log Service
+framework.property.29.default = 250
+
+framework.property.30.name = java.security.manager
+framework.property.30.description = Class name of security manager. If set to empty string, uses "java.lang.SecurityManager". If unset, do not use any security manager.
+framework.property.30.group = Java
+
+framework.property.31.name = java.security.policy
+framework.property.31.description = Security policy file. Used by the security manager.
+framework.property.31.group = Java
+
+
