@@ -2,7 +2,7 @@
 <feature
       id="org.knopflerfish.eclipse.ide_feature"
       label="Knopflerfish OSGi IDE"
-      version="1.0.19"
+      version="1.1.0"
       provider-name="Knopflerfish">
 
    <description url="http://www.knopflerfish.org/eclipse_plugin.html">
@@ -90,13 +90,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
    <plugin
          id="org.knopflerfish.eclipse.repository.framework"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.knopflerfish.eclipse.repository.obr"
          download-size="0"
          install-size="0"
          version="0.0.0"
