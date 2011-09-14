@@ -2,17 +2,45 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Osgi Plug-in
 Bundle-SymbolicName: org.knopflerfish.eclipse.core; singleton:=true
-Bundle-Version: 1.0.17
+Bundle-Version: 1.1.1
 Bundle-ClassPath: osgi.jar
 Bundle-Activator: org.knopflerfish.eclipse.core.internal.OsgiPlugin
 Bundle-Localization: plugin
-Export-Package: org.knopflerfish.eclipse.core,
- org.knopflerfish.eclipse.core.launcher,
- org.knopflerfish.eclipse.core.manifest,
- org.knopflerfish.eclipse.core.pkg,
- org.knopflerfish.eclipse.core.preferences,
- org.knopflerfish.eclipse.core.project,
- org.knopflerfish.eclipse.core.project.classpath
+Export-Package: org.knopflerfish.eclipse.core;
+  uses:="org.knopflerfish.eclipse.core.launcher,
+   org.eclipse.jdt.core,
+   org.eclipse.core.resources,
+   org.osgi.framework,
+   org.knopflerfish.eclipse.core.manifest,
+   org.knopflerfish.eclipse.core.project,
+   org.knopflerfish.eclipse.core.preferences",
+ org.knopflerfish.eclipse.core.launcher;
+  uses:="org.eclipse.debug.core,
+   org.eclipse.debug.core.sourcelookup,
+   org.eclipse.core.runtime,
+   org.eclipse.jdt.launching,
+   org.eclipse.jdt.launching.sourcelookup.containers,
+   org.knopflerfish.eclipse.core.preferences",
+ org.knopflerfish.eclipse.core.manifest;uses:="org.osgi.framework,org.knopflerfish.eclipse.core",
+ org.knopflerfish.eclipse.core.pkg;
+  uses:="org.knopflerfish.eclipse.core.manifest,
+   org.knopflerfish.eclipse.core.project,
+   org.knopflerfish.eclipse.core,
+   org.knopflerfish.eclipse.core.preferences",
+ org.knopflerfish.eclipse.core.preferences;uses:="org.osgi.service.prefs,org.knopflerfish.eclipse.core",
+ org.knopflerfish.eclipse.core.project;
+  uses:="org.eclipse.core.runtime,
+   org.eclipse.jdt.core,
+   org.eclipse.core.resources,
+   org.knopflerfish.eclipse.core.manifest,
+   org.w3c.dom,
+   org.knopflerfish.eclipse.core,
+   org.knopflerfish.eclipse.core.preferences",
+ org.knopflerfish.eclipse.core.project.classpath;
+  uses:="org.eclipse.core.runtime,
+   org.eclipse.jdt.core,
+   org.knopflerfish.eclipse.core.manifest,
+   org.knopflerfish.eclipse.core.preferences"
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.debug.core,
  org.eclipse.jdt.core,
