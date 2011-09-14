@@ -37,6 +37,7 @@ package org.knopflerfish.eclipse.core.launcher;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,10 +54,11 @@ import org.eclipse.debug.core.sourcelookup.ISourceLookupDirector;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.AbstractJavaLaunchConfigurationDelegate;
+import org.eclipse.jdt.launching.ExecutionArguments;
+import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.IVMRunner;
 import org.eclipse.jdt.launching.VMRunnerConfiguration;
-import org.knopflerfish.eclipse.core.Arguments;
 import org.knopflerfish.eclipse.core.IFrameworkConfiguration;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
@@ -157,21 +159,20 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
       }
     }
 
-    Arguments args = null;
     try {
-      args = conf.create();
+      conf.create();
     } catch (IOException e) {
       abort("Failed to create framework configuration.", e,
           IOsgiLaunchConfigurationConstants.ERR_CREATE_CONFIGURATION);
     }
     runConfig.setWorkingDirectory(conf.getWorkingDirectory().getAbsolutePath());
 
-    if (args.getProgramArguments() != null) {
-      runConfig.setProgramArguments(args.getProgramArguments());
-    }
-    if (args.getVMArguments() != null) {
-      runConfig.setVMArguments(args.getVMArguments());
-    }
+    // Set program and VM arguments 
+    String programArgs = getProgramArguments(configuration);
+    String vmArgs = getVMArguments(configuration);
+    ExecutionArguments execArgs = new ExecutionArguments(vmArgs, programArgs);
+    runConfig.setVMArguments(execArgs.getVMArgumentsArray());
+    runConfig.setProgramArguments(execArgs.getProgramArgumentsArray());
 
     // Verify JRE installation
     IVMInstall vm = verifyVMInstall(configuration);
@@ -377,13 +378,13 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
   public static boolean getStartClean(ILaunchConfiguration configuration)
     throws CoreException
   {
-    if (configuration.getAttributes().containsKey(
-        IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE)
-        && ((Boolean) configuration.getAttributes().get(
-            IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE)).booleanValue()) {
-      return true;
+    String programArgs = "";
+    try {
+      programArgs = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "");
+    } catch (CoreException e) {
     }
-    return false;
+    ExecutionArguments execArgs = new ExecutionArguments("", programArgs);
+    return Arrays.asList(execArgs.getProgramArgumentsArray()).contains("-init");
   }
 
   public static int getStartLevel(ILaunchConfiguration configuration)
