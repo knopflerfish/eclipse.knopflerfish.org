@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2011, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,6 +83,7 @@ import org.knopflerfish.eclipse.core.ui.dialogs.ImportLibrariesDialog;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
 import org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement;
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementBundle;
+import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementBundleDirectory;
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementBundleRoot;
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementRoot;
 import org.knopflerfish.eclipse.core.ui.preferences.model.LibraryElementRuntime;
@@ -209,7 +210,13 @@ public class FrameworkDialog extends Dialog {
     distribution.setMainClass(wMainClassText.getText());
     distribution.setSpecificationVersion(wSpecificationVersionText.getText());
     distribution.setRuntimeLibraries(frameworkLibraryModel.getRuntimeLibraries());
-    distribution.setBundles(frameworkLibraryModel.getBundles());
+    // Root bundles
+    distribution.setBundles(FrameworkPreference.BUNDLE_ROOT_DIR, frameworkLibraryModel.getBundles(null));
+    // Bundles in directory
+    String[] dirs = frameworkLibraryModel.getBundleDirectories();
+    for (int i=0; i<dirs.length;i++) {
+      distribution.setBundles(dirs[i], frameworkLibraryModel.getBundles(dirs[i]));
+    }
     distribution.clearSystemPropertyGroups();
     String type = wTypeCombo.getText();
     IFrameworkDefinition def = (IFrameworkDefinition) distributions.get(type);
@@ -410,8 +417,17 @@ public class FrameworkDialog extends Dialog {
             LibraryElementRuntimeRoot runtimeRoot = frameworkLibraryModel.getRuntimeRoot();
             runtimeRoot.remove(element);
           } else if (type == ILibraryTreeElement.TYPE_BUNDLE) {
+            ILibraryTreeElement parent = element.getParent();
+            if (parent instanceof LibraryElementBundleRoot) {
+              LibraryElementBundleRoot bundleRoot = (LibraryElementBundleRoot) parent;
+              bundleRoot.remove((LibraryElementBundle) element);
+            } else if (parent instanceof LibraryElementBundleDirectory) {
+              LibraryElementBundleDirectory bundleDir = (LibraryElementBundleDirectory) parent;
+              bundleDir.remove((LibraryElementBundle) element);
+            }
+          } else if (type == ILibraryTreeElement.TYPE_BUNDLE_DIR) {
             LibraryElementBundleRoot bundleRoot = frameworkLibraryModel.getBundleRoot();
-            bundleRoot.remove(element);
+            bundleRoot.remove((LibraryElementBundleDirectory) element);
           }
         }
         
@@ -521,7 +537,8 @@ public class FrameworkDialog extends Dialog {
             }
           }
           
-          // Import bundles
+          // TODO : Import bundles - change to import 
+          /*
           if (dialog.isImportBundles()) {
             LibraryElementBundleRoot bundleRoot = frameworkLibraryModel.getBundleRoot();
             IOsgiBundle[] bundles = framework.getBundles();
@@ -531,6 +548,7 @@ public class FrameworkDialog extends Dialog {
               }
             }
           }
+          */
           
           wLibraryTreeViewer.refresh();
           updateButtons();
@@ -710,6 +728,7 @@ public class FrameworkDialog extends Dialog {
         ILibraryTreeElement element = (ILibraryTreeElement) i.next();
         int type = element.getType();
         enableRemove |= 
+          type == ILibraryTreeElement.TYPE_BUNDLE_DIR || 
           type == ILibraryTreeElement.TYPE_BUNDLE || 
           type == ILibraryTreeElement.TYPE_RUNTIME;
       }
@@ -779,14 +798,23 @@ public class FrameworkDialog extends Dialog {
         }
       }
       
-      // Set bundles
+      // Set bundle directories
       LibraryElementBundleRoot bundleRoot = frameworkLibraryModel.getBundleRoot();
-      IOsgiBundle[] bundles = def.getBundles(dir);
-      if (bundles != null) {
-        for(int i=0; i<bundles.length; i++) {
-          bundleRoot.addChild(new LibraryElementBundle(bundleRoot, bundles[i]));
+      String[] bundleDirs = def.getBundleDirectories(dir);
+      if (bundleDirs != null) {
+        for(int i=0; i<bundleDirs.length; i++) {
+          LibraryElementBundleDirectory bundleDir = new LibraryElementBundleDirectory(bundleRoot, bundleDirs[i]);
+          bundleRoot.addChild(bundleDir);
+          // Set bundles
+          IOsgiBundle[] bundles = def.getBundles(dir, bundleDir.getBundleDirectory());
+          if (bundles != null) {
+            for(int j=0; j<bundles.length; j++) {
+              bundleDir.addChild(new LibraryElementBundle(bundleDir, bundles[j]));
+            }
+          }
         }
       }
+      
     } else {
       wMainClassText.setText("");
       wSpecificationVersionText.setText("");
@@ -855,13 +883,27 @@ public class FrameworkDialog extends Dialog {
       }
     }
     
-    // Bundles
+    // Set bundles
     LibraryElementBundleRoot bundleRoot = frameworkLibraryModel.getBundleRoot();
     bundleRoot.clear();
     if (settings != null) {
-      IOsgiBundle [] osgiBundles = settings.getBundles();
-      for (int i=0; i<osgiBundles.length; i++) {
-        bundleRoot.addChild(new LibraryElementBundle(bundleRoot, osgiBundles[i]));
+      String[] dirs = settings.getBundleDirectories();
+      for (int i=0; i<dirs.length; i++) {
+        IOsgiBundle [] osgiBundles = settings.getBundles(dirs[i]);
+        if (dirs[i].equals(FrameworkPreference.BUNDLE_ROOT_DIR)) {
+          for (int j=0; j<osgiBundles.length; j++) {
+            bundleRoot.addChild(new LibraryElementBundle(bundleRoot, osgiBundles[j]));
+          }
+        } else {
+          LibraryElementBundleDirectory bundleDir = frameworkLibraryModel.getBundleDirectory(dirs[i]);
+          if (bundleDir == null) {
+            bundleDir = new LibraryElementBundleDirectory(bundleRoot, dirs[i]);
+            bundleRoot.addChild(bundleDir);
+          }
+          for (int j=0; j<osgiBundles.length; j++) {
+            bundleDir.addChild(new LibraryElementBundle(bundleDir, osgiBundles[j]));
+          }
+        }
       }
     }
     

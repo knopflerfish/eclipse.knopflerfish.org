@@ -45,6 +45,7 @@ public interface ILibraryTreeElement {
   public static int TYPE_BUNDLE_ROOT  = 3;
   public static int TYPE_RUNTIME      = 4;
   public static int TYPE_BUNDLE       = 6;
+  public static int TYPE_BUNDLE_DIR   = 7;
 
   ILibraryTreeElement[] getChildren();
 
