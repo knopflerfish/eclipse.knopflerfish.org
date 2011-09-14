@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2011, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,13 @@ package org.knopflerfish.eclipse.core.preferences;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
 import org.knopflerfish.eclipse.core.IOsgiBundle;
@@ -55,23 +60,27 @@ import org.osgi.service.prefs.Preferences;
  */
 public class FrameworkPreference {
 
-  private static String PREF_LOCATION = "Location";
-  private static String PREF_SPECIFICATION_VERISION = "SpecificationVersion";
-  private static String PREF_TYPE = "Type";
-  private static String PREF_MAINCLASS = "MainClass";
-  private static String PREF_RUNTIME_LIBRARIES = "Libraries";
-  private static String PREF_BUNDLES = "Bundles";
-  private static String PREF_JAR = "Jar";
-  private static String PREF_SOURCE = "Source";
-  private static String PREF_USER_DEFINED = "UserDefined";
-  private static String PREF_DEFAULT_SETTINGS = "DefaultSettings";
-  private static String PREF_DEFAULT_DEFINITION = "DefaultDefinition";
-  private static String PREF_PROPERTY_GROUPS = "PropertyGroups";
-  private static String PREF_PROPERTY_DEFAULT = "Default";
-  private static String PREF_PROPERTY_DESCRIPTION = "Description";
-  private static String PREF_PROPERTY_ALLOWED = "Allowed";
-  private static String PREF_PROPERTY_TYPE = "Type";
-
+  final private static String PREF_LOCATION = "Location";
+  final private static String PREF_SPECIFICATION_VERISION = "SpecificationVersion";
+  final private static String PREF_TYPE = "Type";
+  final private static String PREF_MAINCLASS = "MainClass";
+  final private static String PREF_RUNTIME_LIBRARIES = "Libraries";
+  final private static String PREF_BUNDLES = "Bundles";
+  final private static String PREF_BUNDLE_DIRS = "BundleDirs";
+  final private static String PREF_JAR = "Jar";
+  final private static String PREF_SOURCE = "Source";
+  final private static String PREF_PATH = "Path";
+  final private static String PREF_USER_DEFINED = "UserDefined";
+  final private static String PREF_DEFAULT_SETTINGS = "DefaultSettings";
+  final private static String PREF_DEFAULT_DEFINITION = "DefaultDefinition";
+  final private static String PREF_PROPERTY_GROUPS = "PropertyGroups";
+  final private static String PREF_PROPERTY_DEFAULT = "Default";
+  final private static String PREF_PROPERTY_DESCRIPTION = "Description";
+  final private static String PREF_PROPERTY_ALLOWED = "Allowed";
+  final private static String PREF_PROPERTY_TYPE = "Type";
+  
+  public static final String BUNDLE_ROOT_DIR = "--root--";
+  
   private String name;
   private String specificationVersion;
   private String location;
@@ -80,7 +89,7 @@ public class FrameworkPreference {
   private boolean defaultSettings;
   private String mainClass;
   private final ArrayList<IOsgiLibrary> runtimeLibs = new ArrayList<IOsgiLibrary>();
-  private final ArrayList<IOsgiBundle> bundles = new ArrayList<IOsgiBundle>();
+  private final Map<String, List<IOsgiBundle>> bundles = new HashMap<String, List<IOsgiBundle>>();
   private final ArrayList<PropertyGroup> propertyGroups = new ArrayList<PropertyGroup>();
 
   public FrameworkPreference()
@@ -133,25 +142,52 @@ public class FrameworkPreference {
     defaultDefinition = "true".equalsIgnoreCase(node.get(
         PREF_DEFAULT_DEFINITION, "false"));
 
-    // Bundles
-    Preferences bundlesNode = node.node(PREF_BUNDLES);
-    String[] bundleNames = bundlesNode.childrenNames();
+    // Bundle directories
+    Preferences bundleDirsNode = node.node(PREF_BUNDLE_DIRS);
+    String[] bundleDirs = bundleDirsNode.childrenNames();
     bundles.clear();
-    if (bundleNames != null) {
-      for (int i = 0; i < bundleNames.length; i++) {
-        Preferences bundleNode = bundlesNode.node(bundleNames[i]);
+    for (int i = 0; i < bundleDirs.length; i++) {
+      Preferences bundleDirNode = bundleDirsNode.node(bundleDirs[i]);
+      // Bundles in directory
+      String path = bundleDirNode.get(PREF_PATH, null);
+      if (path == null) {
+        continue;
+      }
+      List<IOsgiBundle> l = new ArrayList<IOsgiBundle>();
+      bundles.put(path, l);
+      String[] bundleNames = bundleDirNode.childrenNames();
+      for (int j = 0; j < bundleNames.length; j++) {
+        Preferences bundleNode = bundleDirNode.node(bundleNames[j]);
         try {
           OsgiBundle bundle = new OsgiBundle(new File(bundleNode.get(PREF_JAR,
               "")));
           bundle.setSource(bundleNode.get(PREF_SOURCE, null));
           bundle.setUserDefined("true".equalsIgnoreCase(bundleNode.get(
               PREF_USER_DEFINED, "false")));
-          bundles.add(bundle);
+          l.add(bundle);
         } catch (Exception e) {
         }
       }
     }
-
+    
+    // Older preferences stored bundles in PREF_BUNDLES, keep in order to be backward compatible
+    Preferences bundlesNode = node.node(PREF_BUNDLES);
+    String[] bundleNames = bundlesNode.childrenNames();
+    List<IOsgiBundle> l = new ArrayList<IOsgiBundle>();
+    bundles.put(BUNDLE_ROOT_DIR, l);
+    for (int i = 0; i < bundleNames.length; i++) {
+      Preferences bundleNode = bundlesNode.node(bundleNames[i]);
+      try {
+        OsgiBundle bundle = new OsgiBundle(new File(bundleNode.get(PREF_JAR,
+            "")));
+        bundle.setSource(bundleNode.get(PREF_SOURCE, null));
+        bundle.setUserDefined("true".equalsIgnoreCase(bundleNode.get(
+            PREF_USER_DEFINED, "false")));
+        l.add(bundle);
+      } catch (Exception e) {
+      }
+    }
+    
     // System Property Groups
     Preferences propertyGroupsNode = node.node(PREF_PROPERTY_GROUPS);
     propertyGroups.clear();
@@ -256,17 +292,44 @@ public class FrameworkPreference {
     // Default definition
     subNode.putBoolean(PREF_DEFAULT_DEFINITION, defaultDefinition);
 
-    // Bundles
+    // Bundle directories
+    subNode.node(PREF_BUNDLE_DIRS).removeNode();
+    Preferences bundleDirsNode = subNode.node(PREF_BUNDLE_DIRS);
+    for (Iterator<Entry<String, List<IOsgiBundle>>> i=bundles.entrySet().iterator(); i.hasNext(); ) {
+      Map.Entry<String, List<IOsgiBundle>> entry = i.next();
+      String bundleDir = entry.getKey();
+      if (BUNDLE_ROOT_DIR.equals(bundleDir)) {
+        continue;
+      }
+      List<IOsgiBundle> l = entry.getValue();
+      Preferences bundleDirNode = bundleDirsNode.node("Dir "+bundleDir.hashCode());
+      bundleDirNode.put(PREF_PATH, bundleDir);
+      for (int j = 0; j < l.size(); j++) {
+        IOsgiBundle bundle = l.get(j);
+        Preferences bundleNode = bundleDirNode.node("Bundle " + j);
+        bundleNode.put(PREF_JAR, bundle.getPath());
+        if (bundle.getSource() != null) {
+          bundleNode.put(PREF_SOURCE, bundle.getSource());
+        }
+        bundleNode.putBoolean(PREF_USER_DEFINED, bundle.isUserDefined());
+      }
+      
+    }
+    
+    // Older preferences stored bundles in PREF_BUNDLES, keep in order to be backward compatible
     subNode.node(PREF_BUNDLES).removeNode();
     Preferences bundlesNode = subNode.node(PREF_BUNDLES);
-    for (int i = 0; i < bundles.size(); i++) {
-      IOsgiBundle bundle = bundles.get(i);
-      Preferences bundleNode = bundlesNode.node("Bundle " + i);
-      bundleNode.put(PREF_JAR, bundle.getPath());
-      if (bundle.getSource() != null) {
-        bundleNode.put(PREF_SOURCE, bundle.getSource());
+    List<IOsgiBundle> l = (List<IOsgiBundle>)bundles.get(BUNDLE_ROOT_DIR);
+    if (l != null) {
+      for (int i = 0; i < l.size(); i++) {
+        IOsgiBundle bundle = l.get(i);
+        Preferences bundleNode = bundlesNode.node("Bundle " + i);
+        bundleNode.put(PREF_JAR, bundle.getPath());
+        if (bundle.getSource() != null) {
+          bundleNode.put(PREF_SOURCE, bundle.getSource());
+        }
+        bundleNode.putBoolean(PREF_USER_DEFINED, bundle.isUserDefined());
       }
-      bundleNode.putBoolean(PREF_USER_DEFINED, bundle.isUserDefined());
     }
 
     // Property Groups
@@ -314,9 +377,9 @@ public class FrameworkPreference {
     }
   }
 
-  /****************************************************************************
-   * Getters and Setters
-   ***************************************************************************/
+  //***************************************************************************
+  // Getters and Setters
+  //***************************************************************************
 
   public boolean isDefaultDefinition()
   {
@@ -429,24 +492,37 @@ public class FrameworkPreference {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see org.knopflerfish.eclipse.core.IOsgiInstall#getBundles()
-   */
   public IOsgiBundle[] getBundles()
   {
-    return (OsgiBundle[]) bundles.toArray(new OsgiBundle[bundles.size()]);
+    List<IOsgiBundle> l = new ArrayList<IOsgiBundle>();
+    String[] dirs = getBundleDirectories();
+    for(int i=0; i<dirs.length; i++) {
+      l.addAll(Arrays.asList(getBundles(dirs[i])));
+    }
+    return l.toArray(new OsgiBundle[l.size()]);
+  }
+  
+  public String[] getBundleDirectories()
+  {
+    return bundles.keySet().toArray(new String[bundles.size()]);
   }
 
-  public void setBundles(IOsgiBundle[] libraries)
+  public IOsgiBundle[] getBundles(String dir)
   {
-    bundles.clear();
+    List<IOsgiBundle> l = bundles.get(dir);
+    if (l == null) {
+      l = new ArrayList<IOsgiBundle>();
+    }
+    return (OsgiBundle[]) l.toArray(new OsgiBundle[l.size()]);
+  }
+
+  public void setBundles(String dir, IOsgiBundle[] libraries)
+  {
+    bundles.remove(dir);
     if (libraries == null)
       return;
-    for (int i = 0; i < libraries.length; i++) {
-      bundles.add(libraries[i]);
-    }
+    List<IOsgiBundle> l = new ArrayList<IOsgiBundle>(Arrays.asList(libraries));
+    bundles.put(dir, l);
   }
 
   /*
@@ -487,4 +563,5 @@ public class FrameworkPreference {
     }
     return null;
   }
+
 }
