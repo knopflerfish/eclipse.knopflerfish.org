@@ -58,6 +58,10 @@ public interface IFrameworkDefinition {
   public IOsgiLibrary[] getRuntimeLibraries(File dir);
   
   public IOsgiBundle[] getBundles(File dir);
+
+  public IOsgiBundle[] getBundles(File dir, String path);
+
+  public String[] getBundleDirectories(File dir);
   
   public PropertyGroup[] getSystemPropertyGroups();
   
