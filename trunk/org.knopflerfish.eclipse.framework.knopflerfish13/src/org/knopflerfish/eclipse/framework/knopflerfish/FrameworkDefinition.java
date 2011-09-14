@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,10 +54,12 @@ import org.knopflerfish.eclipse.core.IFrameworkConfiguration;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
+import org.knopflerfish.eclipse.core.IXArgsProperty;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.OsgiLibrary;
 import org.knopflerfish.eclipse.core.Property;
 import org.knopflerfish.eclipse.core.PropertyGroup;
+import org.knopflerfish.eclipse.core.XArgsFile;
 import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.osgi.framework.Constants;
@@ -89,6 +92,9 @@ public class FrameworkDefinition implements IFrameworkDefinition {
   public static int javaVersionMinor = 6;
 
   private final static String PATH_PROPERTY_FILE = "resources/framework.props";
+  
+  static public final String XARGS_INIT     = "init.xargs";
+  static public final String XARGS_RESTART  = "restart.xargs";
 
   private final static String[] PATH_FRAMEWORK_LIB = new String[] {
       "knopflerfish.org/osgi/framework.jar", "osgi/framework.jar",
@@ -161,6 +167,51 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     return libraries.toArray(new IOsgiLibrary[libraries.size()]);
   }
 
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IFrameworkDefinition#getBundleDirectories(java.io.File)
+   */
+  public String[] getBundleDirectories(File dir)
+  {
+    List<String> dirs = new ArrayList<String>();
+    
+    // Find xargs file and parse path. If not found default to 'jars'
+    File root = getRootDir(dir);
+    
+    // Find xargs file
+    if (root != null) {
+      try {
+        // Find default xargs file
+        XArgsFile xArgs = new XArgsFile(root, XARGS_INIT);
+        IXArgsProperty p = xArgs.getFrameworkProperty(IXArgsProperty.PROPERTY_KF_JARS);
+        if (p == null) {
+          p = xArgs.getSystemProperty(IXArgsProperty.PROPERTY_KF_JARS);
+        }
+        if (p != null) {
+          String v = p.getValue();
+          //Split path
+          StringTokenizer st = new StringTokenizer(p.getValue(), ";");
+          while (st.hasMoreTokens()) {
+            URL url = new URL(st.nextToken().trim());
+            // Only add urls which reference local directories
+            if ("file".equals(url.getProtocol())) {
+              dirs.add(url.getPath());
+            }
+          }
+        }
+      } catch (IOException e) {
+        // Failed to create xargs from file
+      }
+    }
+    
+    // Add default jars dir if none has been found in xargs file
+    if (dirs.size() == 0) {
+      dirs.add(PATH_JAR_DIR);
+    }
+    
+    return dirs.toArray(new String[dirs.size()]);
+  }
+
   /*
    * (non-Javadoc)
    * 
@@ -169,12 +220,22 @@ public class FrameworkDefinition implements IFrameworkDefinition {
    */
   public IOsgiBundle[] getBundles(File dir)
   {
+    return getBundles(dir, null);
+  }
+
+  public IOsgiBundle[] getBundles(File dir, String path)
+  {
     List<IOsgiBundle> bundles = new ArrayList<IOsgiBundle>();
 
     // Add bundles
     File root = getRootDir(dir);
+    
+    // Default to PATH_JAR_DIR if not set
+    if (path == null) {
+      path = PATH_JAR_DIR;
+    }
     if (root != null) {
-      File jarDir = new File(root, PATH_JAR_DIR);
+      File jarDir = new File(root, path);
       List<File> jars = getJars(jarDir);
       for (int i = 0; i < jars.size(); i++) {
         try {
@@ -186,14 +247,8 @@ public class FrameworkDefinition implements IFrameworkDefinition {
                 BundleManifest.BUILT_FROM);
           }
           if (builtFrom != null) {
-            int idx = builtFrom.lastIndexOf(PATH_BUNDLE_DIR);
-            if (idx != -1) {
-              File bundleDir = new File(root, builtFrom.substring(idx));
-              File srcDir = new File(bundleDir, "src");
-              if (srcDir.exists() && srcDir.isDirectory()) {
-                bundle.setSource(srcDir.getAbsolutePath());
-              }
-            }
+            // Try to find source directory
+            bundle.setSource(findSourceDir(builtFrom, root));
           }
 
           bundles.add(bundle);
@@ -437,7 +492,7 @@ public class FrameworkDefinition implements IFrameworkDefinition {
 
     return root;
   }
-
+  
   private List<File> getJars(File f)
   {
     List<File> jars = new ArrayList<File>();
@@ -499,6 +554,45 @@ public class FrameworkDefinition implements IFrameworkDefinition {
     } else {
       return props.get(key);
     }
+  }
+  
+  private static String findSourceDir(final String builtFromDir, final File frameworkDir) {
+    if (builtFromDir == null) {
+      return null;
+    }
+    
+    String d = builtFromDir;
+    if (!d.endsWith(File.separator+"src")) {
+      d = d + File.separator+"src";
+    }
+    
+    // Check if builtFrom directly points to an directory
+    File f = new File(d);
+    if (f.exists() && f.isDirectory()) {
+      return f.getAbsolutePath();
+    }
+    
+    // Try to merge builtFrom with frameworkDir to find directory
+    // Make path relative
+    int idx = d.indexOf(File.pathSeparatorChar);
+    if (idx != -1) {
+      d = d.substring(idx+1);
+    }
+    while (d.startsWith(File.separator)) {
+      d = d.substring(1);
+    }
+    while(d.length() > 0) {
+      f = new File(frameworkDir, d);
+      if (f.exists() && f.isDirectory()) {
+        return f.getAbsolutePath();
+      }
+      idx = d.indexOf(File.separator);
+      if (idx == -1 || (idx+1) >= d.length()) {
+        return null;
+      }
+      d = d.substring(idx+1);
+    } 
+    return null;
   }
 
 }
