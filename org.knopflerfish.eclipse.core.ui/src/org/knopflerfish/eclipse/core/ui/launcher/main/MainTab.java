@@ -34,7 +34,11 @@
 
 package org.knopflerfish.eclipse.core.ui.launcher.main;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -45,6 +49,8 @@ import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.sourcelookup.ISourcePathComputer;
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
+import org.eclipse.jdt.launching.ExecutionArguments;
+import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ComboBoxCellEditor;
@@ -491,9 +497,16 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     configuration.setAttribute(
         IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, path.toString());
 
-    // Set default instance settings
-    configuration.setAttribute(
-        IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, true);
+    // Set default instance settings, add program argument "-init"
+    String programArgs = "";
+    try {
+      programArgs = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "");
+    } catch (CoreException e) {
+    }
+    ExecutionArguments execArgs = new ExecutionArguments("", programArgs);
+    if (!Arrays.asList(execArgs.getProgramArgumentsArray()).contains("-init")) {
+      configuration.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "-init "+programArgs);
+    }
 
     // Set default start level
     configuration
@@ -520,7 +533,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   public void initializeFrom(ILaunchConfiguration configuration)
   {
     // Set values to GUI widgets
-
+    try {
     // OSGi install
     updateOsgiInstalls();
     String installName = null;
@@ -549,15 +562,13 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wInstanceDirText.setText(instanceDir);
 
     // Clear bundle cache
-    boolean instanceInit = false;
+    String programArgs = "";
     try {
-      // Instance settings
-      instanceInit = configuration.getAttribute(
-          IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, false);
+      programArgs = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "");
     } catch (CoreException e) {
-      OsgiUiPlugin.log(e.getStatus());
     }
-    wInitButton.setSelection(instanceInit);
+    ExecutionArguments execArgs = new ExecutionArguments("", programArgs);
+    wInitButton.setSelection(Arrays.asList(execArgs.getProgramArgumentsArray()).contains("-init"));
 
     // Start level
     int startLevel = DEFAULT_START_LEVEL;
@@ -579,6 +590,9 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
   }
 
   /*
@@ -598,9 +612,44 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     configuration.setAttribute(
         IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, wInstanceDirText
             .getText());
-    configuration.setAttribute(
-        IOsgiLaunchConfigurationConstants.ATTR_CLEAR_CACHE, wInitButton
-            .getSelection());
+    
+    String programArgs = "";
+    boolean programArgsChanged = false;
+    try {
+      programArgs = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "");
+    } catch (CoreException e) {
+    }
+    ExecutionArguments execArgs = new ExecutionArguments("", programArgs);
+    List argsList = new ArrayList(Arrays.asList(execArgs.getProgramArgumentsArray()));
+    if (!argsList.contains("-init")) {
+      if (wInitButton.getSelection()) {
+        argsList.add(0, "-init");
+        programArgsChanged = true;
+      }
+    } else {
+      if (!wInitButton.getSelection()) {
+        while(argsList.contains("-init")) {
+          argsList.remove("-init");
+          programArgsChanged = true;
+        }
+      }
+    }
+    if (programArgsChanged) {
+      StringBuffer buf = new StringBuffer();
+      for (Iterator i=argsList.iterator(); i.hasNext(); ) {
+        String a = (String) i.next();
+        if (buf.length() > 0) {
+          buf.append(" ");
+        }
+        buf.append(a);
+      }
+      if (buf.length() == 0) {
+        configuration.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, (String) null);
+      } else {
+        configuration.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, buf.toString());
+      }
+    }
+    
     configuration.setAttribute(
         IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, wStartLevelSpinner
             .getSelection());
@@ -787,11 +836,13 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   protected void update(Object element)
   {
     wPropertyTreeViewer.update(element, null);
+    //scheduleUpdateJob();
     updateLaunchConfigurationDialog();
   }
 
   protected void updateDialog()
   {
+    //scheduleUpdateJob();
     updateLaunchConfigurationDialog();
   }
 }

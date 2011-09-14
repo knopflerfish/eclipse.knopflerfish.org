@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2011, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 package org.knopflerfish.eclipse.core.ui.preferences.model;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
@@ -67,26 +68,65 @@ public class LibraryElementRoot implements ILibraryTreeElement {
    }
   
   public IOsgiLibrary[] getRuntimeLibraries() {
-    ArrayList libs = new ArrayList();
+    List<IOsgiLibrary> libs = new ArrayList<IOsgiLibrary>();
     ILibraryTreeElement [] children = runtimeElement.getChildren();
     for (int i=0; i<children.length; i++) {
       libs.add( ((LibraryElementRuntime) children[i]).getLibrary());
     }
-    return (IOsgiLibrary[]) libs.toArray(new IOsgiLibrary[libs.size()]);
+    return libs.toArray(new IOsgiLibrary[libs.size()]);
   }
   
-  public IOsgiBundle[] getBundles() {
-    ArrayList libs = new ArrayList();
-    ILibraryTreeElement [] children = bundleElement.getChildren();
-    for (int i=0; i<children.length; i++) {
-      libs.add( ((LibraryElementBundle) children[i]).getBundle());
+  public IOsgiBundle[] getBundles(String dir) {
+    List<IOsgiBundle> libs = new ArrayList<IOsgiBundle>();
+    if (dir == null) {
+      LibraryElementBundle [] children = bundleElement.getBundles();
+      for (int i=0; i<children.length; i++) {
+          libs.add(children[i].getBundle());
+      }
+    } else if (dir != null) {
+      LibraryElementBundleDirectory [] children = bundleElement.getBundleDirectories();
+      for (int i=0; i<children.length; i++) {
+        if (!dir.equals(children[i].getBundleDirectory())) {
+          continue;
+        }
+        ILibraryTreeElement [] dirChildren = children[i].getChildren();
+        for (int j=0; j<dirChildren.length; j++) {
+          LibraryElementBundle bundleElem = (LibraryElementBundle) dirChildren[j];
+          libs.add(bundleElem.getBundle());
+        }
+      }
     }
-    return (IOsgiBundle[]) libs.toArray(new IOsgiBundle[libs.size()]);
+    return libs.toArray(new IOsgiBundle[libs.size()]);
   }
   
-  /****************************************************************************
-   * org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement methods
-   ***************************************************************************/
+  public String[] getBundleDirectories()
+  {
+    List<String> dirs = new ArrayList<String>();
+    LibraryElementBundleDirectory [] children = bundleElement.getBundleDirectories();
+    for (int i=0; i<children.length; i++) {
+      dirs.add(children[i].getBundleDirectory());
+    }
+    return dirs.toArray(new String[dirs.size()]);
+  }
+  
+  public LibraryElementBundleDirectory getBundleDirectory(String dir)
+  {
+    if (dir == null) {
+      return null;
+    }
+    
+    LibraryElementBundleDirectory [] children = bundleElement.getBundleDirectories();
+    for (int i=0; i<children.length; i++) {
+      if (dir.equals(children[i].getBundleDirectory())) {
+        return children[i];
+      }
+    }
+    return null;
+  }
+  
+  //***************************************************************************
+  // org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement methods
+  //***************************************************************************
   
   /* (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getChildren()
@@ -117,5 +157,5 @@ public class LibraryElementRoot implements ILibraryTreeElement {
   public int getType() {
     return TYPE_ROOT;
   }
-  
+
 }

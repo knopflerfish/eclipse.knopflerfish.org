@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2011, KNOPFLERFISH project
+ * Copyright (c) 2003-2005, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,68 +35,56 @@
 package org.knopflerfish.eclipse.core.ui.preferences.model;
 
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
 /**
  * @author Anders Rimén, Makewave
- * @see http://www.gatespacetelematics.com/
+ * @see http://www.makewave.com/
  */
-public class LibraryElementBundleRoot implements ILibraryTreeElement {
+public class LibraryElementBundleDirectory implements ILibraryTreeElement {
 
   private final ILibraryTreeElement parent;
-  private final Set bundles = new HashSet();
-  private final Set directories = new HashSet();
+  private String bundleDir;
+  private final Set children = new TreeSet(new BundleElementComparator());
   
-  LibraryElementBundleRoot(ILibraryTreeElement parent) {
+  public LibraryElementBundleDirectory(ILibraryTreeElement parent, String dir) {
     this.parent = parent;
+    bundleDir = dir;
+  }
+  
+  public String getBundleDirectory() {
+    return bundleDir;
+  }
+
+  public void setBundleDirectory(String dir) {
+    this.bundleDir = dir;
   }
   
   public void clear() {
-    bundles.clear();
-    directories.clear();
+    children.clear();
   }
   
   public void addChild(LibraryElementBundle e) {
-    if (e != null && !bundles.contains(e)) {
-      bundles.add(e);
+    if (e != null && !children.contains(e)) {
+      children.add(e);
     }
   }
 
-  public boolean remove(LibraryElementBundle e) {
-    return bundles.remove(e);
+  public boolean remove(ILibraryTreeElement e) {
+    return children.remove(e);
   }
   
-  public void addChild(LibraryElementBundleDirectory e) {
-    if (e != null && !directories.contains(e)) {
-      directories.add(e);
-    }
-  }
 
-  public boolean remove(LibraryElementBundleDirectory e) {
-    return directories.remove(e);
-  }
 
-  public LibraryElementBundle[] getBundles() {
-    return (LibraryElementBundle[]) bundles.toArray(new LibraryElementBundle[bundles.size()]);
-  }
-  
-  public LibraryElementBundleDirectory[] getBundleDirectories() {
-    return (LibraryElementBundleDirectory[]) directories.toArray(new LibraryElementBundleDirectory[directories.size()]);
-  }
-  
-  //***************************************************************************
-  // org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement methods
-  //***************************************************************************
+  /****************************************************************************
+   * org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement methods
+   ***************************************************************************/
   
   /* (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getChildren()
    */
   public ILibraryTreeElement[] getChildren() {
-    Set<ILibraryTreeElement> children = new TreeSet(new BundleElementComparator());
-    children.addAll(bundles);
-    children.addAll(directories);
     return (ILibraryTreeElement[]) children.toArray(new ILibraryTreeElement[children.size()]);
   }
 
@@ -111,14 +99,28 @@ public class LibraryElementBundleRoot implements ILibraryTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#hasChildren()
    */
   public boolean hasChildren() {
-    return (bundles.size() > 0 || directories.size() > 0);
+    return (children.size() > 0);
   }
 
   /* (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.ui.preferences.model.ILibraryTreeElement#getType()
    */
   public int getType() {
-    return TYPE_BUNDLE_ROOT;
+    return TYPE_BUNDLE_DIR;
+  }
+
+  /****************************************************************************
+   * java.lang.Object methods
+   ***************************************************************************/
+  
+  /*
+   *  (non-Javadoc)
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof LibraryElementBundleDirectory)) return false;
+    
+    return ((LibraryElementBundleDirectory) obj).getBundleDirectory().equals(getBundleDirectory()); 
   }
   
   class BundleElementComparator implements Comparator {
@@ -140,4 +142,6 @@ public class LibraryElementBundleRoot implements ILibraryTreeElement {
       }
     } 
   }
+  
+
 }

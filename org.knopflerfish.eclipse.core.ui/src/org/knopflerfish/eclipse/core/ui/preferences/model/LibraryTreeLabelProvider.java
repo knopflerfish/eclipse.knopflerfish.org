@@ -138,6 +138,8 @@ public class LibraryTreeLabelProvider extends LabelProvider implements IFontProv
       return JavaUI.getSharedImages().getImage(org.eclipse.jdt.ui.ISharedImages.IMG_OBJS_JAR);
     case ILibraryTreeElement.TYPE_BUNDLE_ROOT:
       return PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ISharedImages.IMG_OBJ_FOLDER);
+    case ILibraryTreeElement.TYPE_BUNDLE_DIR:
+      return PlatformUI.getWorkbench().getSharedImages().getImage(org.eclipse.ui.ISharedImages.IMG_OBJ_FOLDER);
     case ILibraryTreeElement.TYPE_BUNDLE:
       if (((LibraryElementBundle) e).getBundle().getSource() != null) {
         return imageBundleSrc;
@@ -168,6 +170,8 @@ public class LibraryTreeLabelProvider extends LabelProvider implements IFontProv
       return "Bundles";
     case ILibraryTreeElement.TYPE_BUNDLE:
       return ((LibraryElementBundle) e).getBundle().getName();
+    case ILibraryTreeElement.TYPE_BUNDLE_DIR:
+      return ((LibraryElementBundleDirectory) e).getBundleDirectory();
     default :
       return "huh?";
     }
