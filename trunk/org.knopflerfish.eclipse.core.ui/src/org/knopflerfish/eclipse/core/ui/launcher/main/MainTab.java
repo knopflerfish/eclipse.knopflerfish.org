@@ -92,6 +92,7 @@ import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
+import org.knopflerfish.eclipse.core.ui.launcher.CustomJavaArgumentsTab;
 
 /**
  * @author Anders Rimén, Gatespace Telematics
@@ -133,12 +134,14 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
   // Resources
   private Image imageTab = null;
-
+  private final CustomJavaArgumentsTab argTab;
+  
   private final PropertyGroup userGroup = new PropertyGroup(USER_GROUP);
   Map<String, String> systemProperties;
 
-  public MainTab()
+  public MainTab(CustomJavaArgumentsTab argTab)
   {
+    this.argTab = argTab;
     ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin(
         "org.knopflerfish.eclipse.core.ui", IMAGE);
     if (id != null) {
@@ -281,6 +284,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wInitButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e)
       {
+        argTab.setInitFlag(wInitButton.getSelection());
         updateDialog();
       }
     });
@@ -498,6 +502,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, path.toString());
 
     // Set default instance settings, add program argument "-init"
+    /*
     String programArgs = "";
     try {
       programArgs = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "");
@@ -507,6 +512,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     if (!Arrays.asList(execArgs.getProgramArgumentsArray()).contains("-init")) {
       configuration.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "-init "+programArgs);
     }
+    */
 
     // Set default start level
     configuration
@@ -533,7 +539,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   public void initializeFrom(ILaunchConfiguration configuration)
   {
     // Set values to GUI widgets
-    try {
+
     // OSGi install
     updateOsgiInstalls();
     String installName = null;
@@ -562,6 +568,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wInstanceDirText.setText(instanceDir);
 
     // Clear bundle cache
+    /*
     String programArgs = "";
     try {
       programArgs = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "");
@@ -569,6 +576,9 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     }
     ExecutionArguments execArgs = new ExecutionArguments("", programArgs);
     wInitButton.setSelection(Arrays.asList(execArgs.getProgramArgumentsArray()).contains("-init"));
+    */
+    argTab.initializeFrom(configuration);
+    wInitButton.setSelection(argTab.getInitFlag());
 
     // Start level
     int startLevel = DEFAULT_START_LEVEL;
@@ -590,9 +600,6 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
-    } catch (Throwable t) {
-      t.printStackTrace();
-    }
   }
 
   /*
@@ -613,6 +620,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, wInstanceDirText
             .getText());
     
+    /*
     String programArgs = "";
     boolean programArgsChanged = false;
     try {
@@ -649,6 +657,8 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         configuration.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, buf.toString());
       }
     }
+    */
+    argTab.performApply(configuration);
     
     configuration.setAttribute(
         IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, wStartLevelSpinner

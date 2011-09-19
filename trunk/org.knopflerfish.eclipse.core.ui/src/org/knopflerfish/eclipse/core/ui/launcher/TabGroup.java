@@ -59,10 +59,11 @@ public class TabGroup extends AbstractLaunchConfigurationTabGroup {
    * @see org.eclipse.debug.ui.ILaunchConfigurationTabGroup#createTabs(org.eclipse.debug.ui.ILaunchConfigurationDialog, java.lang.String)
    */
   public void createTabs(ILaunchConfigurationDialog dialog, String mode) {
+    CustomJavaArgumentsTab argTab = new CustomJavaArgumentsTab();
     ILaunchConfigurationTab[] tabs = new ILaunchConfigurationTab[] {
-        new MainTab(),
+        new MainTab(argTab),
         new BundleTab(),
-        new CustomJavaArgumentsTab(),
+        argTab,
         new JavaJRETab(),
         new CommonTab()
     };
