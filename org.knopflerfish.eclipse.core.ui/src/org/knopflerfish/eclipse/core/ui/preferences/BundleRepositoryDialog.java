@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2011, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,9 @@
 
 package org.knopflerfish.eclipse.core.ui.preferences;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 import org.eclipse.jface.dialogs.Dialog;
@@ -62,8 +63,8 @@ import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class BundleRepositoryDialog extends Dialog {
 
@@ -85,11 +86,11 @@ public class BundleRepositoryDialog extends Dialog {
   private Label   wErrorMsgLabel;
   private Label   wErrorImgLabel;
   
-  private ArrayList usedNames;
+  private List<String> usedNames;
   private RepositoryPreference repository;
-  private TreeMap repositories = new TreeMap();
+  private Map<String, IBundleRepositoryType> repositories = new TreeMap<String, IBundleRepositoryType>();
   
-  protected BundleRepositoryDialog(Shell parentShell, ArrayList usedNames, RepositoryPreference repository) {
+  protected BundleRepositoryDialog(Shell parentShell, List<String> usedNames, RepositoryPreference repository) {
     super(parentShell);
   
     this.usedNames = usedNames;
@@ -107,9 +108,9 @@ public class BundleRepositoryDialog extends Dialog {
     return repository;
   }
   
-  /****************************************************************************
-   * org.eclipse.jface.window.Window Methods
-   ***************************************************************************/
+  //***************************************************************************
+  // org.eclipse.jface.window.Window Methods
+  //***************************************************************************
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.window.Window#close()
@@ -145,9 +146,9 @@ public class BundleRepositoryDialog extends Dialog {
     return c;
   }
 
-  /****************************************************************************
-   * org.eclipse.jface.dialogs.Dialog Methods
-   ***************************************************************************/
+  //***************************************************************************
+  // org.eclipse.jface.dialogs.Dialog Methods
+  //***************************************************************************
   /*
    *  (non-Javadoc)
    * @see org.eclipse.jface.dialogs.Dialog#okPressed()
@@ -241,9 +242,9 @@ public class BundleRepositoryDialog extends Dialog {
     return composite;
   }
 
-  /****************************************************************************
-   * Verify Methods
-   ***************************************************************************/
+  //***************************************************************************
+  // Verify Methods
+  //***************************************************************************
   public boolean verifyAll() {
 
     if (!verifyType()) {
@@ -308,9 +309,9 @@ public class BundleRepositoryDialog extends Dialog {
     return true;
   }
   
-  /****************************************************************************
-   * Private Utility Methods
-   ***************************************************************************/
+  //***************************************************************************
+  // Private Utility Methods
+  //***************************************************************************
   void updateConfigDescription() {
     String type = wTypeCombo.getText();
     String description = Osgi.getBundleRepositoryTypeConfigDescription(type);
@@ -342,8 +343,8 @@ public class BundleRepositoryDialog extends Dialog {
     
     // Type
     wTypeCombo.removeAll();
-    for(Iterator i=repositories.keySet().iterator(); i.hasNext();) {
-      wTypeCombo.add((String)i.next());
+    for(Iterator<String> i=repositories.keySet().iterator(); i.hasNext();) {
+      wTypeCombo.add(i.next());
     }
     if (settings != null && settings.getType() != null && settings.getType().trim().length() > 0) {
       wTypeCombo.setText(settings.getType());
