@@ -978,8 +978,10 @@ public class BundleProject implements IBundleProject {
     String name = manifest.getName();
     if (name == null || name.trim().length() == 0) {
       return "Bundle name not specified.";
+    /* Do not warn if name contain spaces
     } else if (name.indexOf(' ') != -1) {
       return "Bundle name should not contain spaces.";
+    */
     } else {
       return null;
     }
