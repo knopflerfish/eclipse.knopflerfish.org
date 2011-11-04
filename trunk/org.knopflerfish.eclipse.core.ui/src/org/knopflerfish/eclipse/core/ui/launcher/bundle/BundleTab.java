@@ -469,11 +469,12 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     }
     selectedBundlesLabelProvider.setInitialStartLevel(startLevel);
 
+    boolean updateLaunchConfig = false;
     try {
       selectedBundlesModel.clear();
       // Bundles
-      selectedBundlesModel.addBundles(configuration.getAttribute(
-          IOsgiLaunchConfigurationConstants.ATTR_BUNDLES, (Map) null));
+      updateLaunchConfig = selectedBundlesModel.addBundles(configuration.getAttribute(
+          IOsgiLaunchConfigurationConstants.ATTR_BUNDLES, (Map) null), (AvailableElementRoot) wAvailableBundleTreeViewer.getInput(), wSelectedBundleTableViewer);
       // Bundle Projects
       selectedBundlesModel.addBundleProjects(configuration.getAttribute(
           IOsgiLaunchConfigurationConstants.ATTR_BUNDLE_PROJECTS, (Map) null));
@@ -495,6 +496,12 @@ public class BundleTab extends AbstractLaunchConfigurationTab {
     updatePackages();
 
     wAvailableBundleTreeViewer.refresh();
+    
+    // Notify that configuration is changed
+    if (updateLaunchConfig) {
+      updateLaunchConfigurationDialog();
+    }
+
     UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
   }
 

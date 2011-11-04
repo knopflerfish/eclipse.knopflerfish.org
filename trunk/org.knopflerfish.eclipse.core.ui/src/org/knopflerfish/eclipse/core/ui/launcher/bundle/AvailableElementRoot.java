@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2011, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,12 +43,12 @@ import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class AvailableElementRoot implements IAvailableTreeElement {
 
-  private ArrayList children = new ArrayList();
+  private ArrayList<IAvailableTreeElement> children = new ArrayList<IAvailableTreeElement>();
 
   public AvailableElementRoot() {
     // Add workspace root
@@ -61,10 +61,23 @@ public class AvailableElementRoot implements IAvailableTreeElement {
       children.add(new AvailableElementRepository(this, repositories[i]));
     }
   }
+  
+  public AvailableElementBundle findBundle(String filename) {
+    for(IAvailableTreeElement e : children) {
+      if (e instanceof AvailableElementRepository) {
+        AvailableElementRepository repo = (AvailableElementRepository) e;
+        AvailableElementBundle bundle = repo.findBundle(filename);
+        if (bundle != null) {
+          return bundle;
+        }
+      }
+    }
+    return null;
+  }
 
-  /****************************************************************************
-   * org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement methods
-   ***************************************************************************/
+  //***************************************************************************
+  // org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement methods
+  //***************************************************************************
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getParent()
@@ -78,7 +91,7 @@ public class AvailableElementRoot implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getChildren()
    */
   public IAvailableTreeElement[] getChildren() {
-    return (IAvailableTreeElement[]) children.toArray(new IAvailableTreeElement[children.size()]);
+    return children.toArray(new IAvailableTreeElement[children.size()]);
   }
   
   /*
@@ -129,9 +142,9 @@ public class AvailableElementRoot implements IAvailableTreeElement {
     return null;
   }
 
-  /****************************************************************************
-   * java.lang.Object methods
-   ***************************************************************************/
+  //***************************************************************************
+  // java.lang.Object methods
+  //***************************************************************************
   /*
    *  (non-Javadoc)
    * @see java.lang.Object#toString()
