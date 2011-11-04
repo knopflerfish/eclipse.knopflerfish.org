@@ -363,6 +363,34 @@ public class Util {
     return result.iterator();
   }
 
+  public static String getFileName(String path)
+  {
+    if (path == null) {
+      return null;
+    }
+    
+    String fileName = path;
+    
+    // Extract filename, we do not allow / or \ in a filename
+    int idx = fileName.lastIndexOf('/');
+    if (idx != -1) {
+      if (idx+1 >= fileName.length()) {
+        return "";
+      }
+      fileName = fileName.substring(idx+1);
+    }
+    
+    idx = fileName.lastIndexOf('\\');
+    if (idx != -1) {
+      if (idx+1 >= fileName.length()) {
+        return "";
+      }
+      fileName = fileName.substring(idx+1);
+    }
+    
+    return fileName;
+  }
+
 }
 
 /**
