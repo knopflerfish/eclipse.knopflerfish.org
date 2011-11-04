@@ -40,17 +40,18 @@ import org.knopflerfish.eclipse.core.IBundleRepository;
 import org.knopflerfish.eclipse.core.IBundleRepositoryType;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.Osgi;
+import org.knopflerfish.eclipse.core.Util;
 import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.osgi.framework.Version;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class AvailableElementRepository implements IAvailableTreeElement {
 
   private final IAvailableTreeElement parent;
-  private final ArrayList children = new ArrayList();
+  private final ArrayList<AvailableElementBundle> children = new ArrayList<AvailableElementBundle>();
   private final RepositoryPreference repositoryPref;
 
   AvailableElementRepository(IAvailableTreeElement parent, RepositoryPreference repositoryPref) {
@@ -83,10 +84,20 @@ public class AvailableElementRepository implements IAvailableTreeElement {
     return repositoryPref;
   }
   
+  public AvailableElementBundle findBundle(String filename) {
+    for(AvailableElementBundle e : children) {
+      IOsgiBundle b = e.getBundle();
+      if (Util.getFileName(b.getPath()).equals(filename)) {
+        return e;
+      }
+    }
+    return null;
+  }
 
-  /****************************************************************************
-   * org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement methods
-   ***************************************************************************/
+
+  //***************************************************************************
+  // org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement methods
+  //***************************************************************************
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getParent()
@@ -100,7 +111,7 @@ public class AvailableElementRepository implements IAvailableTreeElement {
    * @see org.knopflerfish.eclipse.core.ui.launcher.IAvailableTreeElement#getChildren()
    */
   public IAvailableTreeElement[] getChildren() {
-    return (IAvailableTreeElement[]) children.toArray(new IAvailableTreeElement[children.size()]);
+    return children.toArray(new IAvailableTreeElement[children.size()]);
   }
   
   /*
@@ -155,9 +166,9 @@ public class AvailableElementRepository implements IAvailableTreeElement {
     return repositoryPref;
   }
 
-  /****************************************************************************
-   * java.lang.Object methods
-   ***************************************************************************/
+  //***************************************************************************
+  // java.lang.Object methods
+  //***************************************************************************
   /*
    *  (non-Javadoc)
    * @see java.lang.Object#toString()

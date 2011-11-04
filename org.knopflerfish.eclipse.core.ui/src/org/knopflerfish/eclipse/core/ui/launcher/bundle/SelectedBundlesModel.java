@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2011, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,14 +41,22 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TreeViewer;
+import org.knopflerfish.eclipse.core.IBundleRepository;
+import org.knopflerfish.eclipse.core.IBundleRepositoryType;
+import org.knopflerfish.eclipse.core.IOsgiBundle;
+import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
+import org.knopflerfish.eclipse.core.Util;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
+import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
+import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class SelectedBundlesModel {
   
@@ -62,22 +70,41 @@ public class SelectedBundlesModel {
     elements.clear();
   }
 
-  public void addBundles(Map m) {
-    if (m == null) return;
-
+  public boolean addBundles(Map m, final AvailableElementRoot availableElementRoot, TableViewer viewer) {
+    if (m == null) return false;
+    
+    boolean changed = false;
     for(Iterator i=m.entrySet().iterator();i.hasNext();) {
       try {
         Map.Entry entry = (Map.Entry) i.next();
         String path = (String) entry.getKey();
-        OsgiBundle bundle = new OsgiBundle(new File(path));
+        // Check if path exists, otherwise try paths from repositories
         BundleLaunchInfo info = new BundleLaunchInfo((String) entry.getValue());
-        SelectedBundleElement element = new SelectedBundleElement(bundle, info);
-        elements.add(element);
-        bundles.put(entry.getKey(), entry.getValue());
+        IOsgiBundle bundle = null;
+        File f = new File(path);
+        if (f.exists() && f.isFile()) {
+          bundle = new OsgiBundle(f);
+        } else {
+          changed = true;
+          if (availableElementRoot != null) {
+            AvailableElementBundle element = availableElementRoot.findBundle(Util.getFileName(path));
+            if (element != null) {
+              bundle = element.getBundle();
+              info.setSource(bundle.getSource());
+            }
+          }
+        }
+        if (bundle != null) {
+          SelectedBundleElement element = new SelectedBundleElement(bundle, info);
+          add(viewer, element);
+          //elements.add(element);
+          //bundles.put(entry.getKey(), entry.getValue());
+        }
       } catch (Exception e) {
         // Something went wrong, skip this element
       }
     }
+    return changed;
   }
   
   public Map getBundles() {
