@@ -34,11 +34,8 @@
 
 package org.knopflerfish.eclipse.repository.directory;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.knopflerfish.eclipse.core.IBundleRepository;
+import org.knopflerfish.eclipse.core.IBundleRepositoryConfig;
 import org.knopflerfish.eclipse.core.IBundleRepositoryType;
 
 /**
@@ -47,34 +44,11 @@ import org.knopflerfish.eclipse.core.IBundleRepositoryType;
  */
 public class BundleRepositoryType implements IBundleRepositoryType {
 
+  private final BundleRepositoryConfig config = new BundleRepositoryConfig();
+  
   //***************************************************************************
-  // org.knopflerfish.eclipse.core.IBundleRepositoryType methods
+  // IBundleRepositoryType methods
   //***************************************************************************
-
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#isValidConfig(java.lang.String)
-   */
-  public boolean isValidConfig(String config) {
-    // Check that config is a valid directory
-    try {
-      File f = new File(config);
-      return (f.exists() && f.isDirectory());
-    } catch (Throwable t) {
-      return false;
-    }
-  }
-
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#getConfigSuggestions()
-   */
-  public String[] getConfigSuggestions() {
-    
-    List<String> names = new ArrayList<String>();
-    return names.toArray(new String[names.size()]);
-  }
-
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#createRepository(java.lang.String)
@@ -88,5 +62,13 @@ public class BundleRepositoryType implements IBundleRepositoryType {
    * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#refreshRepositories()
    */
   public void refreshRepositories() {
+  }
+  
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#getRepositoryConfig()
+   */
+  public IBundleRepositoryConfig getRepositoryConfig()
+  {
+    return config;
   }
 }

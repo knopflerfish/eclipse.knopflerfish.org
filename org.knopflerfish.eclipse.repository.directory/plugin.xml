@@ -12,7 +12,7 @@
          point="org.knopflerfish.eclipse.core.bundleRepositoryType">
     <bundleRepositoryType
           class="org.knopflerfish.eclipse.repository.directory.BundleRepositoryType"
-          configDescription="Directory"
+          configDescription="Enter directory to use as repository"
           id="org.knopflerfish.eclipse.repository.directory.BundleRepositoryType"
           image="icons/obj16/fldr_obj.gif"
           name="Directory Repository"/>
