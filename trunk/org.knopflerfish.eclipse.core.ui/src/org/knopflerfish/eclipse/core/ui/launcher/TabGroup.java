@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2011, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ import org.eclipse.debug.ui.AbstractLaunchConfigurationTabGroup;
 import org.eclipse.debug.ui.CommonTab;
 import org.eclipse.debug.ui.ILaunchConfigurationDialog;
 import org.eclipse.debug.ui.ILaunchConfigurationTab;
-import org.eclipse.jdt.debug.ui.launchConfigurations.JavaArgumentsTab;
+import org.eclipse.debug.ui.sourcelookup.SourceLookupTab;
 import org.eclipse.jdt.debug.ui.launchConfigurations.JavaJRETab;
 import org.knopflerfish.eclipse.core.ui.launcher.bundle.BundleTab;
 import org.knopflerfish.eclipse.core.ui.launcher.main.MainTab;
@@ -46,14 +46,14 @@ import org.knopflerfish.eclipse.core.ui.launcher.main.MainTab;
 /**
  * Implementation of OSGi launch tab group.
  * 
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
 public class TabGroup extends AbstractLaunchConfigurationTabGroup {
 
-  /****************************************************************************
-   * org.eclipse.debug.ui.ILaunchConfigurationTabGroup Methods
-   ***************************************************************************/
+  //***************************************************************************
+  // org.eclipse.debug.ui.ILaunchConfigurationTabGroup Methods
+  //***************************************************************************
   /*
    *  (non-Javadoc)
    * @see org.eclipse.debug.ui.ILaunchConfigurationTabGroup#createTabs(org.eclipse.debug.ui.ILaunchConfigurationDialog, java.lang.String)
@@ -65,6 +65,7 @@ public class TabGroup extends AbstractLaunchConfigurationTabGroup {
         new BundleTab(),
         argTab,
         new JavaJRETab(),
+        new SourceLookupTab(),
         new CommonTab()
     };
     setTabs(tabs);

@@ -43,6 +43,7 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -52,12 +53,12 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
+import org.knopflerfish.eclipse.core.IBundleRepositoryConfig;
 import org.knopflerfish.eclipse.core.IBundleRepositoryType;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
@@ -66,7 +67,7 @@ import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
  * @author Anders Rimén, Makewave
  * @see http://www.makewave.com/
  */
-public class BundleRepositoryDialog extends Dialog {
+public class BundleRepositoryDialog extends Dialog implements ModifyListener {
 
   private final static String TITLE_ADD = "Add bundle repository";
   private final static String TITLE_EDIT = "Edit bundle repository";
@@ -78,10 +79,11 @@ public class BundleRepositoryDialog extends Dialog {
   private final static int STATE_INFO     = 2;
   
   // Widgets
-  private Text    wNameText;
-  Combo   wTypeCombo;
-  private Combo    wConfigCombo;
-  Label   wConfigLabel;
+  private Text      wNameText;
+  private Combo     wTypeCombo;
+  private Label     wConfigLabel;
+  private Composite wConfigGroup;
+  private Composite wDialogArea;
 
   private Label   wErrorMsgLabel;
   private Label   wErrorImgLabel;
@@ -100,7 +102,9 @@ public class BundleRepositoryDialog extends Dialog {
     }
     String[] names = Osgi.getBundleRepositoryTypeNames();
     for (int i=0;i<names.length; i++) {
-      repositories.put(names[i], Osgi.getBundleRepositoryType(names[i]));
+      IBundleRepositoryType repo = Osgi.getBundleRepositoryType(names[i]);
+      repo.getRepositoryConfig().addModifyListener(this);
+      repositories.put(names[i], repo);
     }
   }
 
@@ -109,7 +113,7 @@ public class BundleRepositoryDialog extends Dialog {
   }
   
   //***************************************************************************
-  // org.eclipse.jface.window.Window Methods
+  // Window methods
   //***************************************************************************
   /*
    *  (non-Javadoc)
@@ -117,6 +121,12 @@ public class BundleRepositoryDialog extends Dialog {
    */
   public boolean close() {
     boolean closed = super.close();
+
+    // Clean up
+    for (Iterator<IBundleRepositoryType> i=repositories.values().iterator();i.hasNext();) {
+      IBundleRepositoryType repo = i.next();
+      repo.getRepositoryConfig().removeModifyListener(this);
+    }
     
     return closed;
   }
@@ -147,7 +157,7 @@ public class BundleRepositoryDialog extends Dialog {
   }
 
   //***************************************************************************
-  // org.eclipse.jface.dialogs.Dialog Methods
+  // Dialog methods
   //***************************************************************************
   /*
    *  (non-Javadoc)
@@ -160,8 +170,10 @@ public class BundleRepositoryDialog extends Dialog {
     }
 
     repository.setName(wNameText.getText());
-    repository.setType(wTypeCombo.getText());
-    repository.setConfig(wConfigCombo.getText());
+    final String type = wTypeCombo.getText();
+    repository.setType(type);
+    IBundleRepositoryType repositoryType = repositories.get(type);
+    repository.setConfig(repositoryType.getRepositoryConfig().getValue());
     
     // Set return code and close window
     setReturnCode(Window.OK);
@@ -173,15 +185,15 @@ public class BundleRepositoryDialog extends Dialog {
    * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets.Composite)
    */
   protected Control createDialogArea(Composite parent) {
-    Composite composite = (Composite)super.createDialogArea(parent);
+    wDialogArea = (Composite)super.createDialogArea(parent);
     GridLayout layout = new GridLayout();
     layout.numColumns = 2;
-    composite.setLayout(layout);
+    wDialogArea.setLayout(layout);
     
     // Name
-    Label wNameLabel = new Label(composite, SWT.LEFT);
+    Label wNameLabel = new Label(wDialogArea, SWT.LEFT);
     wNameLabel.setText("Repository name:");
-    wNameText = new Text(composite, SWT.SINGLE | SWT.BORDER);
+    wNameText = new Text(wDialogArea, SWT.SINGLE | SWT.BORDER);
     wNameText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
         verifyAll();
@@ -191,42 +203,32 @@ public class BundleRepositoryDialog extends Dialog {
     gd.widthHint = convertWidthInCharsToPixels(NUM_CHARS_NAME);
     wNameText.setLayoutData(gd);
     
-    // Type
-    Label wTypeLabel = new Label(composite, SWT.LEFT);
+    // Repository Type
+    Label wTypeLabel = new Label(wDialogArea, SWT.LEFT);
     wTypeLabel.setText("Repository type:");
-    wTypeCombo = new Combo(composite, SWT.DROP_DOWN | SWT.READ_ONLY);
+    wTypeCombo = new Combo(wDialogArea, SWT.DROP_DOWN | SWT.READ_ONLY);
     wTypeCombo.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
         // Update description
-        updateConfigDescription();
+        updateConfigDescription(null);
       }
     });
     gd = new GridData(GridData.FILL_HORIZONTAL);
     wTypeCombo.setLayoutData(gd);
     
-    // Config
-    Group wConfigGroup = new Group(composite, SWT.NONE);
-    wConfigGroup.setText("Repository configuration");
-    layout = new GridLayout();
-    layout.numColumns = 1;
-    wConfigGroup.setLayout(layout);
+    // Repository Configuration
+    wConfigLabel = new Label(wDialogArea, SWT.LEFT);
+    gd = new GridData(GridData.FILL_HORIZONTAL);
+    gd.horizontalSpan = 2;
+    wConfigLabel.setLayoutData(gd);
+    wConfigGroup = new Composite(wDialogArea, SWT.NONE);
+    wConfigGroup.setLayout(new StackLayout());
     gd = new GridData(GridData.FILL_HORIZONTAL);
     gd.horizontalSpan = 2;
     wConfigGroup.setLayoutData(gd);
     
-    wConfigLabel = new Label(wConfigGroup, SWT.LEFT);
-    wConfigCombo = new Combo(wConfigGroup, SWT.DROP_DOWN);
-    wConfigCombo.addModifyListener(new ModifyListener() {
-      public void modifyText(ModifyEvent e) {
-        verifyAll();
-      }
-    });
-    gd = new GridData(GridData.FILL_HORIZONTAL);
-    gd.widthHint = convertWidthInCharsToPixels(NUM_CHARS_NAME);
-    wConfigCombo.setLayoutData(gd);
-
     // Error label
-    Composite wErrorComposite = new Composite(composite, SWT.NONE);
+    Composite wErrorComposite = new Composite(wDialogArea, SWT.NONE);
     layout = new GridLayout();
     layout.numColumns = 2;
     wErrorComposite.setLayout(layout);
@@ -239,9 +241,16 @@ public class BundleRepositoryDialog extends Dialog {
     gd = new GridData(GridData.FILL_HORIZONTAL);
     wErrorMsgLabel.setLayoutData(gd);
 
-    return composite;
+    return wDialogArea;
   }
 
+  //***************************************************************************
+  // ModifyListener methods
+  //***************************************************************************
+  public void modifyText(ModifyEvent e)
+  {
+    verifyConfig();
+  }
   //***************************************************************************
   // Verify Methods
   //***************************************************************************
@@ -291,8 +300,6 @@ public class BundleRepositoryDialog extends Dialog {
   }
   
   public boolean verifyConfig() {
-    String config = wConfigCombo.getText();
-
     // Check if location is a valid directory for this definition
     String type = wTypeCombo.getText();
     IBundleRepositoryType repository = (IBundleRepositoryType) repositories.get(type);
@@ -301,7 +308,7 @@ public class BundleRepositoryDialog extends Dialog {
       return false;
     }
 
-    if (!repository.isValidConfig(config)) {
+    if (!repository.getRepositoryConfig().isValid()) {
       setState("The configuration is not valid for the selected repository type.", STATE_ERROR);
       return false;
     }
@@ -312,24 +319,30 @@ public class BundleRepositoryDialog extends Dialog {
   //***************************************************************************
   // Private Utility Methods
   //***************************************************************************
-  void updateConfigDescription() {
+  void updateConfigDescription(String value) {
     String type = wTypeCombo.getText();
     String description = Osgi.getBundleRepositoryTypeConfigDescription(type);
     if (description == null) {
       description = "";
     }
+    
+    // Update description for this repository type
     wConfigLabel.setText(description);
 
-    IBundleRepositoryType repository = (IBundleRepositoryType) repositories.get(type);
-    wConfigCombo.removeAll();
-    if (repository != null) {
-      String[] suggestions = repository.getConfigSuggestions();
-      if (suggestions != null) {
-        for (int i=0; i<suggestions.length; i++) {
-          wConfigCombo.add(suggestions[i]);
-        }
-      }
+    // Show configuration control
+    IBundleRepositoryType repository = repositories.get(type);
+    IBundleRepositoryConfig config = repository.getRepositoryConfig();
+    if (value != null) {
+      config.setValue(value);
     }
+    StackLayout layout = (StackLayout) wConfigGroup.getLayout();
+    layout.topControl = config.createConfigArea(wConfigGroup);
+    // Update layout to show top control
+    wConfigGroup.layout();
+    // Re-pack shell in order to resize dialog if needed
+    Shell shell = wDialogArea.getParent().getShell();
+    shell.pack();
+    verifyConfig();
   }
   
   private void setValues(RepositoryPreference settings) {
@@ -353,15 +366,11 @@ public class BundleRepositoryDialog extends Dialog {
     }
 
     // Description
-    updateConfigDescription();
-
-    // Config
-    if (settings != null) { 
-      wConfigCombo.setText(settings.getConfig());
-    } else {
-      wConfigCombo.setText("");
+    String config = null;
+    if (settings != null) {
+      config = settings.getConfig();
     }
-    
+    updateConfigDescription(config);
     
     verifyAll();
   }
@@ -389,4 +398,5 @@ public class BundleRepositoryDialog extends Dialog {
         break;
     }
   }
+
 }
