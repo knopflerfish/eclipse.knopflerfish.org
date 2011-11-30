@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2010, KNOPFLERFISH project
+ * Copyright (c) 2003-2011, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,13 +34,9 @@
 
 package org.knopflerfish.eclipse.repository.framework;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.knopflerfish.eclipse.core.IBundleRepository;
+import org.knopflerfish.eclipse.core.IBundleRepositoryConfig;
 import org.knopflerfish.eclipse.core.IBundleRepositoryType;
-import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
-import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 
 /**
  * @author Anders Rimén, Makewave
@@ -48,32 +44,11 @@ import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
  */
 public class BundleRepositoryType implements IBundleRepositoryType {
 
-  /****************************************************************************
-   * org.knopflerfish.eclipse.core.IBundleRepositoryType methods
-   ***************************************************************************/
-
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#isValidConfig(java.lang.String)
-   */
-  public boolean isValidConfig(String config) {
-    // Check that config is a valid framework name
-    return (OsgiPreferences.getFramework(config) != null);
-  }
-
-  /*
-   *  (non-Javadoc)
-   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#getConfigSuggestions()
-   */
-  public String[] getConfigSuggestions() {
-    List<String> names = new ArrayList<String>();
-    FrameworkPreference[] frameworks = OsgiPreferences.getFrameworks();
-    for(int i=0; i<frameworks.length;i++) {
-      names.add(frameworks[i].getName());
-    }
-    return names.toArray(new String[names.size()]);
-  }
-
+  private final BundleRepositoryConfig config = new BundleRepositoryConfig();
+  
+  //***************************************************************************
+  // IBundleRepositoryType methods
+  //***************************************************************************
   /*
    *  (non-Javadoc)
    * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#createRepository(java.lang.String)
@@ -93,5 +68,13 @@ public class BundleRepositoryType implements IBundleRepositoryType {
    */
   public void refreshRepositories() {
     RepositoryPlugin.repositoriesCache.clear();
+  }
+
+  /* (non-Javadoc)
+   * @see org.knopflerfish.eclipse.core.IBundleRepositoryType#getRepositoryConfig()
+   */
+  public IBundleRepositoryConfig getRepositoryConfig()
+  {
+    return config;
   }
 }
