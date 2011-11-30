@@ -176,12 +176,14 @@ public class OsgiLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
 
     // Verify JRE installation
     IVMInstall vm = verifyVMInstall(configuration);
-
+    /*
     ISourceLookupDirector sourceLocator = new BundleLookupDirector();
     sourceLocator.setSourcePathComputer(getLaunchManager()
         .getSourcePathComputer(SourcePathComputer.ID)); //$NON-NLS-1$
+    
     sourceLocator.initializeDefaults(configuration);
     launch.setSourceLocator(sourceLocator);
+    */
 
     // Launch the configuration
     IVMRunner runner = vm.getVMRunner(mode);

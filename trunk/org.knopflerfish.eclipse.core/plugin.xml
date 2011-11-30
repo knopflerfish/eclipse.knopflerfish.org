@@ -27,10 +27,12 @@
    <extension point="org.eclipse.debug.core.launchConfigurationTypes">
 	   <launchConfigurationType
           delegate="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
-          public="true"
-          name="Knopflerfish"
           id="org.knopflerfish.eclipse.core.launcher.OsgiLaunchDelegate"
-          modes="run, debug">
+          modes="run, debug"
+          name="Knopflerfish"
+          public="true"
+          sourceLocatorId="org.knopflerfish.eclipse.core.launcher.BundleLookupDirector"
+          sourcePathComputerId="org.knopflerfish.eclipse.core.launcher.SourcePathComputer">
 	   </launchConfigurationType>
    </extension>
    <extension

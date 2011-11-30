@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2011, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ public interface IBundleRepositoryType {
    * 
    * @return true if valid; otherwise false.
    */
-  public boolean isValidConfig(String config);
+  //public boolean isValidConfig(String config);
 
   /** 
    * Returns an array of suitable configurations
@@ -57,8 +57,18 @@ public interface IBundleRepositoryType {
    * 
    * @return list of config suggestions
    */
-  public String[] getConfigSuggestions();
+  //public String[] getConfigSuggestions();
 
+  /**
+   * Returns a repository configuration handler which can be used to
+   * create UI control for configuring this repository.
+   * 
+   * @param config default configuration
+   * 
+   * @return bundle repository configuration handler
+   */
+  public IBundleRepositoryConfig getRepositoryConfig();
+  
   /**
    * Create a bundle repository from the given configuration.
    * 
