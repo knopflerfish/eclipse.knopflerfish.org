@@ -5,7 +5,7 @@
          point="org.knopflerfish.eclipse.core.bundleRepositoryType">
     <bundleRepositoryType
           class="org.knopflerfish.eclipse.repository.framework.BundleRepositoryType"
-          configDescription="Name of framework"
+          configDescription="Enter or selected name of framework"
           id="org.knopflerfish.eclipse.repository.framework.BundleRepositoryType"
           image="icons/obj16/kf-16x16.png"
           name="Framework Repository"/>
