@@ -55,7 +55,7 @@ public class OsgiLibrary implements IOsgiLibrary {
     file = f;
     
     if (!f.exists() || !f.isFile()) {
-      throw new IOException("Library does not exist.");
+      throw new IOException("Library, " + f + ", does not exist.");
     }
     
     jar = new JarFile(file);
