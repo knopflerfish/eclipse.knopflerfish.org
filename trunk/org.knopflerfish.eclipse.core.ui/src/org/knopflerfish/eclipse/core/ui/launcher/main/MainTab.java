@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2012, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,31 +34,32 @@
 
 package org.knopflerfish.eclipse.core.ui.launcher.main;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.sourcelookup.ISourcePathComputer;
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
-import org.eclipse.jdt.launching.ExecutionArguments;
-import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.ComboBoxCellEditor;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
@@ -66,6 +67,7 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
@@ -76,6 +78,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ScrollBar;
@@ -84,74 +87,85 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.knopflerfish.eclipse.core.IXArgsBundle;
+import org.knopflerfish.eclipse.core.IXArgsFile;
+import org.knopflerfish.eclipse.core.IXArgsProperty;
 import org.knopflerfish.eclipse.core.Property;
 import org.knopflerfish.eclipse.core.PropertyGroup;
+import org.knopflerfish.eclipse.core.XArgsFile;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
 import org.knopflerfish.eclipse.core.launcher.SourcePathComputer;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
-import org.knopflerfish.eclipse.core.ui.UiUtils;
+import org.knopflerfish.eclipse.core.ui.dialogs.ImportXargsDialog;
 import org.knopflerfish.eclipse.core.ui.launcher.CustomJavaArgumentsTab;
+import org.knopflerfish.eclipse.core.ui.launcher.bundle.BundleTab;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
-public class MainTab extends AbstractLaunchConfigurationTab {
-  private static String IMAGE = "icons/obj16/kf-16x16.png";
+public class MainTab extends AbstractLaunchConfigurationTab
+{
+  private static String                IMAGE                      =
+                                                                    "icons/obj16/kf-16x16.png";
 
   // Default values
-  private static final String DEFAULT_RUNTIME_PATH = "runtime-osgi";
-  public static final int DEFAULT_START_LEVEL = 10;
+  private static final String          DEFAULT_RUNTIME_PATH       =
+                                                                    "runtime-osgi";
+  public static final int              DEFAULT_START_LEVEL        = 10;
 
   // Column Properties
-  public static String PROP_NAME = "name";
-  public static String PROP_VALUE = "value";
-  public static String PROP_TYPE = "type";
+  public static String                 PROP_NAME                  = "name";
+  public static String                 PROP_VALUE                 = "value";
+  public static String                 PROP_TYPE                  = "type";
 
-  private static final int NUM_ROWS_DESCRIPTION = 5;
-  private int MARGIN = 5;
+  private int                          MARGIN                     = 5;
 
-  protected static final String USER_GROUP = "User Defined";
-  protected static final String DEFAULT_USER_PROPERTY_NAME = "user.property.";
+  protected static final String        USER_GROUP                 =
+                                                                    "User Defined";
+  protected static final String        DEFAULT_USER_PROPERTY_NAME =
+                                                                    "user.property.";
 
   // Widgets
-  private Composite wPageComposite;
-  private Combo wOsgiInstallCombo;
-  Text wInstanceDirText;
-  private Spinner wStartLevelSpinner;
-  private Button wInitButton;
-  private Button wAddPropertyButton;
-  private Button wRemovePropertyButton;
-  private Label wDescriptionLabel;
-  private Label wDescriptionText;
-  private Label wDefaultLabel;
-  private Label wDefaultText;
+  private Composite                    wPageComposite;
+  private Combo                        wOsgiInstallCombo;
+  Text                                 wInstanceDirText;
+  private Spinner                      wStartLevelSpinner;
+  private Button                       wInitButton;
+  private Button                       wAddPropertyButton;
+  private Button                       wRemovePropertyButton;
+  private Label                        wErrorXargs;
 
-  TreeViewer wPropertyTreeViewer;
-  int treeWidth = -1;
+  TreeViewer                           wPropertyTreeViewer;
+  int                                  treeWidth                  = -1;
 
   // Resources
-  private Image imageTab = null;
+  private Image                        imageTab                   = null;
   private final CustomJavaArgumentsTab argTab;
-  
-  private final PropertyGroup userGroup = new PropertyGroup(USER_GROUP);
-  Map<String, String> systemProperties;
+  private final BundleTab              bundleTab;
 
-  public MainTab(CustomJavaArgumentsTab argTab)
+  private final PropertyGroup          userGroup                  =
+                                                                    new PropertyGroup(
+                                                                                      USER_GROUP);
+  Map<String, String>                  systemProperties;
+
+  public MainTab(CustomJavaArgumentsTab argTab, BundleTab bundleTab)
   {
     this.argTab = argTab;
-    ImageDescriptor id = AbstractUIPlugin.imageDescriptorFromPlugin(
-        "org.knopflerfish.eclipse.core.ui", IMAGE);
+    this.bundleTab = bundleTab;
+    ImageDescriptor id =
+      AbstractUIPlugin.imageDescriptorFromPlugin("org.knopflerfish.eclipse.core.ui",
+                                                 IMAGE);
     if (id != null) {
       imageTab = id.createImage();
     }
   }
 
-  /****************************************************************************
-   * org.eclipse.debug.ui.ILaunchConfigurationTab Methods
-   ***************************************************************************/
+  // ***************************************************************************
+  // org.eclipse.debug.ui.ILaunchConfigurationTab Methods
+  // ***************************************************************************
   /*
    * (non-Javadoc)
    * 
@@ -203,6 +217,83 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     layout.numColumns = 1;
     wPageComposite.setLayout(layout);
 
+    // Knopflerfish xargs Group
+    Group wXargsGroup = new Group(wPageComposite, SWT.SHADOW_IN);
+    layout = new GridLayout();
+    layout.marginHeight = MARGIN;
+    layout.marginWidth = MARGIN;
+    layout.numColumns = 3;
+    wXargsGroup.setLayout(layout);
+    GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+    wXargsGroup.setLayoutData(gd);
+    wXargsGroup.setText("Knopflerfish Xargs");
+    Button wImportButton = new Button(wXargsGroup, SWT.CENTER);
+    wImportButton.setText("Import...");
+    wImportButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e)
+      {
+        ImportXargsDialog dialog =
+          new ImportXargsDialog(((Button) e.widget).getShell(),
+                                "Import xargs file");
+        if (dialog.open() == Window.OK) {
+          File f = dialog.getXargsFile();
+          boolean merge = dialog.merge();
+          try {
+            XArgsFile xargsFile = new XArgsFile(f.getParentFile(), f.getName());
+            if (!merge) {
+              // Clear
+              clearConfiguration();
+            }
+            if (importXargs(xargsFile)) {
+              wErrorXargs.setText("");
+            } else {
+              wErrorXargs.setText("Error when importing xargs file, could not resolve all bundles. See log for more info.");
+            }
+          } catch (Exception ioe) {
+            // Failed to parse xargs file
+            OsgiUiPlugin.log(new Status(IStatus.ERROR,
+                                        "org.knopflerfish.eclipse.core",
+                                        IStatus.OK,
+                                        "Failed to import xargs file.", ioe));
+            wErrorXargs.setText("Error when importing xargs file, failed to read file. See log for more info.");
+          }
+        }
+      }
+
+    });
+    // Do we need to export
+    /*
+    Button wExportButton = new Button(wXargsGroup, SWT.CENTER);
+    wExportButton.setText("Export...");
+    wExportButton.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e)
+      {
+        FileDialog dialog =
+          new FileDialog(((Button) e.widget).getShell(), SWT.SAVE);
+
+        dialog.setText("Export xargs");
+        String[] filterExt = {
+          "*.xargs", "*.*"
+        };
+        dialog.setFilterExtensions(filterExt);
+        // dialog.setFilterPath(wInstanceDirText.getText());
+        String path = dialog.open();
+        if (path != null) {
+          // wInstanceDirText.setText(path);
+          // updateDialog();
+        }
+      }
+    });
+    // TBI : Not yet implemented
+    wExportButton.setEnabled(false);
+    */
+
+    // Import/export error messages
+    wErrorXargs = new Label(wXargsGroup, SWT.LEFT | SWT.WRAP);
+    gd = new GridData(GridData.FILL_HORIZONTAL);
+    wErrorXargs.setForeground(new Color(null, 255, 0, 0));
+    wErrorXargs.setLayoutData(gd);
+
     // Location Group
     Group wLocationGroup = new Group(wPageComposite, SWT.SHADOW_IN);
     layout = new GridLayout();
@@ -210,7 +301,7 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     layout.marginWidth = MARGIN;
     layout.numColumns = 3;
     wLocationGroup.setLayout(layout);
-    GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+    gd = new GridData(GridData.FILL_HORIZONTAL);
     wLocationGroup.setLayoutData(gd);
     wLocationGroup.setText("Instance Data");
     Label wLocationLabel = new Label(wLocationGroup, SWT.LEFT | SWT.WRAP);
@@ -230,8 +321,8 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wBrowseLocationButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e)
       {
-        DirectoryDialog dialog = new DirectoryDialog(((Button) e.widget)
-            .getShell());
+        DirectoryDialog dialog =
+          new DirectoryDialog(((Button) e.widget).getShell());
         dialog.setFilterPath(wInstanceDirText.getText());
         String path = dialog.open();
         if (path != null) {
@@ -255,8 +346,8 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     // OSGi framework
     Label wFrameworkLabel = new Label(wFrameworkGroup, SWT.LEFT | SWT.WRAP);
     wFrameworkLabel.setText("Framework:");
-    wOsgiInstallCombo = new Combo(wFrameworkGroup, SWT.DROP_DOWN
-        | SWT.READ_ONLY);
+    wOsgiInstallCombo =
+      new Combo(wFrameworkGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
     wOsgiInstallCombo.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e)
       {
@@ -302,23 +393,27 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wPropertyGroup.setLayoutData(gd);
     wPropertyGroup.setText("Properties");
 
-    Tree wPropertyTree = new Tree(wPropertyGroup, SWT.BORDER
-        | SWT.FULL_SELECTION);
+    Tree wPropertyTree =
+      new Tree(wPropertyGroup, SWT.BORDER | SWT.FULL_SELECTION);
     wPropertyTreeViewer = new TreeViewer(wPropertyTree);
+    ColumnViewerToolTipSupport.enableFor(wPropertyTreeViewer);
     wPropertyTreeViewer.setContentProvider(new SystemPropertyContentProvider());
     wPropertyTreeViewer.setLabelProvider(new SystemPropertyLabelProvider());
     wPropertyTreeViewer.setSorter(new SystemPropertySorter());
-    wPropertyTreeViewer.setColumnProperties(new String[] { PROP_NAME,
-        PROP_VALUE, PROP_TYPE });
+    wPropertyTreeViewer.setColumnProperties(new String[]{
+      PROP_NAME, PROP_VALUE, PROP_TYPE
+    });
     wPropertyTreeViewer.setCellModifier(new SystemPropertyCellModifier(this));
-    TextCellEditor propertyNameEditor = new TextCellEditor(wPropertyTree,
-        SWT.NONE);
-    TextCellEditor propertyValueEditor = new TextCellEditor(wPropertyTree,
-        SWT.NONE);
-    ComboBoxCellEditor propertyTypeEditor = new ComboBoxCellEditor(
-        wPropertyTree, Property.TYPES, SWT.DROP_DOWN | SWT.READ_ONLY);
-    wPropertyTreeViewer.setCellEditors(new CellEditor[] { propertyNameEditor,
-        propertyValueEditor, propertyTypeEditor });
+    TextCellEditor propertyNameEditor =
+      new TextCellEditor(wPropertyTree, SWT.NONE);
+    TextCellEditor propertyValueEditor =
+      new TextCellEditor(wPropertyTree, SWT.NONE);
+    ComboBoxCellEditor propertyTypeEditor =
+      new ComboBoxCellEditor(wPropertyTree, Property.TYPES, SWT.DROP_DOWN
+                                                            | SWT.READ_ONLY);
+    wPropertyTreeViewer.setCellEditors(new CellEditor[]{
+      propertyNameEditor, propertyValueEditor, propertyTypeEditor
+    });
 
     wPropertyTree.setHeaderVisible(true);
     wPropertyTree.setLinesVisible(true);
@@ -329,14 +424,13 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wValueTreeColumn.setText("Value");
     TreeColumn wTypeTreeColumn = new TreeColumn(wPropertyTree, SWT.LEFT);
     wTypeTreeColumn.setText("Type");
-    wPropertyTreeViewer
-        .addSelectionChangedListener(new ISelectionChangedListener() {
-          public void selectionChanged(SelectionChangedEvent event)
-          {
-            // Show property info
-            showPropertyInfo();
-          }
-        });
+    wPropertyTreeViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+      public void selectionChanged(SelectionChangedEvent event)
+      {
+        // Show property info
+        showPropertyInfo();
+      }
+    });
     wPropertyTreeViewer.getTree().addControlListener(new ControlListener() {
 
       public void controlMoved(ControlEvent e)
@@ -356,10 +450,10 @@ public class MainTab extends AbstractLaunchConfigurationTab {
         }
 
         TreeColumn[] columns = tree.getColumns();
-        width = width - 2 * borderWidth - (columns.length - 1) * gridLineWidth
-            - barWidth;
-        if (width == treeWidth)
-          return;
+        width =
+          width - 2 * borderWidth - (columns.length - 1) * gridLineWidth
+              - barWidth;
+        if (width == treeWidth) return;
         treeWidth = width;
 
         int colWidth = width / 4;
@@ -401,8 +495,8 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     wRemovePropertyButton.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e)
       {
-        IStructuredSelection selection = (IStructuredSelection) wPropertyTreeViewer
-            .getSelection();
+        IStructuredSelection selection =
+          (IStructuredSelection) wPropertyTreeViewer.getSelection();
 
         Property property = null;
         if (selection != null && !selection.isEmpty()
@@ -418,20 +512,12 @@ public class MainTab extends AbstractLaunchConfigurationTab {
       }
     });
 
-    // Description
-    wDescriptionLabel = new Label(wPropertyGroup, SWT.LEFT);
-    wDescriptionLabel.setText("Description:");
-    wDescriptionText = new Label(wPropertyGroup, SWT.LEFT | SWT.WRAP);
-    wDefaultLabel = new Label(wPropertyGroup, SWT.LEFT);
-    wDefaultLabel.setText("Default Value:");
-    wDefaultText = new Label(wPropertyGroup, SWT.LEFT);
-
     // Layout
     FormData fd = new FormData();
     fd.left = new FormAttachment(0, 0);
     fd.top = new FormAttachment(0, 0);
     fd.right = new FormAttachment(wRemovePropertyButton, -5, SWT.LEFT);
-    fd.bottom = new FormAttachment(wDescriptionLabel, -5, SWT.TOP);
+    fd.bottom = new FormAttachment(100, 0);
     wPropertyTree.setLayoutData(fd);
 
     fd = new FormData();
@@ -445,32 +531,6 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     fd.right = new FormAttachment(100, 0);
     fd.top = new FormAttachment(wRemovePropertyButton, 5, SWT.BOTTOM);
     wAddPropertyButton.setLayoutData(fd);
-
-    fd = new FormData();
-    fd.left = new FormAttachment(0, 0);
-    fd.right = new FormAttachment(wPropertyTree, 0, SWT.RIGHT);
-    fd.bottom = new FormAttachment(wDescriptionText, -5, SWT.TOP);
-    wDescriptionLabel.setLayoutData(fd);
-
-    fd = new FormData();
-    fd.left = new FormAttachment(0, 0);
-    fd.right = new FormAttachment(wPropertyTree, 0, SWT.RIGHT);
-    fd.bottom = new FormAttachment(wDefaultText, -5, SWT.TOP);
-    fd.height = UiUtils.convertHeightInCharsToPixels(wDescriptionText,
-        NUM_ROWS_DESCRIPTION);
-    wDescriptionText.setLayoutData(fd);
-
-    fd = new FormData();
-    fd.left = new FormAttachment(0, 0);
-    fd.bottom = new FormAttachment(100, 0);
-    fd.top = new FormAttachment(wDefaultText, 0, SWT.CENTER);
-    wDefaultLabel.setLayoutData(fd);
-
-    fd = new FormData();
-    fd.left = new FormAttachment(wDefaultLabel, 5, SWT.RIGHT);
-    fd.right = new FormAttachment(wPropertyTree, 0, SWT.RIGHT);
-    fd.bottom = new FormAttachment(100, 0);
-    wDefaultText.setLayoutData(fd);
 
     showPropertyInfo();
   }
@@ -489,44 +549,40 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     // Set default framework
     FrameworkPreference distribution = OsgiPreferences.getDefaultFramework();
     if (distribution != null) {
-      configuration.setAttribute(
-          IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, distribution
-              .getName());
+      configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK,
+                                 distribution.getName());
     }
 
     // Set default instance directory
     IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
     IPath path = root.getLocation();
     path = path.append(DEFAULT_RUNTIME_PATH);
-    configuration.setAttribute(
-        IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, path.toString());
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR,
+                               path.toString());
 
     // Set default instance settings, add program argument "-init"
     /*
-    String programArgs = "";
-    try {
-      programArgs = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "");
-    } catch (CoreException e) {
-    }
-    ExecutionArguments execArgs = new ExecutionArguments("", programArgs);
-    if (!Arrays.asList(execArgs.getProgramArgumentsArray()).contains("-init")) {
-      configuration.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "-init "+programArgs);
-    }
-    */
+     * String programArgs = ""; try { programArgs =
+     * configuration.getAttribute(IJavaLaunchConfigurationConstants
+     * .ATTR_PROGRAM_ARGUMENTS, ""); } catch (CoreException e) { }
+     * ExecutionArguments execArgs = new ExecutionArguments("", programArgs); if
+     * (!Arrays.asList(execArgs.getProgramArgumentsArray()).contains("-init")) {
+     * configuration
+     * .setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS,
+     * "-init "+programArgs); }
+     */
 
     // Set default start level
-    configuration
-        .setAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL,
-            DEFAULT_START_LEVEL);
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL,
+                               DEFAULT_START_LEVEL);
 
     // Set default properties
     HashMap<String, String> properties = new HashMap<String, String>();
-    configuration.setAttribute(
-        IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, properties);
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES,
+                               properties);
 
-    configuration
-        .setAttribute(ISourcePathComputer.ATTR_SOURCE_PATH_COMPUTER_ID,
-            SourcePathComputer.ID);
+    configuration.setAttribute(ISourcePathComputer.ATTR_SOURCE_PATH_COMPUTER_ID,
+                               SourcePathComputer.ID);
   }
 
   /*
@@ -539,29 +595,31 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   public void initializeFrom(ILaunchConfiguration configuration)
   {
     // Set values to GUI widgets
+    wErrorXargs.setText("");
 
     // OSGi install
     updateOsgiInstalls();
     String installName = null;
     try {
-      installName = configuration.getAttribute(
-          IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
+      installName =
+        configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK,
+                                   (String) null);
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
     int idx = 0;
     if (installName != null) {
       idx = wOsgiInstallCombo.indexOf(installName);
-      if (idx < 0)
-        idx = 0;
+      if (idx < 0) idx = 0;
     }
     wOsgiInstallCombo.select(idx);
 
     // Instance directory
     String instanceDir = null;
     try {
-      instanceDir = configuration.getAttribute(
-          IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, "");
+      instanceDir =
+        configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR,
+                                   "");
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
@@ -569,23 +627,23 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
     // Clear bundle cache
     /*
-    String programArgs = "";
-    try {
-      programArgs = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "");
-    } catch (CoreException e) {
-    }
-    ExecutionArguments execArgs = new ExecutionArguments("", programArgs);
-    wInitButton.setSelection(Arrays.asList(execArgs.getProgramArgumentsArray()).contains("-init"));
-    */
+     * String programArgs = ""; try { programArgs =
+     * configuration.getAttribute(IJavaLaunchConfigurationConstants
+     * .ATTR_PROGRAM_ARGUMENTS, ""); } catch (CoreException e) { }
+     * ExecutionArguments execArgs = new ExecutionArguments("", programArgs);
+     * wInitButton
+     * .setSelection(Arrays.asList(execArgs.getProgramArgumentsArray()
+     * ).contains("-init"));
+     */
     argTab.initializeFrom(configuration);
     wInitButton.setSelection(argTab.getInitFlag());
 
     // Start level
     int startLevel = DEFAULT_START_LEVEL;
     try {
-      startLevel = configuration.getAttribute(
-          IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL,
-          DEFAULT_START_LEVEL);
+      startLevel =
+        configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL,
+                                   DEFAULT_START_LEVEL);
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
@@ -593,9 +651,9 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
     // Initialize default system properties list
     try {
-      systemProperties = configuration.getAttribute(
-          IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES,
-          (Map<String, String>) null);
+      systemProperties =
+        configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES,
+                                   (Map<String, String>) null);
       initializeSystemProperties(systemProperties);
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
@@ -613,64 +671,45 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   {
 
     // Read values from GUI widgets
-    configuration.setAttribute(
-        IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, wOsgiInstallCombo
-            .getText());
-    configuration.setAttribute(
-        IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR, wInstanceDirText
-            .getText());
-    
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK,
+                               wOsgiInstallCombo.getText());
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_INSTANCE_DIR,
+                               wInstanceDirText.getText());
+
     /*
-    String programArgs = "";
-    boolean programArgsChanged = false;
-    try {
-      programArgs = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, "");
-    } catch (CoreException e) {
-    }
-    ExecutionArguments execArgs = new ExecutionArguments("", programArgs);
-    List argsList = new ArrayList(Arrays.asList(execArgs.getProgramArgumentsArray()));
-    if (!argsList.contains("-init")) {
-      if (wInitButton.getSelection()) {
-        argsList.add(0, "-init");
-        programArgsChanged = true;
-      }
-    } else {
-      if (!wInitButton.getSelection()) {
-        while(argsList.contains("-init")) {
-          argsList.remove("-init");
-          programArgsChanged = true;
-        }
-      }
-    }
-    if (programArgsChanged) {
-      StringBuffer buf = new StringBuffer();
-      for (Iterator i=argsList.iterator(); i.hasNext(); ) {
-        String a = (String) i.next();
-        if (buf.length() > 0) {
-          buf.append(" ");
-        }
-        buf.append(a);
-      }
-      if (buf.length() == 0) {
-        configuration.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, (String) null);
-      } else {
-        configuration.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, buf.toString());
-      }
-    }
-    */
+     * String programArgs = ""; boolean programArgsChanged = false; try {
+     * programArgs =
+     * configuration.getAttribute(IJavaLaunchConfigurationConstants
+     * .ATTR_PROGRAM_ARGUMENTS, ""); } catch (CoreException e) { }
+     * ExecutionArguments execArgs = new ExecutionArguments("", programArgs);
+     * List argsList = new
+     * ArrayList(Arrays.asList(execArgs.getProgramArgumentsArray())); if
+     * (!argsList.contains("-init")) { if (wInitButton.getSelection()) {
+     * argsList.add(0, "-init"); programArgsChanged = true; } } else { if
+     * (!wInitButton.getSelection()) { while(argsList.contains("-init")) {
+     * argsList.remove("-init"); programArgsChanged = true; } } } if
+     * (programArgsChanged) { StringBuffer buf = new StringBuffer(); for
+     * (Iterator i=argsList.iterator(); i.hasNext(); ) { String a = (String)
+     * i.next(); if (buf.length() > 0) { buf.append(" "); } buf.append(a); } if
+     * (buf.length() == 0) {
+     * configuration.setAttribute(IJavaLaunchConfigurationConstants
+     * .ATTR_PROGRAM_ARGUMENTS, (String) null); } else {
+     * configuration.setAttribute
+     * (IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS,
+     * buf.toString()); } }
+     */
     argTab.performApply(configuration);
-    
-    configuration.setAttribute(
-        IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL, wStartLevelSpinner
-            .getSelection());
-    configuration
-        .setAttribute(ISourcePathComputer.ATTR_SOURCE_PATH_COMPUTER_ID,
-            SourcePathComputer.ID);
+    bundleTab.performApply(configuration);
+
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_START_LEVEL,
+                               wStartLevelSpinner.getSelection());
+    configuration.setAttribute(ISourcePathComputer.ATTR_SOURCE_PATH_COMPUTER_ID,
+                               SourcePathComputer.ID);
 
     // System Properties
     systemProperties = getSystemProperties();
-    configuration.setAttribute(
-        IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES, systemProperties);
+    configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_PROPERTIES,
+                               systemProperties);
   }
 
   /*
@@ -685,8 +724,9 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     // Verify Osgi install
     String name = null;
     try {
-      name = configuration.getAttribute(
-          IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK, (String) null);
+      name =
+        configuration.getAttribute(IOsgiLaunchConfigurationConstants.ATTR_FRAMEWORK,
+                                   (String) null);
     } catch (CoreException e) {
       OsgiUiPlugin.log(e.getStatus());
     }
@@ -701,9 +741,9 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     return true;
   }
 
-  /****************************************************************************
-   * Private utility methods
-   ***************************************************************************/
+  // ***************************************************************************
+  // Private utility methods
+  // ***************************************************************************
   private void updateOsgiInstalls()
   {
     wOsgiInstallCombo.removeAll();
@@ -716,10 +756,9 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
   void initializeSystemProperties(Map<String, String> properties)
   {
-    FrameworkPreference distribution = OsgiPreferences
-        .getFramework(wOsgiInstallCombo.getText());
-    if (distribution == null)
-      return;
+    FrameworkPreference distribution =
+      OsgiPreferences.getFramework(wOsgiInstallCombo.getText());
+    if (distribution == null) return;
     distribution.addSystemPropertyGroup(userGroup);
     userGroup.clear();
     if (properties != null) {
@@ -751,20 +790,17 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
   private Map<String, String> getSystemProperties()
   {
-    FrameworkPreference distribution = (FrameworkPreference) wPropertyTreeViewer
-        .getInput();
-    if (distribution == null)
-      return null;
+    FrameworkPreference distribution =
+      (FrameworkPreference) wPropertyTreeViewer.getInput();
+    if (distribution == null) return null;
 
     PropertyGroup[] groups = distribution.getSystemPropertyGroups();
-    if (groups == null)
-      return null;
+    if (groups == null) return null;
 
     HashMap<String, String> map = new HashMap<String, String>();
     for (int i = 0; i < groups.length; i++) {
       Property[] properties = groups[i].getProperties();
-      if (properties == null)
-        continue;
+      if (properties == null) continue;
       for (int j = 0; j < properties.length; j++) {
         if (!isDefaultProperty(properties[j])) {
           String name = properties[j].getName();
@@ -780,29 +816,25 @@ public class MainTab extends AbstractLaunchConfigurationTab {
 
   protected static boolean isDefaultProperty(Property property)
   {
-    if (property == null)
-      return false;
+    if (property == null) return false;
 
     if (MainTab.USER_GROUP.equals(property.getSystemPropertyGroup().getName()))
       return false;
 
     String value = property.getValue();
-    if (value == null)
-      value = "";
+    if (value == null) value = "";
     String defaultValue = property.getDefaultValue();
-    if (defaultValue == null)
-      defaultValue = "";
+    if (defaultValue == null) defaultValue = "";
 
-    if (value.equals(defaultValue))
-      return true;
+    if (value.equals(defaultValue)) return true;
 
     return false;
   }
 
   void showPropertyInfo()
   {
-    IStructuredSelection selection = (IStructuredSelection) wPropertyTreeViewer
-        .getSelection();
+    IStructuredSelection selection =
+      (IStructuredSelection) wPropertyTreeViewer.getSelection();
 
     Property property = null;
     if (selection != null && !selection.isEmpty()
@@ -811,29 +843,8 @@ public class MainTab extends AbstractLaunchConfigurationTab {
     }
 
     if (property == null) {
-      wDescriptionLabel.setEnabled(false);
-      wDescriptionText.setText("");
-      wDefaultLabel.setEnabled(false);
-      wDefaultText.setText("");
-
       wRemovePropertyButton.setEnabled(false);
     } else {
-      // Description
-      wDescriptionLabel.setEnabled(true);
-      if (property.getDescription() != null) {
-        wDescriptionText.setText(property.getDescription());
-      } else {
-        wDescriptionText.setText("");
-      }
-
-      // Default value
-      wDefaultLabel.setEnabled(true);
-      if (property.getDefaultValue() != null) {
-        wDefaultText.setText(property.getDefaultValue());
-      } else {
-        wDefaultText.setText("");
-      }
-
       // Buttons
       if (USER_GROUP.equals(property.getSystemPropertyGroup().getName())) {
         wRemovePropertyButton.setEnabled(true);
@@ -846,13 +857,116 @@ public class MainTab extends AbstractLaunchConfigurationTab {
   protected void update(Object element)
   {
     wPropertyTreeViewer.update(element, null);
-    //scheduleUpdateJob();
+    // scheduleUpdateJob();
     updateLaunchConfigurationDialog();
   }
 
   protected void updateDialog()
   {
-    //scheduleUpdateJob();
+    // scheduleUpdateJob();
     updateLaunchConfigurationDialog();
   }
+
+  private boolean importXargs(IXArgsFile xArgsFile)
+  {
+    FrameworkPreference distribution =
+      OsgiPreferences.getFramework(wOsgiInstallCombo.getText());
+
+    boolean importOk = true;
+
+    if (distribution != null) {
+      // Set system properties
+      Set<String> systemPropertyNames = xArgsFile.getSystemPropertyNames();
+      for (Iterator<String> i = systemPropertyNames.iterator(); i.hasNext();) {
+        String name = i.next();
+        IXArgsProperty p = xArgsFile.getSystemProperty(name);
+        Property property = distribution.findSystemProperty(name);
+        if (property == null) {
+          property = userGroup.findSystemProperty(name);
+          if (property == null) {
+            property = new Property(name);
+            userGroup.addSystemProperty(property);
+          }
+        }
+        property.setType(Property.SYSTEM_PROPERTY);
+        property.setValue(p.getValue());
+
+      }
+      // Set framework properties
+      Set<String> frameworkPropertyNames =
+        xArgsFile.getFrameworkPropertyNames();
+      for (Iterator<String> i = frameworkPropertyNames.iterator(); i.hasNext();) {
+        String name = i.next();
+        IXArgsProperty p = xArgsFile.getFrameworkProperty(name);
+        Property property = distribution.findSystemProperty(name);
+        if (property == null) {
+          property = userGroup.findSystemProperty(name);
+          if (property == null) {
+            property = new Property(name);
+            userGroup.addSystemProperty(property);
+          }
+        }
+        property.setType(Property.FRAMEWORK_PROPERTY);
+        property.setValue(p.getValue());
+
+      }
+      distribution.addSystemPropertyGroup(userGroup);
+      wPropertyTreeViewer.setInput(distribution);
+    }
+
+    // Set start level
+    wStartLevelSpinner.setSelection(xArgsFile.getStartLevel());
+
+    // Read init flag from xargs file
+    wInitButton.setSelection(xArgsFile.clearPersistentData());
+    argTab.setInitFlag(xArgsFile.clearPersistentData());
+
+    // Add bundles
+    for (Iterator<IXArgsBundle> i = xArgsFile.getBundles().iterator(); i.hasNext();) {
+      IXArgsBundle xArgsBundle = i.next();
+      try {
+        bundleTab.addBundle(xArgsBundle);
+      } catch (Throwable t) {
+        importOk = false;
+        OsgiUiPlugin.log(new Status(IStatus.ERROR,
+                                    "org.knopflerfish.eclipse.core",
+                                    IStatus.OK,
+                                    "Failed to find bundle ["
+                                        + xArgsBundle.getLocation()
+                                        + "] when importing xargs file.", t));
+
+      }
+    }
+    bundleTab.refresh();
+
+    return importOk;
+  }
+
+  private void clearConfiguration()
+  {
+    // Set default instance location
+    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+    IPath path = root.getLocation();
+    path = path.append(DEFAULT_RUNTIME_PATH);
+    wInstanceDirText.setText(path.toString());
+
+    // Set default framework
+
+    // Set default start level
+    wStartLevelSpinner.setSelection(DEFAULT_START_LEVEL);
+
+    // Set clear bundle cache
+    wInitButton.setSelection(false);
+    argTab.setInitFlag(false);
+
+    // Clear properties
+    systemProperties.clear();
+    initializeSystemProperties(systemProperties);
+
+    // Clear bundles
+    bundleTab.clearBundles();
+
+    updateDialog();
+  }
+
 }

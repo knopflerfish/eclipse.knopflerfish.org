@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2012, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,24 +34,27 @@
 
 package org.knopflerfish.eclipse.core.ui.launcher.main;
 
-import org.eclipse.jface.viewers.IFontProvider;
+import org.eclipse.jface.viewers.CellLabelProvider;
 import org.eclipse.jface.viewers.ILabelProviderListener;
-import org.eclipse.jface.viewers.ITableLabelProvider;
+import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 import org.knopflerfish.eclipse.core.Property;
 import org.knopflerfish.eclipse.core.PropertyGroup;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
-public class SystemPropertyLabelProvider
-    implements ITableLabelProvider, IFontProvider {
+public class SystemPropertyLabelProvider extends CellLabelProvider
+/*
+ * implements ITableLabelProvider, IFontProvider
+ */
+{
 
   private Font fontUser = null;
 
@@ -67,82 +70,9 @@ public class SystemPropertyLabelProvider
     }
   }
 
-  /****************************************************************************
-   * org.eclipse.jface.viewers.ITableLabelProvider methods
-   ***************************************************************************/
-  /*
-   * (non-Javadoc)
-   * 
-   * @see
-   * org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.
-   * Object, int)
-   */
-  public Image getColumnImage(Object element, int columnIndex)
-  {
-    return null;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see
-   * org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object
-   * , int)
-   */
-  public String getColumnText(Object o, int columnIndex)
-  {
-
-    if (columnIndex == 0) {
-      if (o instanceof FrameworkPreference) {
-        FrameworkPreference distribution = (FrameworkPreference) o;
-        return distribution.getName();
-      } else if (o instanceof PropertyGroup) {
-        PropertyGroup group = (PropertyGroup) o;
-        return group.getName();
-      } else if (o instanceof Property) {
-        Property property = (Property) o;
-        return property.getName();
-      } else {
-        return "";
-      }
-    } else if (columnIndex == 1) {
-      if (o instanceof FrameworkPreference) {
-        return "";
-      } else if (o instanceof PropertyGroup) {
-        return "";
-      } else if (o instanceof Property) {
-        Property property = (Property) o;
-        String value = property.getValue();
-        if (value == null || value.trim().length() == 0) {
-          value = property.getDefaultValue();
-        }
-        if (value == null || value.trim().length() == 0) {
-          value = "";
-        }
-        return value;
-      } else {
-        return "";
-      }
-    } else if (columnIndex == 2) {
-      if (o instanceof FrameworkPreference) {
-        return "";
-      } else if (o instanceof PropertyGroup) {
-        return "";
-      } else if (o instanceof Property) {
-        Property property = (Property) o;
-        String type = property.getType();
-        return type;
-      } else {
-        return "";
-      }
-    } else {
-      return "";
-    }
-  }
-
-  /****************************************************************************
-   * org.eclipse.jface.viewers.IBaseLabelProvider methods
-   ***************************************************************************/
+  // ***************************************************************************
+  // org.eclipse.jface.viewers.IBaseLabelProvider methods
+  // ***************************************************************************
   /*
    * (non-Javadoc)
    * 
@@ -190,23 +120,99 @@ public class SystemPropertyLabelProvider
   {
   }
 
-  /****************************************************************************
-   * org.eclipse.jface.viewers.IFontProvider methods
-   ***************************************************************************/
+  // ***************************************************************************
+  // CellLabelProvider methods
+  // ***************************************************************************
+
   /*
    * (non-Javadoc)
    * 
-   * @see org.eclipse.jface.viewers.IFontProvider#getFont(java.lang.Object)
+   * @see
+   * org.eclipse.jface.viewers.CellLabelProvider#getToolTipText(java.lang.Object
+   * )
    */
-  public Font getFont(Object o)
+  public String getToolTipText(Object o)
   {
+    if (o instanceof Property) {
+      Property property = (Property) o;
+      StringBuffer toolTip = new StringBuffer();
+      String description = property.getDescription();
+      if (description != null) {
+        toolTip.append(description);
+      }
+      String defaultValue = property.getDefaultValue();
+      if (defaultValue != null) {
+        if (toolTip.length() > 0) {
+          toolTip.append('\n');
+        }
+        toolTip.append("Default value : ");
+        toolTip.append(defaultValue);
+      }
+
+      if (toolTip.length() > 0) {
+        return toolTip.toString();
+      }
+    }
+    return null;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.CellLabelProvider#getToolTipShift(java.lang.Object
+   * )
+   */
+  public Point getToolTipShift(Object object)
+  {
+    return new Point(5, 5);
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.CellLabelProvider#getToolTipDisplayDelayTime(
+   * java.lang.Object)
+   */
+  public int getToolTipDisplayDelayTime(Object object)
+  {
+    return 2000;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.CellLabelProvider#getToolTipTimeDisplayed(java
+   * .lang.Object)
+   */
+  public int getToolTipTimeDisplayed(Object object)
+  {
+    return 5000;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.jface.viewers.CellLabelProvider#update(org.eclipse.jface.viewers
+   * .ViewerCell)
+   */
+  public void update(ViewerCell cell)
+  {
+    int columnIndex = cell.getColumnIndex();
+    Object o = cell.getElement();
+    // Font
+    Font font = null;
     if (o instanceof Property) {
       Property property = (Property) o;
 
       if (!MainTab.isDefaultProperty(property)) {
-        return fontUser;
+        font = fontUser;
+      } else {
+        font = null;
       }
-      return null;
     } else if (o instanceof PropertyGroup) {
       PropertyGroup group = (PropertyGroup) o;
       boolean isDefault = true;
@@ -216,11 +222,63 @@ public class SystemPropertyLabelProvider
       }
 
       if (isDefault) {
-        return null;
+        font = null;
+      } else {
+        font = fontUser;
       }
-      return fontUser;
     } else {
-      return null;
+      font = null;
     }
+    cell.setFont(font);
+
+    // Text
+    String text = "";
+    if (columnIndex == 0) {
+      if (o instanceof FrameworkPreference) {
+        FrameworkPreference distribution = (FrameworkPreference) o;
+        text = distribution.getName();
+      } else if (o instanceof PropertyGroup) {
+        PropertyGroup group = (PropertyGroup) o;
+        text = group.getName();
+      } else if (o instanceof Property) {
+        Property property = (Property) o;
+        text = property.getName();
+      } else {
+        text = "";
+      }
+    } else if (columnIndex == 1) {
+      if (o instanceof FrameworkPreference) {
+        text = "";
+      } else if (o instanceof PropertyGroup) {
+        text = "";
+      } else if (o instanceof Property) {
+        Property property = (Property) o;
+        String value = property.getValue();
+        if (value == null || value.trim().length() == 0) {
+          value = property.getDefaultValue();
+        }
+        if (value == null || value.trim().length() == 0) {
+          value = "";
+        }
+        text = value;
+      } else {
+        text = "";
+      }
+    } else if (columnIndex == 2) {
+      if (o instanceof FrameworkPreference) {
+        text = "";
+      } else if (o instanceof PropertyGroup) {
+        text = "";
+      } else if (o instanceof Property) {
+        Property property = (Property) o;
+        String type = property.getType();
+        text = type;
+      } else {
+        text = "";
+      }
+    } else {
+      text = "";
+    }
+    cell.setText(text);
   }
 }

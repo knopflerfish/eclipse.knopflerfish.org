@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2011, KNOPFLERFISH project
+ * Copyright (c) 2003-2012, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,10 +37,12 @@ package org.knopflerfish.eclipse.core.ui.launcher.bundle;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.ILaunchConfiguration;
@@ -87,8 +89,10 @@ import org.knopflerfish.eclipse.core.IBundleProject;
 import org.knopflerfish.eclipse.core.IFrameworkDefinition;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
 import org.knopflerfish.eclipse.core.IOsgiLibrary;
+import org.knopflerfish.eclipse.core.IXArgsBundle;
 import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
+import org.knopflerfish.eclipse.core.Util;
 import org.knopflerfish.eclipse.core.VersionRange;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
@@ -99,6 +103,7 @@ import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.ui.OsgiUiPlugin;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 import org.knopflerfish.eclipse.core.ui.dialogs.LibraryDialog;
+import org.knopflerfish.eclipse.core.ui.dialogs.StartLevelDialog;
 import org.knopflerfish.eclipse.core.ui.launcher.main.MainTab;
 
 /**
@@ -126,6 +131,8 @@ public class BundleTab extends AbstractLaunchConfigurationTab
 
   private static final int     DEFAULT_STARTLEVEL_BUNDLE         = 1;
   private static final int     DEFAULT_STARTLEVEL_BUNDLE_PROJECT = 2;
+
+  private static final int     MAX_START_LEVELS_IN_MENU          = 10;
 
   // SWT Widgets
   private Composite            wPageComposite;
@@ -266,17 +273,19 @@ public class BundleTab extends AbstractLaunchConfigurationTab
       new Table(wPageComposite, SWT.MULTI | SWT.FULL_SELECTION | SWT.BORDER);
     // Pop up menu
     final MenuManager popupMenu = new MenuManager();
-    MenuManager startLevelMenu = new MenuManager("Start Level");
-    for (int i = 1; i <= 10; i++) {
-      IAction startLevelAction = new StartLevelAction(i);
-      startLevelMenu.add(startLevelAction);
-    }
+    final MenuManager startLevelMenu = new MenuManager("Start Level");
     popupMenu.add(startLevelMenu);
     MenuManager runModeMenu = new MenuManager("Mode");
-    IAction installAction = new ModeAction(false);
-    runModeMenu.add(installAction);
-    IAction runAction = new ModeAction(true);
-    runModeMenu.add(runAction);
+    IAction action = new ModeAction(BundleLaunchInfo.MODE_INSTALL);
+    runModeMenu.add(action);
+    action = new ModeAction(BundleLaunchInfo.MODE_START);
+    runModeMenu.add(action);
+    action = new ModeAction(BundleLaunchInfo.MODE_START_EAGERLY);
+    runModeMenu.add(action);
+    action = new ModeAction(BundleLaunchInfo.MODE_START_TRANSIENTLY);
+    runModeMenu.add(action);
+    action = new ModeAction(BundleLaunchInfo.MODE_START_EAGERLY_TRANSIENTLY);
+    runModeMenu.add(action);
     popupMenu.add(runModeMenu);
     Menu menu = popupMenu.createContextMenu(wSelectedBundleTable);
     wSelectedBundleTable.setMenu(menu);
@@ -284,6 +293,16 @@ public class BundleTab extends AbstractLaunchConfigurationTab
 
       public void menuAboutToShow(IMenuManager manager)
       {
+        // Update start level menu to show the ten most used start levels
+        startLevelMenu.removeAll();
+        // Get the ten most used start levels
+        StartLevelUsage[] usedStartLevels = getUsedStartLevels();
+        for (int i = 0; i < usedStartLevels.length; i++) {
+          IAction startLevelAction =
+            new StartLevelAction(usedStartLevels[i].startLevel);
+          startLevelMenu.add(startLevelAction);
+        }
+        startLevelMenu.add(new CustomStartLevelAction());
         popupMenu.update(IAction.CHECKED);
       }
 
@@ -454,6 +473,30 @@ public class BundleTab extends AbstractLaunchConfigurationTab
    * (non-Javadoc)
    * 
    * @see
+   * org.eclipse.debug.ui.AbstractLaunchConfigurationTab#activated(org.eclipse
+   * .debug.core.ILaunchConfigurationWorkingCopy)
+   */
+  public void activated(ILaunchConfigurationWorkingCopy workingCopy)
+  {
+    // initializeFrom(workingCopy);
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.debug.ui.AbstractLaunchConfigurationTab#deactivated(org.eclipse
+   * .debug.core.ILaunchConfigurationWorkingCopy)
+   */
+  public void deactivated(ILaunchConfigurationWorkingCopy workingCopy)
+  {
+    // performApply(workingCopy);
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
    * org.eclipse.debug.ui.ILaunchConfigurationTab#setDefaults(org.eclipse.debug
    * .core.ILaunchConfigurationWorkingCopy)
    */
@@ -462,13 +505,13 @@ public class BundleTab extends AbstractLaunchConfigurationTab
     // New configuration created, set default values
 
     // Set default bundles
-    Map defaultBundles = new HashMap();
+    Map<String, String> defaultBundles = new HashMap<String, String>();
     // TODO: Calculate default bundles
     configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_BUNDLES,
                                defaultBundles);
 
     // Set default bundle projects
-    Map defaultBundleProjects = new HashMap();
+    Map<String, String> defaultBundleProjects = new HashMap<String, String>();
     // TODO: Calculate default bundles
     configuration.setAttribute(IOsgiLaunchConfigurationConstants.ATTR_BUNDLE_PROJECTS,
                                defaultBundleProjects);
@@ -560,7 +603,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab
     // Read values from GUI widgets
 
     // Bundles
-    HashMap bundles = new HashMap();
+    Map<String, String> bundles = new HashMap<String, String>();
     if (selectedBundlesModel.getBundles() != null) {
       bundles.putAll(selectedBundlesModel.getBundles());
     }
@@ -568,7 +611,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab
                                bundles);
 
     // Bundle Projects
-    HashMap bundleProjects = new HashMap();
+    Map<String, String> bundleProjects = new HashMap<String, String>();
     if (selectedBundlesModel.getBundleProjects() != null) {
       bundleProjects.putAll(selectedBundlesModel.getBundleProjects());
     }
@@ -579,6 +622,65 @@ public class BundleTab extends AbstractLaunchConfigurationTab
   // ***************************************************************************
   // Private utility methods
   // ***************************************************************************
+  // Utility class for sorting start level based on usage
+  class StartLevelUsage
+  {
+    int startLevel;
+    int usage;
+  }
+
+  private StartLevelUsage[] getUsedStartLevels()
+  {
+    // Loop through selected bundles and count which start levels are used and
+    // how often
+    SelectedBundleElement[] elements = selectedBundlesModel.getElements();
+    Map<Integer, StartLevelUsage> levelUsage =
+      new HashMap<Integer, StartLevelUsage>();
+    for (int i = 0; i < elements.length; i++) {
+      BundleLaunchInfo info = elements[i].getLaunchInfo();
+      Integer level = new Integer(info.getStartLevel());
+      StartLevelUsage usage = levelUsage.get(level);
+      if (usage == null) {
+        usage = new StartLevelUsage();
+        usage.startLevel = level;
+      }
+      usage.usage = usage.usage + 1;
+      levelUsage.put(level, usage);
+    }
+
+    // Pick out the most used start levels
+    TreeSet<StartLevelUsage> sortUsage =
+      new TreeSet<StartLevelUsage>(new Comparator<StartLevelUsage>() {
+        public int compare(StartLevelUsage slu0, StartLevelUsage slu1)
+        {
+          if (slu0.usage != slu1.usage) {
+            return slu1.usage - slu0.usage;
+          } else {
+            return slu0.startLevel - slu1.startLevel;
+          }
+        }
+
+      });
+    sortUsage.addAll(levelUsage.values());
+
+    // Sort by start level
+    TreeSet<StartLevelUsage> sortStartLevel =
+      new TreeSet<StartLevelUsage>(new Comparator<StartLevelUsage>() {
+        public int compare(StartLevelUsage slu0, StartLevelUsage slu1)
+        {
+          return slu0.startLevel - slu1.startLevel;
+        }
+
+      });
+    int numStartLevelUsages = 0;
+    for (Iterator<StartLevelUsage> i = sortUsage.iterator(); i.hasNext()
+                                                             && numStartLevelUsages < MAX_START_LEVELS_IN_MENU;) {
+      StartLevelUsage slu = i.next();
+      sortStartLevel.add(slu);
+    }
+
+    return sortStartLevel.toArray(new StartLevelUsage[sortStartLevel.size()]);
+  }
 
   void selectBundle()
   {
@@ -621,7 +723,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab
         items.add(selectedElement);
       }
     }
-    
+
     wSelectedBundleTableViewer.setSelection(new StructuredSelection(items));
 
     // Check package dependencies
@@ -757,6 +859,58 @@ public class BundleTab extends AbstractLaunchConfigurationTab
   protected void updateDialog()
   {
     updateLaunchConfigurationDialog();
+  }
+
+  public void clearBundles()
+  {
+    selectedBundlesModel.removeAll(wSelectedBundleTableViewer);
+  }
+
+  public void addBundle(IXArgsBundle xArgsBundle) throws Exception
+  {
+    AvailableElementRoot availabeElementRoot =
+      (AvailableElementRoot) wAvailableBundleTreeViewer.getInput();
+    AvailableElementBundle repoBundle =
+      availabeElementRoot.findBundleCompleteLocation(xArgsBundle.getLocation());
+    if (repoBundle == null) {
+      // Try just filename
+      repoBundle =
+        availabeElementRoot.findBundle(Util.getFileName(xArgsBundle.getLocation()));
+      if (repoBundle != null) {
+        // System.err.println("Found bundle : "+repoBundle.getPath());
+      }
+    } else {
+      // System.err.println("Found exact bundle : "+repoBundle.getPath());
+    }
+    if (repoBundle != null) {
+      IOsgiBundle bundle = (IOsgiBundle) repoBundle.getBundle();
+
+      BundleLaunchInfo info = new BundleLaunchInfo();
+      info.setStartLevel(xArgsBundle.getStartLevel());
+      info.setMode(xArgsBundle.getStartMode());
+      if (bundle.getSource() != null) {
+        info.setSource(bundle.getSource());
+      }
+      SelectedBundleElement selectedElement =
+        new SelectedBundleElement(bundle, info);
+
+      selectedBundlesModel.add(wSelectedBundleTableViewer, selectedElement);
+    } else {
+      throw new Exception("Bundle not found in repository");
+    }
+  }
+
+  public void refresh()
+  {
+
+    // Check package dependencies
+    updatePackages();
+
+    // Refilter available bundle tree
+    wAvailableBundleTreeViewer.refresh();
+
+    // Resize columns in selected table
+    UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
   }
 
   // ***************************************************************************
@@ -1034,15 +1188,49 @@ public class BundleTab extends AbstractLaunchConfigurationTab
     }
   }
 
+  class CustomStartLevelAction extends Action
+  {
+
+    public CustomStartLevelAction()
+    {
+      super("Set Level...");
+    }
+
+    public void run()
+    {
+      // Show dialog allowing start level to be set
+      StartLevelDialog dialog = new StartLevelDialog(getShell(), "Start Level");
+      if (dialog.open() == Window.OK) {
+        int level = dialog.getStartLevel();
+
+        IStructuredSelection selection =
+          (IStructuredSelection) wSelectedBundleTableViewer.getSelection();
+
+        // Should not happen
+        if (selection.size() == 0) {
+          return;
+        }
+
+        for (Iterator<SelectedBundleElement> i = selection.iterator(); i.hasNext();) {
+          SelectedBundleElement element = i.next();
+          element.getLaunchInfo().setStartLevel(level);
+          selectedBundlesModel.update(wSelectedBundleTableViewer, element,
+                                      PROP_STARTLEVEL);
+        }
+        updateDialog();
+      }
+
+    }
+  }
+
   class ModeAction extends Action
   {
     private final int mode;
 
-    public ModeAction(boolean start)
+    public ModeAction(int mode)
     {
-      super(!start ? "Install" : "Start");
-      this.mode =
-        start ? BundleLaunchInfo.MODE_START : BundleLaunchInfo.MODE_INSTALL;
+      super(BundleLaunchInfo.MODES[mode]);
+      this.mode = mode;
     }
 
     public boolean isChecked()
