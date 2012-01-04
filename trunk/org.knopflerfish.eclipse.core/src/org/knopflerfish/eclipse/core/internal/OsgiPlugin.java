@@ -272,6 +272,10 @@ public class OsgiPlugin extends Plugin implements IResourceChangeListener, IVMIn
     throw new CoreException(status);
   }
 
+  public static void error(String message, Throwable t) {
+    log(new Status(IStatus.ERROR, "org.knopflerfish.eclipse.core", IStatus.OK, message, t));
+  }
+  
   public static void log(IStatus status) {
     getDefault().getLog().log(status);
   }

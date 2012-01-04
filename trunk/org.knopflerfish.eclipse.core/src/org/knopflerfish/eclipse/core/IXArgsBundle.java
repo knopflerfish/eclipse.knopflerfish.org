@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2012, KNOPFLERFISH project
+ * Copyright (c) 2003-2011, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,50 +31,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.knopflerfish.eclipse.core;
 
-public class XArgsProperty implements IXArgsProperty
+/**
+ * Interface representing an xargs bundle
+ * 
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
+ */
+public interface IXArgsBundle
 {
-  private final String type;
-  private final String name;
-  private final String value;
+  public String getLocation();
 
-  public XArgsProperty(String p)
-  {
-    if (p.startsWith(IXArgsProperty.TYPE_SYSTEM)) {
-      type = IXArgsProperty.TYPE_SYSTEM;
-    } else if (p.startsWith(IXArgsProperty.TYPE_FRAMEWORK)) {
-      type = IXArgsProperty.TYPE_FRAMEWORK;
-    } else {
-      throw new IllegalArgumentException("Invalid property type, -D and -F supported.");
-    }
-    int i = p.indexOf('=');
-    if (i ==-1) {
-      throw new IllegalArgumentException("Invalid property, no value");
-    }
-    
-    name = p.substring(2, i); 
-    value = p.substring(i+1); 
-  }
+  public void setStartMode(int startMode);
+  public int getStartMode();
 
-  // ***************************************************************************
-  // IXArgsProperty implementation
-  // ***************************************************************************
-  
-  public String getPropertyType()
-  {
-    return type;
-  }
-
-  public String getValue()
-  {
-    return value;
-  }
-
-  public String getName()
-  {
-    return name;
-  }
+  public int getStartLevel();
 
 }

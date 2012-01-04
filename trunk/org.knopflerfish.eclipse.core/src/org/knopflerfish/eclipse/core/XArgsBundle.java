@@ -34,47 +34,40 @@
 
 package org.knopflerfish.eclipse.core;
 
-public class XArgsProperty implements IXArgsProperty
+public class XArgsBundle implements IXArgsBundle
 {
-  private final String type;
-  private final String name;
-  private final String value;
+  private final String location;
+  private final int    startLevel;
+  private int          startMode;
 
-  public XArgsProperty(String p)
+  public XArgsBundle(String location, int startLevel)
   {
-    if (p.startsWith(IXArgsProperty.TYPE_SYSTEM)) {
-      type = IXArgsProperty.TYPE_SYSTEM;
-    } else if (p.startsWith(IXArgsProperty.TYPE_FRAMEWORK)) {
-      type = IXArgsProperty.TYPE_FRAMEWORK;
-    } else {
-      throw new IllegalArgumentException("Invalid property type, -D and -F supported.");
-    }
-    int i = p.indexOf('=');
-    if (i ==-1) {
-      throw new IllegalArgumentException("Invalid property, no value");
-    }
-    
-    name = p.substring(2, i); 
-    value = p.substring(i+1); 
+    this.location = location;
+    this.startLevel = startLevel;
   }
 
   // ***************************************************************************
-  // IXArgsProperty implementation
+  // IXArgsBundle implementation
   // ***************************************************************************
-  
-  public String getPropertyType()
+
+  public String getLocation()
   {
-    return type;
+    return location;
   }
 
-  public String getValue()
+  public int getStartLevel()
   {
-    return value;
+    return startLevel;
   }
 
-  public String getName()
+  public int getStartMode()
   {
-    return name;
+    return startMode;
+  }
+
+  public void setStartMode(int startMode)
+  {
+    this.startMode = startMode;
   }
 
 }
