@@ -38,19 +38,14 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TreeViewer;
-import org.knopflerfish.eclipse.core.IBundleRepository;
-import org.knopflerfish.eclipse.core.IBundleRepositoryType;
 import org.knopflerfish.eclipse.core.IOsgiBundle;
-import org.knopflerfish.eclipse.core.Osgi;
 import org.knopflerfish.eclipse.core.OsgiBundle;
 import org.knopflerfish.eclipse.core.Util;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
-import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
-import org.knopflerfish.eclipse.core.preferences.RepositoryPreference;
 import org.knopflerfish.eclipse.core.project.BundleProject;
 import org.knopflerfish.eclipse.core.ui.UiUtils;
 
@@ -60,9 +55,9 @@ import org.knopflerfish.eclipse.core.ui.UiUtils;
  */
 public class SelectedBundlesModel {
   
-  private Map bundles = new HashMap();
-  private Map bundleProjects = new HashMap();
-  private ArrayList elements = new ArrayList();
+  private Map<String, String> bundles = new HashMap<String, String>();
+  private Map<String, String> bundleProjects = new HashMap<String, String>();
+  private List<SelectedBundleElement> elements = new ArrayList<SelectedBundleElement>();
   
   public void clear() {
     bundles.clear();
@@ -70,16 +65,16 @@ public class SelectedBundlesModel {
     elements.clear();
   }
 
-  public boolean addBundles(Map m, final AvailableElementRoot availableElementRoot, TableViewer viewer) {
+  public boolean addBundles(Map<String, String>m, final AvailableElementRoot availableElementRoot, TableViewer viewer) {
     if (m == null) return false;
     
     boolean changed = false;
-    for(Iterator i=m.entrySet().iterator();i.hasNext();) {
+    for(Iterator<Map.Entry<String, String>> i=m.entrySet().iterator();i.hasNext();) {
       try {
-        Map.Entry entry = (Map.Entry) i.next();
-        String path = (String) entry.getKey();
+        Map.Entry<String, String> entry = i.next();
+        String path = entry.getKey();
         // Check if path exists, otherwise try paths from repositories
-        BundleLaunchInfo info = new BundleLaunchInfo((String) entry.getValue());
+        BundleLaunchInfo info = new BundleLaunchInfo(entry.getValue());
         IOsgiBundle bundle = null;
         File f = new File(path);
         if (f.exists() && f.isFile()) {
@@ -107,18 +102,18 @@ public class SelectedBundlesModel {
     return changed;
   }
   
-  public Map getBundles() {
+  public Map<String, String> getBundles() {
     return bundles;
   }
   
-  public void addBundleProjects(Map m) {
+  public void addBundleProjects(Map<String, String> m) {
     if (m == null) return;
 
-    for(Iterator i=m.entrySet().iterator();i.hasNext();) {
+    for(Iterator<Map.Entry<String, String>> i=m.entrySet().iterator();i.hasNext();) {
       try {
-        Map.Entry entry = (Map.Entry) i.next();
-        String name = (String) entry.getKey();
-        BundleLaunchInfo info = new BundleLaunchInfo((String) entry.getValue());
+        Map.Entry<String, String> entry = i.next();
+        String name = entry.getKey();
+        BundleLaunchInfo info = new BundleLaunchInfo(entry.getValue());
         SelectedBundleElement element = new SelectedBundleElement(new BundleProject(name), info);
         elements.add(element);
         bundleProjects.put(entry.getKey(), entry.getValue());
@@ -128,7 +123,7 @@ public class SelectedBundlesModel {
     }
   }
   
-  public Map getBundleProjects() {
+  public Map<String, String> getBundleProjects() {
     return bundleProjects;
   }
   
@@ -170,6 +165,23 @@ public class SelectedBundlesModel {
     // Remove element from viewer
     viewer.remove(element);
     elements.remove(element);
+  }
+  
+  public void removeAll(TableViewer viewer) {
+    for (Iterator<SelectedBundleElement> i=elements.iterator(); i.hasNext();) {
+      SelectedBundleElement element = i.next();
+    
+      // Remove element from model
+      if (element.getType() == SelectedBundleElement.TYPE_BUNDLE) {
+        bundles.remove(element.getPath());
+      } else if (element.getType() == SelectedBundleElement.TYPE_BUNDLE_PROJECT) {
+        bundleProjects.remove(element.getPath());
+      }
+    
+      // Remove element from viewer
+      viewer.remove(element);
+      i.remove();
+    }
   }
 
   public SelectedBundleElement [] getElements() {

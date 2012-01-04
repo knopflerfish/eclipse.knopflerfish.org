@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2011, KNOPFLERFISH project
+ * Copyright (c) 2003-2012, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,25 +49,32 @@ import org.knopflerfish.eclipse.core.ui.launcher.main.MainTab;
  * @author Anders Rimén, Makewave
  * @see http://www.makewave.com/
  */
-public class TabGroup extends AbstractLaunchConfigurationTabGroup {
+public class TabGroup extends AbstractLaunchConfigurationTabGroup
+{
 
-  //***************************************************************************
+  // ***************************************************************************
   // org.eclipse.debug.ui.ILaunchConfigurationTabGroup Methods
-  //***************************************************************************
+  // ***************************************************************************
   /*
-   *  (non-Javadoc)
-   * @see org.eclipse.debug.ui.ILaunchConfigurationTabGroup#createTabs(org.eclipse.debug.ui.ILaunchConfigurationDialog, java.lang.String)
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.eclipse.debug.ui.ILaunchConfigurationTabGroup#createTabs(org.eclipse
+   * .debug.ui.ILaunchConfigurationDialog, java.lang.String)
    */
-  public void createTabs(ILaunchConfigurationDialog dialog, String mode) {
+  public void createTabs(ILaunchConfigurationDialog dialog, String mode)
+  {
     CustomJavaArgumentsTab argTab = new CustomJavaArgumentsTab();
-    ILaunchConfigurationTab[] tabs = new ILaunchConfigurationTab[] {
-        new MainTab(argTab),
-        new BundleTab(),
+    BundleTab bundleTab = new BundleTab();
+    ILaunchConfigurationTab[] tabs =
+      new ILaunchConfigurationTab[]{
+        new MainTab(argTab, bundleTab),
+        bundleTab,
         argTab,
         new JavaJRETab(),
         new SourceLookupTab(),
         new CommonTab()
-    };
+      };
     setTabs(tabs);
   }
 }

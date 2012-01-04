@@ -84,6 +84,19 @@ public class AvailableElementRepository implements IAvailableTreeElement {
     return repositoryPref;
   }
   
+  public AvailableElementBundle findBundleCompleteLocation(String location) {
+    if (location.startsWith("file:")) {
+      location = location.substring(5);
+    }
+    for(AvailableElementBundle e : children) {
+      IOsgiBundle b = e.getBundle();
+      if (b.getPath().equals(location)) {
+        return e;
+      }
+    }
+    return null;
+  }
+  
   public AvailableElementBundle findBundle(String filename) {
     for(AvailableElementBundle e : children) {
       IOsgiBundle b = e.getBundle();

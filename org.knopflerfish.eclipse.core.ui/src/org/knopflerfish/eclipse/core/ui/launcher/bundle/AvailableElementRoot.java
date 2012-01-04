@@ -62,6 +62,19 @@ public class AvailableElementRoot implements IAvailableTreeElement {
     }
   }
   
+  public AvailableElementBundle findBundleCompleteLocation(String location) {
+    for(IAvailableTreeElement e : children) {
+      if (e instanceof AvailableElementRepository) {
+        AvailableElementRepository repo = (AvailableElementRepository) e;
+        AvailableElementBundle bundle = repo.findBundleCompleteLocation(location);
+        if (bundle != null) {
+          return bundle;
+        }
+      }
+    }
+    return null;
+  }
+  
   public AvailableElementBundle findBundle(String filename) {
     for(IAvailableTreeElement e : children) {
       if (e instanceof AvailableElementRepository) {
