@@ -52,17 +52,21 @@ import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
  * @author Anders Rimén, Makewave
  * @see http://www.makewave.com/
  */
-public class FrameworkConfiguration implements IFrameworkConfiguration {
+public class FrameworkConfiguration implements IFrameworkConfiguration
+{
 
-  private static final int DEFAULT_STARTLEVEL = 7;
+  private static final int                      DEFAULT_STARTLEVEL     = 7;
 
-  private static String PROPERTY_FRAMEWORK_DIR = "org.osgi.framework.dir";
+  private static String                         PROPERTY_FRAMEWORK_DIR =
+                                                                         "org.osgi.framework.dir";
 
-  private File workDir;
-  private TreeMap<Integer, List<BundleElement>> bundles = new TreeMap<Integer, List<BundleElement>>();
-  private Map<String, Property> systemProperties;
-  private boolean clean;
-  private int startLevel = DEFAULT_STARTLEVEL;
+  private File                                  workDir;
+  private TreeMap<Integer, List<BundleElement>> bundles                =
+                                                                         new TreeMap<Integer, List<BundleElement>>();
+  private Map<String, Property>                 systemProperties;
+  private boolean                               clean;
+  private int                                   startLevel             =
+                                                                         DEFAULT_STARTLEVEL;
 
   public FrameworkConfiguration(File dir)
   {
@@ -127,7 +131,7 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
       List<BundleElement> l = element.getValue();
       for (BundleElement e : l) {
         writeCommand(initFile, "-install", "file:" + e.getBundle().getPath(),
-            true);
+                     true);
       }
     }
     // Set start level and launch
@@ -142,13 +146,21 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
       for (BundleElement e : l) {
         if (e.getLaunchInfo().getMode() == BundleLaunchInfo.MODE_START) {
           writeCommand(initFile, "-start", "file:" + e.getBundle().getPath(),
-              true);
+                       true);
+        } else if (e.getLaunchInfo().getMode() == BundleLaunchInfo.MODE_START_EAGERLY) {
+          writeCommand(initFile, "-start_e", "file:" + e.getBundle().getPath(),
+                       true);
+        } else if (e.getLaunchInfo().getMode() == BundleLaunchInfo.MODE_START_TRANSIENTLY) {
+          writeCommand(initFile, "-start_pt",
+                       "file:" + e.getBundle().getPath(), true);
+        } else if (e.getLaunchInfo().getMode() == BundleLaunchInfo.MODE_START_EAGERLY_TRANSIENTLY) {
+          writeCommand(initFile, "-start_et",
+                       "file:" + e.getBundle().getPath(), true);
         }
       }
     }
 
-    args.setProgramArguments((String[]) programArgs
-        .toArray(new String[programArgs.size()]));
+    args.setProgramArguments((String[]) programArgs.toArray(new String[programArgs.size()]));
     return args;
   }
 
@@ -283,8 +295,9 @@ public class FrameworkConfiguration implements IFrameworkConfiguration {
   /****************************************************************************
    * Inner classes
    ***************************************************************************/
-  class BundleElement {
-    private final IOsgiBundle bundle;
+  class BundleElement
+  {
+    private final IOsgiBundle      bundle;
     private final BundleLaunchInfo launchInfo;
 
     BundleElement(IOsgiBundle bundle, BundleLaunchInfo info)
