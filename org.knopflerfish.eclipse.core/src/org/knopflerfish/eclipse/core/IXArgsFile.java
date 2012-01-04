@@ -34,6 +34,7 @@
 
 package org.knopflerfish.eclipse.core;
 
+import java.util.Set;
 
 /**
  * Interface representing an xargs file
@@ -41,22 +42,64 @@ package org.knopflerfish.eclipse.core;
  * @author Anders Rimén, Makewave
  * @see http://www.makewave.com/
  */
-public interface IXArgsFile {
+public interface IXArgsFile
+{
 
-  /** 
-   * Returns the framework property with given name or null if
-   * it does not exist.
+  /**
+   * Returns a set of all framework property names.
+   * 
+   * @return framework property names
+   */
+  public Set<String> getFrameworkPropertyNames();
+
+  /**
+   * Returns the framework property with given name or null if it does not
+   * exist.
    * 
    * @return framework property
    */
   public IXArgsProperty getFrameworkProperty(String name);
 
-  /** 
-   * Returns the system property with given name or null if
-   * it does not exist.
+  /**
+   * Returns a set of all system property names.
+   * 
+   * @return system property names
+   */
+  public Set<String> getSystemPropertyNames();
+
+  /**
+   * Returns the system property with given name or null if it does not exist.
    * 
    * @return system property
    */
   public IXArgsProperty getSystemProperty(String name);
+
+  /**
+   * Returns the property with given name or null if it does not exist.
+   * Framework properties are returned before system properties.
+   * 
+   * @return framework or system property
+   */
+  public IXArgsProperty getProperty(String name);
+
+  /**
+   * Returns the bundles to be installed.
+   * 
+   * @return bundles
+   */
+  public Set<IXArgsBundle> getBundles();
   
+  /**
+   * Returns the start level set in the xargs file.
+   * 
+   * @return start level
+   */
+  public int getStartLevel();
+
+  /**
+   * Returns if the platform shall be started empty.
+   * 
+   * @return clear persistent data
+   */
+  public boolean clearPersistentData();
 }

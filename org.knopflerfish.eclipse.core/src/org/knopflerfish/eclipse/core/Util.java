@@ -175,6 +175,16 @@ public class Util {
 
     return new String(r);
   }
+  
+  /**
+   * Default whitespace string for splitwords(). Value is <tt>" \t\n\r"</tt>)
+   */
+  protected static String WHITESPACE = " \t\n\r";
+
+  /**
+   * Default citation char for splitwords(). Value is <tt>'"'</tt>
+   */
+  protected static char CITCHAR = '"';
 
   /**
    * Split a string into words separated by whitespace SPACE | TAB | NEWLINE |
@@ -186,6 +196,17 @@ public class Util {
   public static String[] splitwords(String s)
   {
     return splitwords(s, " \t\n\r", '"');
+  }
+  
+  /**
+   * Utility method to split a string into words separated by whitespace.
+   * 
+   * <p>
+   * Equivalent to <tt>splitwords(s, WHITESPACE, CITCHAR)</tt>
+   * </p>
+   */
+  public static String[] splitwords(String s, String whiteSpace) {
+    return splitwords(s, whiteSpace, CITCHAR);
   }
 
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2005, KNOPFLERFISH project
+ * Copyright (c) 2003-2012, KNOPFLERFISH project
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,22 +37,34 @@ package org.knopflerfish.eclipse.core.launcher;
 import java.util.StringTokenizer;
 
 /**
- * @author Anders Rimén, Gatespace Telematics
- * @see http://www.gatespacetelematics.com/
+ * @author Anders Rimén, Makewave
+ * @see http://www.makewave.com/
  */
-public class BundleLaunchInfo {
-  public static String [] MODES = new String[] {"Install", "Start"};
-  public static int MODE_INSTALL  = 0; 
-  public static int MODE_START    = 1; 
+public class BundleLaunchInfo
+{
+  public static String[] MODES                          = new String[]{
+    "Install",
+    "Start",
+    "Start E",
+    "Start PT",
+    "Start ET"
+                                                        };
+  public static int      MODE_INSTALL                   = 0;
+  public static int      MODE_START                     = 1;
+  public static int      MODE_START_EAGERLY             = 2;
+  public static int      MODE_START_TRANSIENTLY         = 3;
+  public static int      MODE_START_EAGERLY_TRANSIENTLY = 4;
 
-  private int startLevel;
-  private int mode;
-  private String src;
-  
-  public BundleLaunchInfo() {
+  private int            startLevel;
+  private int            mode;
+  private String         src;
+
+  public BundleLaunchInfo()
+  {
   }
-  
-  public BundleLaunchInfo(String s) {
+
+  public BundleLaunchInfo(String s)
+  {
     StringTokenizer st = new StringTokenizer(s, ",");
     if (st.hasMoreTokens()) {
       startLevel = Integer.parseInt(st.nextToken());
@@ -64,33 +76,39 @@ public class BundleLaunchInfo {
       src = st.nextToken();
     }
   }
-  
-  public int getMode() {
+
+  public int getMode()
+  {
     return mode;
   }
 
-  public void setMode(int mode) {
+  public void setMode(int mode)
+  {
     this.mode = mode;
   }
 
-  public int getStartLevel() {
+  public int getStartLevel()
+  {
     return startLevel;
   }
 
-  public void setStartLevel(int startLevel) {
+  public void setStartLevel(int startLevel)
+  {
     this.startLevel = startLevel;
   }
 
-  public String getSource() {
+  public String getSource()
+  {
     return src;
   }
 
-  public void setSource(String src) {
+  public void setSource(String src)
+  {
     this.src = src;
   }
 
-  
-  public String toString() {
+  public String toString()
+  {
     StringBuffer buf = new StringBuffer();
     buf.append(startLevel);
     buf.append(",");
@@ -99,7 +117,7 @@ public class BundleLaunchInfo {
       buf.append(",");
       buf.append(src);
     }
-    
+
     return buf.toString();
   }
 }
