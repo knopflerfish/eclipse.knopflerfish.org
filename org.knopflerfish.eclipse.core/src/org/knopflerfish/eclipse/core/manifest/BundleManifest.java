@@ -70,6 +70,7 @@ public class BundleManifest extends Manifest {
   public static final String IMPORT_PACKAGE = "Import-Package";
   public static final String DYNAMIC_IMPORT_PACKAGE = "DynamicImport-Package";
   public static final String BUNDLE_MANIFESTVERSION = "Bundle-ManifestVersion";
+  public static final String SERVICE_COMPONENT = "Service-Component";
 
   // Build information attributes
   public static final String BUILT_FROM = "Built-From";
@@ -187,6 +188,16 @@ public class BundleManifest extends Manifest {
   public void setActivator(String value)
   {
     setAttribute(BUNDLE_ACTIVATOR, value);
+  }
+
+  public String getServiceComponent()
+  {
+    return getAttribute(SERVICE_COMPONENT);
+  }
+
+  public void setServiceComponent(String value)
+  {
+    setAttribute(SERVICE_COMPONENT, value);
   }
 
   public String getDocumentationUrl()

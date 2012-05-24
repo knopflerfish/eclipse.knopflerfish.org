@@ -224,6 +224,10 @@ public class PackageDescription {
       return false;
 
     // Package name the same, check version
+    if ((version == null && pd.version != null) 
+        || (versionRange == null && pd.versionRange != null)) {
+        return false;
+    }
     if ((version != null && !version.equals(pd.version))
         || (versionRange != null && !versionRange.equals(pd.versionRange))) {
       return false;
