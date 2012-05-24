@@ -96,6 +96,7 @@ import org.knopflerfish.eclipse.core.Util;
 import org.knopflerfish.eclipse.core.VersionRange;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 import org.knopflerfish.eclipse.core.launcher.IOsgiLaunchConfigurationConstants;
+import org.knopflerfish.eclipse.core.manifest.BundleManifest;
 import org.knopflerfish.eclipse.core.manifest.PackageDescription;
 import org.knopflerfish.eclipse.core.preferences.FrameworkPreference;
 import org.knopflerfish.eclipse.core.preferences.OsgiPreferences;
@@ -129,9 +130,6 @@ public class BundleTab extends AbstractLaunchConfigurationTab
 
   private int                  MARGIN                            = 5;
 
-  private static final int     DEFAULT_STARTLEVEL_BUNDLE         = 1;
-  private static final int     DEFAULT_STARTLEVEL_BUNDLE_PROJECT = 2;
-
   private static final int     MAX_START_LEVELS_IN_MENU          = 10;
 
   // SWT Widgets
@@ -151,6 +149,9 @@ public class BundleTab extends AbstractLaunchConfigurationTab
   // Images, fonts
   private Image                imageTab                          = null;
   private Image                imageFish                         = null;
+
+  // Initial framework start level, set by MainTab
+  private int startLevel;
 
   public BundleTab()
   {
@@ -391,7 +392,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab
               new OsgiBundle(new File(dialog.getLibrary().getPath()));
             bundle.setSource(dialog.getLibrary().getSource());
             BundleLaunchInfo info = new BundleLaunchInfo();
-            info.setStartLevel(DEFAULT_STARTLEVEL_BUNDLE);
+            info.setStartLevel(startLevel);
             info.setSource(bundle.getSource());
             String activator = null;
             if (bundle.getBundleManifest() != null) {
@@ -541,6 +542,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab
     }
 
     // Start level
+    /*
     int startLevel = MainTab.DEFAULT_START_LEVEL;
     try {
       startLevel =
@@ -550,6 +552,7 @@ public class BundleTab extends AbstractLaunchConfigurationTab
       OsgiUiPlugin.log(e.getStatus());
     }
     selectedBundlesLabelProvider.setInitialStartLevel(startLevel);
+    */
 
     boolean updateLaunchConfig = false;
     try {
@@ -692,29 +695,38 @@ public class BundleTab extends AbstractLaunchConfigurationTab
 
       SelectedBundleElement selectedElement = null;
       if (element.getType() == IAvailableTreeElement.TYPE_BUNDLE) {
-        IOsgiBundle bundle = (IOsgiBundle) element.getData();
-
-        BundleLaunchInfo info = new BundleLaunchInfo();
-        info.setStartLevel(DEFAULT_STARTLEVEL_BUNDLE);
-        String activator = null;
-        if (bundle.getBundleManifest() != null) {
-          activator = bundle.getBundleManifest().getActivator();
+        final IOsgiBundle bundle = (IOsgiBundle) element.getData();
+        final BundleLaunchInfo info = new BundleLaunchInfo();
+        
+        // Set start level to initial selected start level
+        info.setStartLevel(startLevel);
+        
+        // Start bundle if bundle activator or service component is specified
+        final BundleManifest bm = bundle.getBundleManifest();
+        if (bm != null) {
+          if (bm.getServiceComponent() != null || bm.getActivator() != null) {
+            info.setMode(BundleLaunchInfo.MODE_START);
+          }
         }
-
-        info.setMode(activator != null ? BundleLaunchInfo.MODE_START
-                                      : BundleLaunchInfo.MODE_INSTALL);
         if (bundle.getSource() != null) {
           info.setSource(bundle.getSource());
         }
         selectedElement = new SelectedBundleElement(bundle, info);
       } else if (element.getType() == IAvailableTreeElement.TYPE_PROJECT) {
-        IBundleProject project = (IBundleProject) element.getData();
+        final IBundleProject project = (IBundleProject) element.getData();
+        final BundleLaunchInfo info = new BundleLaunchInfo();
 
-        BundleLaunchInfo info = new BundleLaunchInfo();
-        info.setStartLevel(DEFAULT_STARTLEVEL_BUNDLE_PROJECT);
-        info.setMode(project.getBundleManifest().getActivator() != null
-                                                                       ? BundleLaunchInfo.MODE_START
-                                                                       : BundleLaunchInfo.MODE_INSTALL);
+        // Set start level to initial selected start level
+        info.setStartLevel(startLevel);
+        
+        // Start bundle if bundle activator or service component is specified
+        final BundleManifest bm = project.getBundleManifest();
+        if (bm != null) {
+          if (bm.getServiceComponent() != null || bm.getActivator() != null) {
+            info.setMode(BundleLaunchInfo.MODE_START);
+          }
+        }
+        
         selectedElement = new SelectedBundleElement(project, info);
       }
 
@@ -910,6 +922,13 @@ public class BundleTab extends AbstractLaunchConfigurationTab
     wAvailableBundleTreeViewer.refresh();
 
     // Resize columns in selected table
+    UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
+  }
+  
+  public void setInitialStartLevel(int startLevel) {
+    this.startLevel = startLevel;
+    selectedBundlesLabelProvider.setInitialStartLevel(startLevel);
+    wSelectedBundleTableViewer.refresh();
     UiUtils.packTableColumns(wSelectedBundleTableViewer.getTable());
   }
 

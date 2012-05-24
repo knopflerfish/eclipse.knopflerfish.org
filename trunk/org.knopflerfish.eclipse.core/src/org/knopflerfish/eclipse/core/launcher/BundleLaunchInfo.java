@@ -56,7 +56,7 @@ public class BundleLaunchInfo
   public static int      MODE_START_EAGERLY_TRANSIENTLY = 4;
 
   private int            startLevel;
-  private int            mode;
+  private int            mode = MODE_INSTALL;
   private String         src;
 
   public BundleLaunchInfo()

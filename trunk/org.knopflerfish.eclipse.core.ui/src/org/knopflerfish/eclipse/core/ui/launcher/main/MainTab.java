@@ -78,7 +78,6 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ScrollBar;
@@ -263,30 +262,19 @@ public class MainTab extends AbstractLaunchConfigurationTab
     });
     // Do we need to export
     /*
-    Button wExportButton = new Button(wXargsGroup, SWT.CENTER);
-    wExportButton.setText("Export...");
-    wExportButton.addSelectionListener(new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e)
-      {
-        FileDialog dialog =
-          new FileDialog(((Button) e.widget).getShell(), SWT.SAVE);
-
-        dialog.setText("Export xargs");
-        String[] filterExt = {
-          "*.xargs", "*.*"
-        };
-        dialog.setFilterExtensions(filterExt);
-        // dialog.setFilterPath(wInstanceDirText.getText());
-        String path = dialog.open();
-        if (path != null) {
-          // wInstanceDirText.setText(path);
-          // updateDialog();
-        }
-      }
-    });
-    // TBI : Not yet implemented
-    wExportButton.setEnabled(false);
-    */
+     * Button wExportButton = new Button(wXargsGroup, SWT.CENTER);
+     * wExportButton.setText("Export...");
+     * wExportButton.addSelectionListener(new SelectionAdapter() { public void
+     * widgetSelected(SelectionEvent e) { FileDialog dialog = new
+     * FileDialog(((Button) e.widget).getShell(), SWT.SAVE);
+     * 
+     * dialog.setText("Export xargs"); String[] filterExt = { "*.xargs", "*.*"
+     * }; dialog.setFilterExtensions(filterExt); //
+     * dialog.setFilterPath(wInstanceDirText.getText()); String path =
+     * dialog.open(); if (path != null) { // wInstanceDirText.setText(path); //
+     * updateDialog(); } } }); // TBI : Not yet implemented
+     * wExportButton.setEnabled(false);
+     */
 
     // Import/export error messages
     wErrorXargs = new Label(wXargsGroup, SWT.LEFT | SWT.WRAP);
@@ -364,6 +352,7 @@ public class MainTab extends AbstractLaunchConfigurationTab
     wStartLevelSpinner.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e)
       {
+        bundleTab.setInitialStartLevel(wStartLevelSpinner.getSelection());
         updateDialog();
       }
     });
@@ -648,6 +637,7 @@ public class MainTab extends AbstractLaunchConfigurationTab
       OsgiUiPlugin.log(e.getStatus());
     }
     wStartLevelSpinner.setSelection(startLevel);
+    bundleTab.setInitialStartLevel(wStartLevelSpinner.getSelection());
 
     // Initialize default system properties list
     try {
@@ -916,6 +906,7 @@ public class MainTab extends AbstractLaunchConfigurationTab
 
     // Set start level
     wStartLevelSpinner.setSelection(xArgsFile.getStartLevel());
+    bundleTab.setInitialStartLevel(wStartLevelSpinner.getSelection());
 
     // Read init flag from xargs file
     wInitButton.setSelection(xArgsFile.clearPersistentData());
@@ -954,6 +945,7 @@ public class MainTab extends AbstractLaunchConfigurationTab
 
     // Set default start level
     wStartLevelSpinner.setSelection(DEFAULT_START_LEVEL);
+    bundleTab.setInitialStartLevel(wStartLevelSpinner.getSelection());
 
     // Set clear bundle cache
     wInitButton.setSelection(false);

@@ -126,6 +126,47 @@ public class VersionRange {
     return !isRange() && Version.emptyVersion.equals(lowerBound);
   }
 
+  // ***************************************************************************
+  // java.lang.Object methods
+  // ***************************************************************************
+  /*
+   * (non-Javadoc)
+   * 
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  public boolean equals(Object obj)
+  {
+    if (obj == null || !(obj instanceof VersionRange)) {
+      return false;
+    }
+    
+    VersionRange vr = (VersionRange) obj;
+    
+    if ((lowerBoundInclusive != vr.lowerBoundInclusive) ||
+        (upperBoundInclusive != vr.upperBoundInclusive)) {
+      return false;
+    }
+    
+    if (!lowerBound.equals(vr.lowerBound)) {
+      return false;
+    }
+    
+    if (upperBound != null && !upperBound.equals(vr.upperBound)) {
+      return false;
+    }
+    
+    if (upperBound == null && vr.upperBound != null) {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  /*
+   * (non-Javadoc)
+   * 
+   * @see java.lang.Object#toString()
+   */
   public String toString()
   {
     StringBuffer sb = new StringBuffer();
