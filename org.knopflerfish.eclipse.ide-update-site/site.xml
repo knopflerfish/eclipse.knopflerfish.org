@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <description url="http://www.knopflerfish.org/eclipse-update">
+   <description name="Knopflerfish Update Site" url="http://www.knopflerfish.org/eclipse-update">
       Knopflerfish Eclipse Plugins Update Site
    </description>
-   <feature url="features/org.knopflerfish.eclipse.ide_feature_1.2.1.jar" id="org.knopflerfish.eclipse.ide_feature" version="1.2.1">
+   <feature url="features/org.knopflerfish.eclipse.ide_feature_1.2.2.jar" id="org.knopflerfish.eclipse.ide_feature" version="1.2.2">
       <category name="Knopflerfish"/>
    </feature>
    <category-def name="Knopflerfish" label="Knopflerfish Plugin">

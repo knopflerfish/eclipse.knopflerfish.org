@@ -2,7 +2,7 @@
 <feature
       id="org.knopflerfish.eclipse.ide_feature"
       label="Knopflerfish OSGi IDE"
-      version="1.2.1"
+      version="1.2.2"
       provider-name="Knopflerfish">
 
    <description url="http://www.knopflerfish.org/eclipse_plugin.html">
@@ -57,7 +57,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
       <import plugin="org.eclipse.debug.core"/>
       <import plugin="org.eclipse.jdt.core"/>
       <import plugin="org.eclipse.jdt.launching"/>
-      <import plugin="org.eclipse.core.resources"/>
+      <import plugin="org.eclipse.swt"/>
       <import plugin="org.eclipse.ui"/>
       <import plugin="org.eclipse.debug.ui"/>
       <import plugin="org.eclipse.jdt.debug.ui"/>
