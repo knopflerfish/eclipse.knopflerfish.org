@@ -49,7 +49,7 @@ import org.knopflerfish.eclipse.core.Property;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 
 /**
- * @author Anders Rimén, Makewave
+ * @author Anders Rimï¿½n, Makewave
  * @see http://www.makewave.com/
  */
 public class FrameworkConfiguration implements IFrameworkConfiguration
@@ -136,7 +136,6 @@ public class FrameworkConfiguration implements IFrameworkConfiguration
     }
     // Set start level and launch
     writeCommand(initFile, "-startlevel", Integer.toString(startLevel), true);
-    writeCommand(initFile, "-launch", "", true);
 
     // Add start entries
     for (Map.Entry<Integer, List<BundleElement>> element : bundles.entrySet()) {

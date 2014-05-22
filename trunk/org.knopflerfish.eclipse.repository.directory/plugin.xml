@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
-<plugin
-   id="org.knopflerfish.eclipse.repository.directory"
-   name="Directory Repository Plug-in"
->
-   <requires>
-      <import plugin="org.eclipse.core.runtime" version="3.7.0"/>
-      <import plugin="org.knopflerfish.eclipse.core" version="1.1.1"/>
-   </requires>
+<plugin>
    <extension
          point="org.knopflerfish.eclipse.core.bundleRepositoryType">
     <bundleRepositoryType

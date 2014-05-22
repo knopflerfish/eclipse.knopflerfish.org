@@ -100,7 +100,7 @@ public class AvailableElementRepository implements IAvailableTreeElement {
   public AvailableElementBundle findBundle(String filename) {
     for(AvailableElementBundle e : children) {
       IOsgiBundle b = e.getBundle();
-      if (Util.getFileName(b.getPath()).equals(filename)) {
+      if (b.getName().equals(filename)) {
         return e;
       }
     }
