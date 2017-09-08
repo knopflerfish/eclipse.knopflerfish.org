@@ -49,7 +49,7 @@ import org.knopflerfish.eclipse.core.Property;
 import org.knopflerfish.eclipse.core.launcher.BundleLaunchInfo;
 
 /**
- * @author Anders Rim�n, Makewave
+ * @author Anders Rimén, Makewave
  * @see http://www.makewave.com/
  */
 public class FrameworkConfiguration implements IFrameworkConfiguration
@@ -114,8 +114,13 @@ public class FrameworkConfiguration implements IFrameworkConfiguration
       }
     }
 
+    Property startLevelProp = new Property("org.osgi.framework.startlevel.beginning");
+    startLevelProp.setType(Property.FRAMEWORK_PROPERTY);
+    startLevelProp.setValue(Integer.toString(startLevel));
+    writeProperty(initFile, startLevelProp, true);
+    
     writeCommand(initFile, "-init", "", true);
-
+   
     // Add install entries
     int currentLevel = -1;
     for (Map.Entry<Integer, List<BundleElement>> element : bundles.entrySet()) {
@@ -134,8 +139,9 @@ public class FrameworkConfiguration implements IFrameworkConfiguration
                      true);
       }
     }
-    // Set start level and launch
-    writeCommand(initFile, "-startlevel", Integer.toString(startLevel), true);
+    // Start level must be set via property
+    // Setting it explicitly is not possible since KF 5.2.1, see issue #1
+    // writeCommand(initFile, "-startlevel", Integer.toString(startLevel), true);
 
     // Add start entries
     for (Map.Entry<Integer, List<BundleElement>> element : bundles.entrySet()) {

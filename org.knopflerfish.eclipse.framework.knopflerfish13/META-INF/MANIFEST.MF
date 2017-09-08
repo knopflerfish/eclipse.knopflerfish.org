@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Knopflerfish 1.3 Plug-in
 Bundle-SymbolicName: org.knopflerfish.eclipse.framework.knopflerfish13; singleton:=true
-Bundle-Version: 1.2.1
+Bundle-Version: 1.2.2
 Bundle-Activator: org.knopflerfish.eclipse.framework.knopflerfish.KnopflerfishPlugin
 Require-Bundle: org.eclipse.core.runtime,
  org.knopflerfish.eclipse.core
